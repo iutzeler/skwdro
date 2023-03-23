@@ -1,34 +1,31 @@
 ####################
-project-template API
+skwdro API
 ####################
 
-This is an example on how to document the API of your own project.
+The following models are implemented in skwdro
 
 .. currentmodule:: skwdro
 
-Estimator
+Estimators
 =========
+
+.. currentmodule:: skwdro.estimators
 
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
-   TemplateEstimator
+   NewsVendor
 
-Transformer
+Classifiers
 ===========
 
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   TemplateTransformer
-
-Predictor
-=========
+.. currentmodule:: skwdro.estimators
 
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
-    TemplateClassifier
+   LogisticRegression
+
+

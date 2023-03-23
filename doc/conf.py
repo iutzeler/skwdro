@@ -78,7 +78,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'skwdro'
-copyright = u'2016, Vighnesh Birodkar'
+copyright = u'2023 skwdro team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -315,6 +315,3 @@ sphinx_gallery_conf = {
         'skwdro': None}
 }
 
-def setup(app):
-    # a copy button to copy snippet of code from the documentation
-    app.add_javascript('js/copybutton.js')
