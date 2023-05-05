@@ -235,7 +235,6 @@ def PiatEtAl(WDROProblem=None, epsilon=1.0, Nsamples = 5):
         step = 10/(t+10)**0.8
         theta = np.minimum(np.maximum(theta - step*d,WDROProblem.Theta_bounds[0]),WDROProblem.Theta_bounds[1])
 
-        print(theta)
 
     
     return theta
