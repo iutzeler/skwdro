@@ -5,13 +5,13 @@ import math
 
 from skwdro.solvers.utils import *
 
-import progressbar
-widgets = [' [',
-         progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
-         '] ',
-           progressbar.Bar('*'),' (',
-           progressbar.ETA(), ') ',
-          ]
+# import progressbar
+# widgets = [' [',
+#          progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
+#          '] ',
+#            progressbar.Bar('*'),' (',
+#            progressbar.ETA(), ') ',
+#           ]
 
 
 def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 20,fit_intercept=False):
@@ -111,12 +111,13 @@ def Approx_BFGS(WDROProblem=None, epsilon=0.1, Nsamples = 50,fit_intercept=False
 
 
     T = 10
-    bar = progressbar.ProgressBar(max_value=T,widgets=widgets).start()
+    # bar = progressbar.ProgressBar(max_value=T,widgets=widgets).start()
     for t in range(T):
         lbfgs.step(closure)
-        bar.update(t)
+        
+        # bar.update(t)
 
-    bar.finish("Done")
+    #bar.finish("Done")
 
     
     return theta, intercept, lam

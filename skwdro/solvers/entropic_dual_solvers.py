@@ -1,17 +1,14 @@
 import numpy as np
-import progressbar
- 
-
 
 from skwdro.solvers.utils import *
 
-
-widgets = [' [',
-         progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
-         '] ',
-           progressbar.Bar('*'),' (',
-           progressbar.ETA(), ') ',
-          ]
+# import progressbar
+# widgets = [' [',
+#          progressbar.Timer(format= 'elapsed time: %(elapsed)s'),
+#          '] ',
+#            progressbar.Bar('*'),' (',
+#            progressbar.ETA(), ') ',
+#           ]
 
  
 
@@ -73,7 +70,7 @@ def WangGaoXie_v1(WDROProblem=None, epsilon=0.1, Nsamples = 50,fit_intercept=Fal
 
 
     T = 50
-    bar = progressbar.ProgressBar(max_value=T,widgets=widgets).start()
+    # bar = progressbar.ProgressBar(max_value=T,widgets=widgets).start()
     for t in range(T):
         lam = (lamL+lamU)/2.0
         
@@ -198,9 +195,9 @@ def WangGaoXie_v1(WDROProblem=None, epsilon=0.1, Nsamples = 50,fit_intercept=Fal
             #print(grad_est)
             # break
 
-        bar.update(t)
+        # bar.update(t)
 
-    bar.finish("Done")
+    # bar.finish("Done")
     
     return theta, intercept, lam
 
