@@ -17,4 +17,11 @@ class NewsVendorLoss_torch(Loss):
 
     def value(self,theta,xi):
         return self.k*theta-self.u*torch.minimum(theta,xi)
-    
+
+class WeberLoss_torch(Loss):
+
+    def __init__(self, name="Weber loss"):
+        self.name = name
+
+    def value(self,y,x,w):
+        return w*torch.norm(x-y)
