@@ -37,9 +37,9 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
     cost: Loss, default=NormCost(p=2)
         Transport cost
     solver: str, default='entropic'
-        Solver to be used: 'entropic' or 'dedicated' 
+        Solver to be used: 'entropic' or 'dedicated'
     solver_reg: float, default=1.0
-        regularization value for the entropic solver 
+        regularization value for the entropic solver
 
     Attributes
     ----------
@@ -65,7 +65,7 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
     """
 
     def __init__(self, rho = 1e-2, l2_reg=None, fit_intercept=True, cost = NormCost(p=2), solver="entropic", solver_reg  = 1.0):
-        
+
         self.rho    = rho
         self.l2_reg = l2_reg
         self.cost   = cost
@@ -74,7 +74,7 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
         self.solver_reg = solver_reg
 
         self.problem = WDROProblem(Xi_bounds=[-1e8,1e8],Theta_bounds=[-1e8,1e8],rho=rho,cost = cost, loss=LogisticLoss(l2_reg=l2_reg))
-        
+
 
     def fit(self, X, y):
         """Fits the WDRO classifier.
@@ -118,11 +118,11 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
 
 
         self.is_fitted_ = True
-        
+
 
         # Return the classifier
         return self
-    
+
     def predict_proba_2Class(self,X):
         """ Robust prediction probability for class +1.
 
