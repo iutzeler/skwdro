@@ -8,6 +8,12 @@ ENGINES_NAMES = {
 }
 
 
+ENGINES_NAMES = {
+    "pt": "PyTorch tensors",
+    "np": "Numpy arrays",
+    "jx": "Jax arrays"
+}
+
 class Cost:
     """ Base class for transport functions """
 
