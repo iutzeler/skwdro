@@ -5,7 +5,7 @@ from skwdro.base.costs import Cost
 class WDROProblem:
     """ Base class for WDRO problem """
 
-    def __init__(self, n=0, Theta_bounds=None , d=0, Xi_bounds=None , cost=Cost, dLabel=0, XiLabel_bounds=None , costLabel=None, loss=None, rho = 0, P = None,  name="WDRO Problem"):
+    def __init__(self, n=0, Theta_bounds=None , d=0, Xi_bounds=None , cost=Cost, dLabel=0, XiLabel_bounds=None , costLabel=None, loss=None, rho = 0., P = None,  name="WDRO Problem"):
 
         ## Optimization variable
         self.n = n # size of Theta
