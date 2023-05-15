@@ -6,7 +6,7 @@ class Loss:
 
     def value(self,theta,xi):
         raise NotImplementedError("Please Implement this method")
-    
+
     def grad_theta(self,theta,xi):
         raise NotImplementedError("Please Implement this method")
 
@@ -20,7 +20,7 @@ class NewsVendorLoss(Loss):
 
     def value(self,theta,xi):
         return self.k*theta-self.u*np.minimum(theta,xi)
-    
+
     def grad_theta(self,theta,xi):
         if theta>=xi :
             return self.k
@@ -40,7 +40,7 @@ class LogisticLoss(Loss):
     def valueSplit(self,theta,X,y,intercept=0.0):
 
         m = np.size(y)
-        
+
         if self.l2_reg != None:
             raise NotImplementedError("l2 regression is not yet available")
 
@@ -54,10 +54,10 @@ class LogisticLoss(Loss):
                 val += np.log(1+np.exp(-y[i]*(np.dot(X[i,:],theta)+intercept)))
 
             return val/m
-    
+
     def grad_thetaSplit(self,theta,X,y,intercept=0.0):
         m = np.size(y)
-        
+
         if self.l2_reg != None:
             raise NotImplementedError("l2 regression is not yet available")
 
@@ -73,7 +73,7 @@ class LogisticLoss(Loss):
 
     def grad_interceptSplit(self,theta,X,y,intercept=0.0):
         m = np.size(y)
-        
+
         if self.l2_reg != None:
             raise NotImplementedError("l2 regression is not yet available")
 
@@ -97,7 +97,7 @@ class QuadraticLoss(Loss):
     def valueSplit(self,theta,X,y,intercept=0.0):
 
         m = np.size(y)
-        
+
         if self.l2_reg != None:
             raise NotImplementedError("l2 regression is not yet available")
 
@@ -106,13 +106,13 @@ class QuadraticLoss(Loss):
         else:
             val = 0
             for i in range(m):
-                val += 0.5*np.linalg.norm(np.dot(X[i,:],theta)+intercept-y[i])**2 
+                val += 0.5*np.linalg.norm(np.dot(X[i,:],theta)+intercept-y[i])**2
 
             return val/m
-    
+
     def grad_thetaSplit(self,theta,X,y,intercept=0.0):
         m = np.size(y)
-        
+
         if self.l2_reg != None:
             raise NotImplementedError("l2 regression is not yet available")
 
@@ -121,13 +121,13 @@ class QuadraticLoss(Loss):
         else:
             grad = np.zeros(theta.shape)
             for i in range(m):
-                grad += np.dot(X[i,:].T , (np.dot(X[i,:],theta)+intercept-y[i]) )   
+                grad += np.dot(X[i,:].T , (np.dot(X[i,:],theta)+intercept-y[i]) )
 
-            return grad/m    
-    
+            return grad/m
+
     def grad_interceptSplit(self,theta,X,y,intercept=0.0):
         m = np.size(y)
-        
+
         if self.l2_reg != None:
             raise NotImplementedError("l2 regression is not yet available")
 
@@ -136,8 +136,8 @@ class QuadraticLoss(Loss):
         else:
             grad = np.zeros(theta.shape)
             for i in range(m):
-                grad += (np.dot(X[i,:],theta)+intercept-y[i]) 
+                grad += (np.dot(X[i,:],theta)+intercept-y[i])
 
-            return grad/m    
+            return grad/m
 
-            
+

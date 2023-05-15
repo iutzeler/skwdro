@@ -5,7 +5,6 @@ class Loss:
 
     def value(self,theta,xi):
         raise NotImplementedError("Please Implement this method")
-    
 
 
 class NewsVendorLoss_torch(Loss):

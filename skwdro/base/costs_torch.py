@@ -1,49 +1,36 @@
-import numpy as np
 from typing import Optional
+from .costs import Cost
 
-ENGINES_NAMES = {
-    "pt": "PyTorch tensors",
-    "np": "Numpy arrays",
-    "jx": "Jax arrays"
-}
-
-
-class Cost:
-    """ Base class for transport functions """
-
-    def __init__(self, name: str="", engine: str=""):
-        self.name = name
-        self.engine = engine
-
-    def value(self, x, y):
-        raise NotImplementedError("Please Implement this method")
-
-    def __str__(self) -> str:
-        return "Cost named " + self.name + " using as data: " + ENGINES_NAMES[self.engine]
-
+import torch as pt
 
 class NormCost(Cost):
-    """ p-norm to some power """
-
-    def __init__(self, p=1.0, power=1.0, name=None):
-        super().__init__(name="Norm" if name is None else name, engine="np")
+    """ p-norm to some power, with torch arguments
+    """
+    def __init__(self, p: float=1., power: float=1., name: Optional[str]=None):
+        r"""
+        Norm to represent the ground cost of type :math:`p`.
+        It represents a distance depending on :math:`p`:
+            * for :math:`p=1`: Manhattan
+            * for :math:`p=2`: Euclidean distance
+            * for :math:`p=\infty`: Sup-norm
+        """
+        super().__init__(name="Norm" if name is None else name, engine="pt")
         self.p = p
         self.power = power
 
-    def value(self,x,y):
+    def value(self, xi: pt.Tensor, zeta: pt.Tensor):
         r"""
         Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
 
         Parameters
         ----------
-        x : Array, shape (n_samples, n_features)
+        xi : Tensor
             Data point to be displaced
-        y : Array, shape (n_samples, n_features)
+        zeta : Tensor
             Data point towards which ``xi`` is displaced
         """
-        diff = np.array(x-y).flatten()
-        return np.linalg.norm(diff,ord=self.p)**self.power
-
+        diff = (xi - zeta).reshape(-1)
+        return pt.norm(diff, p=self.p)**self.power
 
 
 class NormLabelCost(NormCost):
@@ -66,14 +53,14 @@ class NormLabelCost(NormCost):
 
     @classmethod
     def _label_penalty(cls, y: float, y_prime: float):
-        return np.abs(y - y_prime)
+        return abs(y - y_prime)
 
     @classmethod
-    def _data_penalty(cls, x: np.ndarray, x_prime: np.ndarray, p: float):
-        diff = (x - x_prime).flatten()
-        return float(np.linalg.norm(diff, ord=p))
+    def _data_penalty(cls, x: pt.Tensor, x_prime: pt.Tensor, p: float):
+        diff = (x - x_prime).reshape(-1)
+        return float(pt.norm(diff, p=p))
 
-    def value(self, x: np.ndarray, x_prime: np.ndarray, y: float, y_prime: float):
+    def value(self, x: pt.Tensor, x_prime: pt.Tensor, y: float, y_prime: float):
         r"""
         Cost to displace :math:`\xi:=\left[\begin{array}{c}\bm{X}\\y\end{array}\right]`
         to :math:`\zeta:=\left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]`
@@ -81,13 +68,13 @@ class NormLabelCost(NormCost):
 
         Parameters
         ----------
-        x : Array, shape (n_samples, n_features)
+        x : Tensor, shape (n_samples, n_features)
             Data point to be displaced (without the label)
-        x_prime : Array, shape (n_samples, n_features)
+        x_prime : Tensor, shape (n_samples, n_features)
             Data point towards which ``x`` is displaced
-        y : Array, shape (n_samples,)
+        y : float
             Label or target for the problem/loss
-        y_prime : Array, shape (n_samples,)
+        y_prime : float
             Label or target in the dataset
         """
         if self.kappa is float("inf"):
