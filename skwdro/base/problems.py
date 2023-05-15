@@ -4,9 +4,9 @@ from skwdro.base.costs import Cost
 
 class WDROProblem:
     """ Base class for WDRO problem """
-    
-    def __init__(self, n=0, Theta_bounds=None , d=0, Xi_bounds=None , cost=Cost, dLabel=0, XiLabel_bounds=None , costLabel=None, loss=None, rho = 0, P = None,  name="WDRO Problem"):
-        
+
+    def __init__(self, cost: Cost, n=0, Theta_bounds=None , d=0, Xi_bounds=None , dLabel=0, XiLabel_bounds=None , costLabel=None, loss=None, rho = 0., P = None,  name="WDRO Problem"):
+
         ## Optimization variable
         self.n = n # size of Theta
         self.Theta_bounds = Theta_bounds
@@ -15,7 +15,7 @@ class WDROProblem:
         self.d = d # size of Xi
         self.Xi_bounds = Xi_bounds
 
-        ## Uncertain labels 
+        ## Uncertain labels
         self.dLabel = dLabel # size of Xi
         self.XiLabel_bounds = XiLabel_bounds
         self.costLabel = costLabel
@@ -23,9 +23,9 @@ class WDROProblem:
         ## Problem loss
         self.loss = loss
 
-        ## Radius  
-        self.rho = rho 
-        
+        ## Radius
+        self.rho = rho
+
         ## Transport cost
         self.c = cost.value
 
@@ -35,8 +35,8 @@ class WDROProblem:
         ## Problem name
         self.name = name
 
-    
-    
+
+
 
 class EmpiricalDistribution:
     """ Empirical Probability distribution """

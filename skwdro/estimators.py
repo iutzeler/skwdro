@@ -30,14 +30,14 @@ class NewsVendor(BaseEstimator):
     ----------
     rho : float, default=1e-2
         Robustness radius
-    k   : float, default=5 
+    k   : float, default=5
         Buying cost
     u   : float, default=7
         Selling cost
     cost: Loss, default=NormCost()
         Transport cost
     solver: str, default='entropic'
-        Solver to be used: 'entropic' or 'dedicated' 
+        Solver to be used: 'entropic' or 'dedicated'
 
     Attributes
     ----------
@@ -66,7 +66,7 @@ class NewsVendor(BaseEstimator):
 
         if solver == "entropic_torch":
             self.problem.loss = NewsVendorLoss_torch(k=k,u=u)
-        
+
 
     def fit(self, X, y=None):
         """Fits a WDRO model
@@ -81,7 +81,7 @@ class NewsVendor(BaseEstimator):
         self : object
             Returns self.
         """
-        
+
         # TODO: assert X has the right shape
 
 
