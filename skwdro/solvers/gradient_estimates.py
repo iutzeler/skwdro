@@ -119,6 +119,8 @@ def step_theta_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss_fns, 
     lr = lr_decay_schedule(step_id)
     return -lr * grad_estimate
 
+def project_lambda(lam):
+    return max(0., lam)
 
 def step_wgx_wol(xi, zeta, theta, lam, cost, loss_fns, t, rho_eps):
     """
@@ -133,6 +135,10 @@ def step_wgx_wol(xi, zeta, theta, lam, cost, loss_fns, t, rho_eps):
         theta += step_theta
     step_lambda = step_lam_wol(xi, zeta, theta, lam, cost, loss_fns[0], t, rho, epsilon)
     lam += step_lambda
+
+    # Gradient projection
+    lam = project_lambda(lam)
+
     return theta, lam, (step_theta, step_lambda)
 
 def step_wgx_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss_fns, t, rho_eps):
@@ -148,5 +154,9 @@ def step_wgx_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss_fns, t,
         theta += step_theta
     step_lambda = step_lam_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss_fns[0], t, rho, epsilon)
     lam += step_lambda
+
+    # Gradient projection
+    lam = project_lambda(lam)
+
     return theta, lam, (step_theta, step_lambda)
 # ##############################################################
