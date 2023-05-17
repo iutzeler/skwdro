@@ -70,7 +70,10 @@ class NormLabelCost(NormCost):
 
     @classmethod
     def _label_penalty(cls, y: np.ndarray, y_prime: np.ndarray):
-        if y.shape[-1] == 1:
+        if isinstance(y, int) or isinstance(y, float) or len(y.shape) < 2:
+            # Old code for scalar y (non-parallelized)
+            return abs(y-y_prime)
+        elif y.shape[-1] == 1:
             # d = 1
             return np.abs(y - y_prime)
         else:
@@ -80,8 +83,10 @@ class NormLabelCost(NormCost):
 
     @classmethod
     def _data_penalty(cls, x: np.ndarray, x_prime: np.ndarray, p: float):
-        diff = x - x_prime
-        return np.linalg.norm(diff, ord=p, axis=2, keepdims=True)
+        if len(x.shape) > 2:
+            diff = x - x_prime
+            return np.linalg.norm(diff, ord=p, axis=2, keepdims=True)
+        else: return np.linalg.norm(x-x_prime)
 
     def value(self, x: np.ndarray, x_prime: np.ndarray, y: np.ndarray, y_prime: np.ndarray):
         r"""
