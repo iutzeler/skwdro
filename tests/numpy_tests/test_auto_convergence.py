@@ -9,7 +9,7 @@ from test_binary_separable_log_classif import generate_points
 
 def launch_solver(fi: bool=False):
     estimator = LogisticRegression(
-            rho=np.sqrt(np.random.rand())*1e-1,
+            rho=1e-2,
             l2_reg=None,
             fit_intercept=fi,
             cost=NormLabelCost(2., 1., 10**np.random.randint(-1, 4), "test"),

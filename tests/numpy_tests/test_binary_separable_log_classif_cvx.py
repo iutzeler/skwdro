@@ -9,7 +9,7 @@ ANGLE_TOL = 1e-1 * np.pi
 
 def fit_estimator(fi=True):
     estimator = LogisticRegression(
-            rho=1e-2,#np.sqrt(np.random.rand())*1e-1,
+            rho=1e-2,
             l2_reg=None,
             fit_intercept=fi,
             cost=NormLabelCost(2., 1., 10**np.random.randint(-1, 4), "test"),
