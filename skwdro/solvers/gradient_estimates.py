@@ -39,6 +39,20 @@ def lr_decay_schedule(iter_idx, offset: int=10, lr0=1e-1) -> float:
     """
     return lr0 * (iter_idx + offset)**-0.8
 
+# Graident projection ##########################################
+def proj_gradient(lam_grad, lam, lr):
+    """
+    Project the gradient ``lam_grad -> new_lam_grad`` such that ``lam - lr * new_lam_grad >= 0``
+    Returns the projected step ``lr*new_lam_grad``
+    """
+    return min(lam, lr*lam_grad)
+
+def project_lambda(lam):
+    """
+    Safety measure in case the projected gradient bugged (may depracate this later)
+    """
+    return max(0., lam)
+# ##############################################################
 
 # ### Steps ####################################################
 def step_lam_wol(xi, zeta, theta, lam, cost, loss, t, rho, epsilon):
@@ -57,7 +71,7 @@ def step_lam_wol(xi, zeta, theta, lam, cost, loss, t, rho, epsilon):
 
     # Returned the scheduled step
     lr = lr_decay_schedule(t)
-    return -lr * grad_estimate
+    return -proj_gradient(grad_estimate, lam, lr)
 
 def step_lam_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss, t, rho, epsilon):
     """
@@ -75,7 +89,7 @@ def step_lam_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss, t, rho
 
     # Returned the scheduled step
     lr = lr_decay_schedule(t)
-    return -lr * grad_estimate
+    return -proj_gradient(grad_estimate, lam, lr)
 
 def step_theta_wol(xi, zeta, theta, lam, cost, loss_fns, step_id, epsilon):
     """
@@ -118,9 +132,6 @@ def step_theta_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss_fns, 
     # Returned the scheduled step
     lr = lr_decay_schedule(step_id)
     return -lr * grad_estimate
-
-def project_lambda(lam):
-    return max(0., lam)
 
 def step_wgx_wol(xi, zeta, theta, lam, cost, loss_fns, t, rho_eps):
     """

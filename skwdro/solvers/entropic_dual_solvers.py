@@ -34,7 +34,7 @@ def wgx_v2_wo_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss
     while t > 0:
         # Perform step
         theta, lam, grads = step_wgx_wol(xi, zeta, theta, lam, c, loss_fns, t, rho_eps)
-        # Check stopping
+        # Check stopping on the 5th theta gradient and last lambda projected gradient
         if opt_cond(grads, t): break
         else: t += 1
     return theta, lam
@@ -55,7 +55,7 @@ def wgx_v2_w_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss,
     while t > 0:
         # Perform step
         theta, lam, grads = step_wgx_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, c, loss, t, rho_eps)
-        # Check stopping
+        # Check stopping on the 5th theta gradient and last lambda projected gradient
         if opt_cond(grads, t): break
         else: t += 1
     return theta, lam
