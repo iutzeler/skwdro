@@ -30,20 +30,24 @@ class NormCost(Cost):
         self.p = p
         self.power = power
 
-    def value(self,x,y):
+    def value(self,x,y, *_):
         r"""
         Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
 
         Parameters
         ----------
-        x : Array, shape (n_samples, n_features)
+        x : Array, shape (n_samples, n_features, d)
             Data point to be displaced
-        y : Array, shape (n_samples, n_features)
+        y : Array, shape (n_samples, n_features, d)
             Data point towards which ``xi`` is displaced
         """
+        if len(x.shape) > 2:
+            return self._parallel_value(x, y)
         diff = np.array(x-y).flatten()
         return np.linalg.norm(diff,ord=self.p)**self.power
 
+    def _parallel_value(self, x, y):
+        return np.linalg.norm(x - y, axis=2, ord=self.p, keepdims=True) ** self.power
 
 
 class NormLabelCost(NormCost):
@@ -65,15 +69,26 @@ class NormLabelCost(NormCost):
         assert kappa >= 0, f"Input kappa={kappa}<0 is illicit since it 'encourages' flipping labels in the database, and thus makes no sense wrt the database in terms of 'trust' to the labels."
 
     @classmethod
-    def _label_penalty(cls, y: float, y_prime: float):
-        return np.abs(y - y_prime)
+    def _label_penalty(cls, y: np.ndarray, y_prime: np.ndarray):
+        if isinstance(y, int) or isinstance(y, float) or len(y.shape) < 2:
+            # Old code for scalar y (non-parallelized)
+            return abs(y-y_prime)
+        elif y.shape[-1] == 1:
+            # d = 1
+            return np.abs(y - y_prime)
+        else:
+            # TODO
+            raise NotImplementedError("Multi-dim y not implemented")
+
 
     @classmethod
     def _data_penalty(cls, x: np.ndarray, x_prime: np.ndarray, p: float):
-        diff = (x - x_prime).flatten()
-        return float(np.linalg.norm(diff, ord=p))
+        if len(x.shape) > 2:
+            diff = x - x_prime
+            return np.linalg.norm(diff, ord=p, axis=2, keepdims=True)
+        else: return np.linalg.norm(x-x_prime)
 
-    def value(self, x: np.ndarray, x_prime: np.ndarray, y: float, y_prime: float):
+    def value(self, x: np.ndarray, x_prime: np.ndarray, y: np.ndarray, y_prime: np.ndarray):
         r"""
         Cost to displace :math:`\xi:=\left[\begin{array}{c}\bm{X}\\y\end{array}\right]`
         to :math:`\zeta:=\left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]`
@@ -81,13 +96,13 @@ class NormLabelCost(NormCost):
 
         Parameters
         ----------
-        x : Array, shape (n_samples, n_features)
+        x : Array, shape (n_samples, m, d)
             Data point to be displaced (without the label)
-        x_prime : Array, shape (n_samples, n_features)
+        x_prime : Array, shape (n_samples, m, d)
             Data point towards which ``x`` is displaced
-        y : Array, shape (n_samples,)
+        y : Array, shape (n_samples, m, 1)
             Label or target for the problem/loss
-        y_prime : Array, shape (n_samples,)
+        y_prime : Array, shape (n_samples, m, 1)
             Label or target in the dataset
         """
         if self.kappa is float("inf"):
@@ -102,4 +117,6 @@ class NormLabelCost(NormCost):
         else:
             distance = self._data_penalty(x, x_prime, self.p) \
                 + self.kappa * self._label_penalty(y, y_prime)
+            # Rescale to avoid overflows
+            distance /= (1. + self.kappa)
             return distance**self.power
