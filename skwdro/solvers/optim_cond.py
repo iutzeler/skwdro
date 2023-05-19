@@ -1,7 +1,7 @@
 import numpy as np
 
 class OptCond:
-    def __init__(self, order, tol_theta: float=1e-4, tol_lambda: float=1e-4, max_iter: int=int(1e4), mode: str="both"):
+    def __init__(self, order, tol_theta: float=1e-4, tol_lambda: float=1e-6, max_iter: int=int(1e4), mode: str="both"):
         assert order > 0
         self.p = order
         self.tol_t = tol_theta
@@ -21,6 +21,8 @@ class OptCond:
         grad_t_stop = float(np.linalg.norm(grad_theta, ord=self.p)) < self.tol_t and self.tol_t  > 0
         grad_l_stop = float(grad_lambda) < self.tol_l and self.tol_l  > 0
         it_stop = it >= self.maxiter and self.maxiter > 0
+        if it_stop: # Warn the user that the optimality conditions may not be verified (loss of accuracy)
+            Warning("Maximum number of iterations reached") 
         return self.grad_stop(grad_t_stop, grad_l_stop) or it_stop
 
     def grad_stop(self, grad_t_stop: bool, grad_l_stop: bool) -> bool:

@@ -23,7 +23,7 @@ def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 20,fit_interce
 # ### Gradient iterations ######################################
 def wgx_v2_wo_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss_fns, fit_intercept, opt_cond):
     """
-    Launch the optimisation, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
+    Launch the optimization, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
     """
     xi, theta, zeta = prepare_data(data_structure.samples, m, d, n_samples, rho_eps[1], fit_intercept)
 
@@ -34,6 +34,7 @@ def wgx_v2_wo_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss
     while t > 0:
         # Perform step
         theta, lam, grads = step_wgx_wol(xi, zeta, theta, lam, c, loss_fns, t, rho_eps)
+        print(theta,lam,grads)
         # Check stopping on the 5th theta gradient and last lambda projected gradient
         if opt_cond(grads, t): break
         else: t += 1
@@ -42,7 +43,7 @@ def wgx_v2_wo_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss
 
 def wgx_v2_w_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss, fit_intercept, opt_cond):
     """
-    Launch the optimisation, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
+    Launch the optimization, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
     """
     xi, theta, zeta = prepare_data(data_structure.samplesX, m, d, n_samples, rho_eps[1], fit_intercept)
     xi_labels = data_structure.samplesY[:, None]
@@ -95,12 +96,8 @@ def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, o
     m = WDROProblem.P.m
     rho =  WDROProblem.rho
 
-    lamL = 1e-10
-    lamU = 1e10
-    lam = (lamL+lamU)/2.0
-
-    # TODO: fix
-    lam = 1e1
+    # Starting lambda is 1/rho  
+    lam = 1.0/rho
 
     loss = WDROProblem.loss
     if no_labels:

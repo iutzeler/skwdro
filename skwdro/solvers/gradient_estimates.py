@@ -30,7 +30,7 @@ from skwdro.solvers.utils import non_overflow_exp_mean
 # #############
 def lr_decay_schedule(iter_idx, offset: int=10, lr0=1e-1) -> float:
     r"""
-    For gradient descent, usualy schedule looking like:
+    For gradient descent, usually schedule looking like:
 
     .. math ::
         \nu_t=\frac{\nu_0}{(o+t)^k}
@@ -39,7 +39,7 @@ def lr_decay_schedule(iter_idx, offset: int=10, lr0=1e-1) -> float:
     """
     return lr0 * (iter_idx + offset)**-0.8
 
-# Graident projection ##########################################
+# Gradient projection ##########################################
 def proj_gradient(lam_grad, lam, lr):
     """
     Project the gradient ``lam_grad -> new_lam_grad`` such that ``lam - lr * new_lam_grad >= 0``
