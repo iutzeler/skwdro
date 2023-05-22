@@ -21,7 +21,6 @@ class NewsVendorLoss(Loss):
     def value(self,theta,xi):
         return self.k*theta-self.u*np.minimum(theta,xi)
 
-
     def _parallel_grad_theta(self, theta, X):
         # New parallelized:
         # shapes in:
@@ -32,8 +31,7 @@ class NewsVendorLoss(Loss):
         # NOTE: no mean on m !!!!
         grads = self.k*np.ones_like(X) - self.u*(X>theta).astype(int)
         return grads
-
-
+      
     def grad_theta(self,theta,xi):
         if len(xi) >= 2:
             # Parallelized
@@ -87,6 +85,7 @@ class LogisticLoss(Loss):
                 val += np.log(1+np.exp(-y[i]*(np.dot(X[i,:],theta)+intercept)))
 
             return val/m
+
 
     def _parallel_grad_theta_split(self, theta, X, y):
         # New parallelized:

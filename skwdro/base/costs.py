@@ -31,6 +31,7 @@ class NormCost(Cost):
         self.power = power
 
     def value(self,x,y, *_):
+
         r"""
         Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
 
@@ -48,6 +49,7 @@ class NormCost(Cost):
 
     def _parallel_value(self, x, y):
         return np.linalg.norm(x - y, axis=2, ord=self.p, keepdims=True) ** self.power
+
 
 
 class NormLabelCost(NormCost):
@@ -103,6 +105,7 @@ class NormLabelCost(NormCost):
         y : Array, shape (n_samples, m, 1)
             Label or target for the problem/loss
         y_prime : Array, shape (n_samples, m, 1)
+
             Label or target in the dataset
         """
         if self.kappa is float("inf"):
@@ -117,6 +120,8 @@ class NormLabelCost(NormCost):
         else:
             distance = self._data_penalty(x, x_prime, self.p) \
                 + self.kappa * self._label_penalty(y, y_prime)
+
             # Rescale to avoid overflows
             distance /= (1. + self.kappa)
+
             return distance**self.power

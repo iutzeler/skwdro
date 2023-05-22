@@ -16,17 +16,20 @@ import numpy as np
 from skwdro.linear_models import LogisticRegression
 from skwdro.base.costs import NormLabelCost, NormCost
 
+
 # Generate the random data ##################################################
 rng = RandomState(seed=666)
 n = 100
 d = 2
 X, y, centers = make_blobs(n, d, centers=2, shuffle=True, random_state=rng, return_centers=True) # type: ignore
 y = 2 * y - 1 # type: ignore
+
 # Center data to avoid learning intercept
 X -= centers.mean(axis=0, keepdims=True) # type : ignore
 # ###########################################################################
 #cost=NormLabelCost(2., 1., 100., "Kappa-cost (w/ kappa=100)"),
 cost=NormCost(2., 1., "=")
+
 
 # SPECIFIC SOLVER
 print("Specific solver w/ LP fast solve #####")
