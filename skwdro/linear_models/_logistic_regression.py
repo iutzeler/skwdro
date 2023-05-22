@@ -14,6 +14,7 @@ from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses import LogisticLoss
 # from skwdro.base.losses_torch import *
 from skwdro.base.costs import Cost, NormCost
+from skwdro.solvers.optim_cond import OptCond
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
@@ -71,7 +72,8 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
                  fit_intercept=True,
                  cost: Cost=NormCost(p=2),
                  solver="entropic",
-                 solver_reg=1.0
+                 solver_reg=1.0,
+                 solver_cond=OptCond(2)
                  ):
 
         self.rho    = rho
@@ -80,6 +82,7 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
         self.fit_intercept = fit_intercept
         self.solver = solver
         self.solver_reg = solver_reg
+        self.opt_cond = solver_cond
 
         self.problem = WDROProblem(
                 cost=cost,
@@ -127,7 +130,8 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
         if self.solver=="entropic":
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
                     self.problem,
-                    fit_intercept=self.fit_intercept
+                    fit_intercept=self.fit_intercept,
+                    opt_cond=self.opt_cond
             )
         elif self.solver=="dedicated":
             self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLogisticSpecificSolver(

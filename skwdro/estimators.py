@@ -92,6 +92,10 @@ class NewsVendor(BaseEstimator):
 
         if self.solver=="dedicated":
             self.coef_ = spS.WDRONewsvendorSolver(self.problem)
+            if self.coef_ == 0.0:
+                self.dual_var_ = 0.0
+            else:
+                self.dual_var_ = self.u 
         elif self.solver=="entropic":
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(self.problem,epsilon=0.1)
         elif self.solver=="entropic_torch":

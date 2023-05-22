@@ -2,6 +2,8 @@ import numpy as np
 from numpy.random import sample
 
 from skwdro.solvers.utils import *
+from skwdro.solvers.optim_cond import OptCond
+from skwdro.solvers.gradient_estimates import step_wgx_wol, step_wgx_wl
 
 # import progressbar
 # widgets = [' [',
@@ -12,9 +14,127 @@ from skwdro.solvers.utils import *
 #           ]
 
 
+def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 20,fit_intercept=False, opt_cond=OptCond(2)):
+    #return WangGaoXie_v1(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
+    return WangGaoXie_v2(WDROProblem=WDROProblem, epsilon=epsilon, n_samples = Nsamples,fit_intercept=fit_intercept, opt_cond=opt_cond)
 
-def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 20,fit_intercept=False):
-    return WangGaoXie_v1(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
+
+
+# ### Gradient iterations ######################################
+def wgx_v2_wo_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss_fns, fit_intercept, opt_cond):
+    """
+    Launch the optimization, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
+    """
+    xi, theta, zeta = prepare_data(data_structure.samples, m, d, n_samples, rho_eps[1], fit_intercept)
+
+    c = lambda samples_x, z_x, *_: cost(samples_x, z_x)
+
+    t = 1
+    lam = lam_0
+    while t > 0:
+        # Perform step
+        theta, lam, grads = step_wgx_wol(xi, zeta, theta, lam, c, loss_fns, t, rho_eps)
+        print(theta,lam,grads)
+        # Check stopping on the 5th theta gradient and last lambda projected gradient
+        if opt_cond(grads, t): break
+        else: t += 1
+    return theta, lam
+
+
+def wgx_v2_w_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss, fit_intercept, opt_cond):
+    """
+    Launch the optimization, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
+    """
+    xi, theta, zeta = prepare_data(data_structure.samplesX, m, d, n_samples, rho_eps[1], fit_intercept)
+    xi_labels = data_structure.samplesY[:, None]
+    zeta_labels = sample_pi_0(rho_eps[1], n_samples, xi_labels)
+
+    c = lambda samples_x, z_x, samples_y, z_y: cost(samples_x, z_x, samples_y, z_y)
+
+    t = 1
+    lam = lam_0
+    while t > 0:
+        # Perform step
+        theta, lam, grads = step_wgx_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, c, loss, t, rho_eps)
+        # Check stopping on the 5th theta gradient and last lambda projected gradient
+        if opt_cond(grads, t): break
+        else: t += 1
+    return theta, lam
+# ##############################################################
+
+def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, opt_cond=OptCond(2)):
+    r"""
+    Full method to solve the dual problem of entropy-regularized WDRO.
+
+    .. math::
+        \inf_{\lambda\ge 0, \theta}
+            \lambda\rho + \epsilon
+                \mathbb{E}_{\xi\sim\mathbb{P}^N}
+                \ln\mathbb{E}_{\zeta\sim\mathcal{N}(\xi, \sigma)}
+                e^{\frac{1}{\epsilon}(L_\theta(\zeta)-\lambda c(\zeta, \xi))}
+
+    Parameters
+    ==========
+    WDROProblem: WDROProblem
+        Instance containing all important Parameters
+    epsilon: float
+        Relative importance/penalty attributed to the entropy in the primal
+    n_samples: int
+        Number of samples drown to approximate :math:`\mathbb{E}_{\zeta\sim\mathcal{N}(\xi, \sigma)}`
+    fit_intercept: bool
+        Set to true to plunge data in a ``d+1`` dimensional space in order to capture an affine model
+    opt_cond: OptCond
+        Instance containing information for stopping criteria wrt gradient descent
+    """
+
+    d = WDROProblem.d
+
+    no_labels = WDROProblem.dLabel == 0
+
+    data_structure = WDROProblem.P
+
+    m = WDROProblem.P.m
+    rho =  WDROProblem.rho
+
+    # Starting lambda is 1/rho  
+    lam = 1.0/rho
+
+    loss = WDROProblem.loss
+    if no_labels:
+        theta, lam = wgx_v2_wo_labels(
+                d,
+                data_structure,
+                m,
+                (rho, epsilon),
+                lam,
+                n_samples,
+                WDROProblem.c,
+                (loss.value, loss.grad_theta),
+                fit_intercept,
+                opt_cond
+            )
+    else:
+        theta, lam = wgx_v2_w_labels(
+                d,
+                data_structure,
+                m,
+                (rho, epsilon),
+                lam,
+                n_samples,
+                WDROProblem.c,
+                (loss.valueSplit, loss.grad_thetaSplit),
+                fit_intercept,
+                opt_cond
+            )
+
+    # Format of output:
+    # * linear coefficients (vector format)
+    # * intercept (None if fit_intercept==False)
+    # * optimal lambda
+    if fit_intercept:
+        return theta[1:], theta[0], lam
+    else:
+        return theta, None, lam
 
 
 def WangGaoXie_v1(WDROProblem, epsilon=0.1, Nsamples = 50,fit_intercept=False):
