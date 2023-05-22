@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.special import logsumexp, expit
+from scipy.special import logsumexp, expit, log_expit
 
 class Loss:
     """ Base class for loss functions """
@@ -21,11 +21,26 @@ class NewsVendorLoss(Loss):
     def value(self,theta,xi):
         return self.k*theta-self.u*np.minimum(theta,xi)
 
+    def _parallel_grad_theta(self, theta, X):
+        # New parallelized:
+        # shapes in:
+        # X(:=zeta): (n_samples, m, 1)
+        # theta: (1,)
+        # shapes out:
+        # grad: (n_samples, m, 1)
+        # NOTE: no mean on m !!!!
+        grads = self.k*np.ones_like(X) - self.u*(X>theta).astype(int)
+        return grads
+      
     def grad_theta(self,theta,xi):
-        if theta>=xi :
-            return self.k
+        if len(xi) >= 2:
+            # Parallelized
+            return self._parallel_grad_theta(theta, xi)
         else:
-            return self.k-self.u
+            if theta>=xi :
+                return self.k
+            else:
+                return self.k-self.u
 
 class LogisticLoss(Loss):
 
@@ -37,7 +52,23 @@ class LogisticLoss(Loss):
     def value(self, theta, xi):
         return SyntaxError
 
+    def _parallel_value_split(self, theta, X, y):
+        # New parallelized:
+        # shapes in:
+        # X(:=zeta): (n_samples, m, d)
+        # y(:=zeta_labels): (n_samples, m, 1)
+        # theta: (d,)
+        # shapes out:
+        # value: (n_samples, m)
+        # NOTE: no mean on m !!!!
+        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
+        return -log_expit(y * linear)
+
+
     def valueSplit(self,theta,X,y,intercept=0.0):
+        if len(X.shape) > 2:
+            # Parallelized
+            return self._parallel_value_split(theta, X, y)
 
         m = np.size(y)
 
@@ -55,21 +86,38 @@ class LogisticLoss(Loss):
 
             return val/m
 
+
+    def _parallel_grad_theta_split(self, theta, X, y):
+        # New parallelized:
+        # shapes in:
+        # X(:=zeta): (n_samples, m, d)
+        # y(:=zeta_labels): (n_samples, m, 1)
+        # theta: (d,)
+        # shapes out:
+        # grad: (n_samples, m, d)
+        # NOTE: no mean on m !!!!
+        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
+        grads = -y*X * expit(-y*linear) # (n_samples, m, d)
+        return grads
+
     def grad_thetaSplit(self,theta,X,y,intercept=0.0):
-        m = np.size(y)
-
-        if self.l2_reg != None:
-            raise NotImplementedError("l2 regression is not yet available")
-
-        if m == 1:
-            return -y*X*expit(-y*(np.dot(X,theta)+intercept))
-            #return -y*X/(1+np.exp(y*(np.dot(X,theta)+intercept)))
+        if len(X.shape) > 2:
+            # Parallelized
+            return self._parallel_grad_theta_split(theta, X, y)
         else:
-            grad = np.zeros(theta.shape)
-            for i in range(m):
-                grad += -y[i]*X[i,:]/(1+np.exp(y[i]*(np.dot(X[i,:],theta)+intercept)))
+            m = np.size(y)
 
-            return grad/m
+            if self.l2_reg != None:
+                raise NotImplementedError("l2 regression is not yet available")
+
+            if m == 1:
+                return -y*X*expit(-y*(np.dot(X,theta)+intercept))
+                #return -y*X/(1+np.exp(y*(np.dot(X,theta)+intercept)))
+            else:
+                grad = np.zeros(theta.shape)
+                for i in range(m):
+                    grad += -y[i]*X[i,:]/(1+np.exp(y[i]*(np.dot(X[i,:],theta)+intercept)))
+                return grad/m
 
     def grad_interceptSplit(self,theta,X,y,intercept=0.0):
         m = np.size(y)
