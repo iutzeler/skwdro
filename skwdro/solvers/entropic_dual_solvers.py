@@ -1,4 +1,5 @@
 import numpy as np
+from numpy.random import sample
 
 from skwdro.solvers.utils import *
 from skwdro.solvers.optim_cond import OptCond
@@ -11,7 +12,6 @@ from skwdro.solvers.gradient_estimates import step_wgx_wol, step_wgx_wl
 #            progressbar.Bar('*'),' (',
 #            progressbar.ETA(), ') ',
 #           ]
-
 
 
 def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 20,fit_intercept=False, opt_cond=OptCond(2)):
@@ -135,6 +135,7 @@ def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, o
         return theta[1:], theta[0], lam
     else:
         return theta, None, lam
+
 
 def WangGaoXie_v1(WDROProblem, epsilon=0.1, Nsamples = 50,fit_intercept=False):
     """ Algorithm of Wang et al. but with epsilon >0 and delta = 0 (regularization in the objective)"""
