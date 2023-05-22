@@ -8,7 +8,7 @@ An example plot of :class:`skwdro.Estimator.NewsVendor`
 
 
 
-from skwdro.estimators import NewsVendor
+from skwdro.operations_research import NewsVendor
 import numpy as np
 X = np.random.exponential(scale=2.0,size=(20,1))
 

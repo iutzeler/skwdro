@@ -6,26 +6,32 @@ The following models are implemented in skwdro
 
 .. currentmodule:: skwdro
 
-Estimators
-=========
 
-.. currentmodule:: skwdro.estimators
-
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
-
-   NewsVendor
-
-Classifiers
+Linear Models
 ===========
 
-.. currentmodule:: skwdro.estimators
+.. currentmodule:: skwdro.linear_models
 
 .. autosummary::
    :toctree: generated/
    :template: class.rst
 
    LogisticRegression
+   LinearRegression
+
+
+Operations Research
+=========
+
+.. currentmodule:: skwdro.operations_research
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+   NewsVendor
+   Weber
+
+
 
 

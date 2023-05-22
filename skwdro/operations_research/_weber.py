@@ -1,5 +1,5 @@
 """
-Estimators for Operations Research
+Weber problem
 """
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin

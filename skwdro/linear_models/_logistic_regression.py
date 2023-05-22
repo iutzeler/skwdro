@@ -1,8 +1,8 @@
 """
-WDRO Estimators
+Logistic Regression
 """
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
+from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import euclidean_distances
@@ -21,11 +21,12 @@ import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 
 
-class LogisticRegression(ClassifierMixin, BaseEstimator):
+class LogisticRegression(BaseEstimator):
     """ A Wasserstein Distributionally Robust logistic regression classifier.
 
 
     The cost function is XXX
+
     Uncertainty is XXX
 
     Parameters
@@ -53,7 +54,7 @@ class LogisticRegression(ClassifierMixin, BaseEstimator):
     Examples
     --------
     >>> import numpy as np
-    >>> from skwdro.estimators import LogisticRegression
+    >>> from skwdro.linear_models import LogisticRegression
     >>> from sklearn.datasets import make_blobs
     >>> from sklearn.model_selection import train_test_split
     >>> X, y = make_blobs(n_samples=100, centers=2, n_features=2, random_state=0)
