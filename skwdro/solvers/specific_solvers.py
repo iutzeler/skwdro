@@ -2,6 +2,8 @@ import numpy as np
 from cvxopt import matrix, solvers
 import cvxpy as cp 
 
+from skwdro.base.costs import Cost, NormCost
+
 def WDRONewsvendorSolver(WDROProblem):
     return WDRONewsvendorSpecificSolver(k=WDROProblem.loss.k,u=WDROProblem.loss.u,rho=WDROProblem.rho,samples=WDROProblem.P.samples)
 
@@ -150,3 +152,43 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
         problem.solve(verbose=False)
 
         return beta.value[:d], 0.0 , beta.value[d]
+
+def WDROPortfolioSolver(WDROProblem, fit_intercept=None):
+    return NotImplementedError("TODO: Implement this method for the Portfolio problem")
+
+
+def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, samples=None, fit_intercept=None):
+
+    #Problem data
+    a = [-1, -1 - eta/alpha]
+    b = [eta, eta(1-(1/alpha))]
+    N = samples.size
+    K = 2
+
+    #Decision variables of the problem
+    lam = cp.Variable(1)
+    s = cp.Variable(N)
+    theta = cp.Variable(m)
+    tau = cp.Variable(1)
+    gamma = cp.Variable(N*K)
+
+    #Objective function
+    obj = lam*rho + (1/N)*np.sum(s)
+
+    #Constraints
+    constraints = [np.sum(theta) == 1]
+
+    if isinstance(cost, NormCost):
+        pass #To implement
+    else:
+        pass
+
+    for i in range(N):
+        xii_hat = samples[i]
+        for k in range(K):
+            constraints.append(b[k]*tau + a[k]*np.dot(theta,xii_hat) + np.dot(gamma[i][k], d - np.dot(C,xii_hat)) <= s[i])
+
+
+
+    return NotImplementedError("TODO: Implement this method for the Portfolio problem")
+
