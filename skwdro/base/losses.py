@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.special import logsumexp, expit, log_expit, softmax
+from scipy.special import logsumexp, expit, log_expit
 
 class Loss:
     """ Base class for loss functions """
@@ -69,22 +69,22 @@ class LogisticLoss(Loss):
         if len(X.shape) > 2:
             # Parallelized
             return self._parallel_value_split(theta, X, y)
+
+        m = np.size(y)
+
+        if self.l2_reg != None:
+            raise NotImplementedError("l2 regression is not yet available")
+
+        if m == 1:
+            return logsumexp([0,-y*(np.dot(X,theta)+intercept)])
+            #return np.log(1+np.exp(-y*(np.dot(X,theta)+intercept)))
         else:
-            m = np.size(y)
+            val = 0
+            for i in range(m):
+                print(y,theta,X)
+                val += np.log(1+np.exp(-y[i]*(np.dot(X[i,:],theta)+intercept)))
 
-            if self.l2_reg != None:
-                raise NotImplementedError("l2 regression is not yet available")
-
-            if m == 1:
-                return logsumexp([0,-y*(np.dot(X,theta)+intercept)])
-                #return np.log(1+np.exp(-y*(np.dot(X,theta)+intercept)))
-            else:
-                val = 0
-                for i in range(m):
-                    print(y,theta,X)
-                    val += np.log(1+np.exp(-y[i]*(np.dot(X[i,:],theta)+intercept)))
-
-                return val/m
+            return val/m
 
 
     def _parallel_grad_theta_split(self, theta, X, y):
@@ -143,74 +143,35 @@ class QuadraticLoss(Loss):
         self.name = name
 
     def valueSplit(self,theta,X,y,intercept=0.0):
-        if len(X.shape) > 2:
-            # Parallelized
-            return self._parallel_value_split(theta, X, y)
+
+        m = np.size(y)
+
+        if self.l2_reg != None:
+            raise NotImplementedError("l2 regression is not yet available")
+
+        if m == 1:
+            return 0.5*np.linalg.norm(np.dot(X,theta)+intercept-y)**2
         else:
-            m = np.size(y)
+            val = 0
+            for i in range(m):
+                val += 0.5*np.linalg.norm(np.dot(X[i,:],theta)+intercept-y[i])**2
 
-            if self.l2_reg != None:
-                raise NotImplementedError("l2 regression is not yet available")
+            return val/m
 
-            if m == 1:
-                return 0.5*np.linalg.norm(np.dot(X,theta)+intercept-y)**2
-            else:
-                val = 0
-                for i in range(m):
-                    val += 0.5*np.linalg.norm(np.dot(X[i,:],theta)+intercept-y[i])**2
-
-                return val/m
-            
-    
-    def _parallel_value_split(self, theta, X, y):
-        # New parallelized:
-        # shapes in:
-        # X(:=zeta): (n_samples, m, d)
-        # y(:=zeta_labels): (n_samples, m, 1)
-        # theta: (d,)
-        # shapes out:
-        # value: (n_samples, m)
-        # NOTE: no mean on m !!!!
-        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] - y # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
-        return 0.5*linear*linear
-    
     def grad_thetaSplit(self,theta,X,y,intercept=0.0):
-        if len(X.shape) > 2:
-            # Parallelized
-            return self._parallel_grad_theta_split(theta, X, y)
+        m = np.size(y)
+
+        if self.l2_reg != None:
+            raise NotImplementedError("l2 regression is not yet available")
+
+        if m == 1:
+            return np.dot(X.T , (np.dot(X,theta)+intercept-y) )
         else:
-            m = np.size(y)
+            grad = np.zeros(theta.shape)
+            for i in range(m):
+                grad += np.dot(X[i,:].T , (np.dot(X[i,:],theta)+intercept-y[i]) )
 
-            if self.l2_reg != None:
-                raise NotImplementedError("l2 regression is not yet available")
-
-            if m == 1:
-                return np.dot(X.T , (np.dot(X,theta)+intercept-y) )
-            else:
-                return np.dot(X.T , (np.dot(X,theta)+intercept-y) )
-                
-                # np.zeros(theta.shape)
-                # for i in range(m):
-                #     inner = np.dot(X[i,:],theta)+intercept-y[i]
-                #     print(inner.shape)
-                #     grad += np.dot(X[i,:].T , inner )
-
-                # return grad/m
-
-
-    def _parallel_grad_theta_split(self, theta, X, y):
-        # New parallelized:
-        # shapes in:
-        # X(:=zeta): (n_samples, m, d)
-        # y(:=zeta_labels): (n_samples, m, 1)
-        # theta: (d,)
-        # shapes out:
-        # grad: (n_samples, m, d)
-        # NOTE: no mean on m !!!!
-        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] - y # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
-        grads   = X*linear
-        return grads
-    
+            return grad/m
 
     def grad_interceptSplit(self,theta,X,y,intercept=0.0):
         m = np.size(y)
@@ -226,44 +187,5 @@ class QuadraticLoss(Loss):
                 grad += (np.dot(X[i,:],theta)+intercept-y[i])
 
             return grad/m
-
-
-class PortfolioLoss(Loss):
-
-    def __init__(self, l2_reg=None, name="Portfolio loss", eta=0, alpha=.95,\
-            fit_intercept="False"):
-        
-        self.l2_reg = l2_reg
-        self.name = name
-        self.eta = eta
-        self.alpha = alpha
-        self.fit_intercept = fit_intercept
-
-    def value(self, theta, X):
-
-        #Define coefficients linked to the problem
-        a1 = -1
-        a2 = -1 - self.eta/self.alpha
-        b1 = self.eta
-        b2 = self.eta(1-(1/self.alpha))
-
-        #Transform theta to respect the simplex condition
-        '''
-        TODO: Implement the loss value 
-
-        tmax_vector = np.amax(theta) * np.ones(len(theta))
-        theta_tilde = softmax(theta - tmax_vector)
-
-        return_cost = np.dot(theta_tilde.T, X)
-        return max(a1*return_cost+b1*self.tau, a2*return_cost+b2*self.tau)
-        '''
-
-        raise NotImplementedError("TODO: Create the loss after the Cvxopt part")
-
-    def grad_theta(self, theta, xi):
-        raise NotImplementedError("TODO: Compute the gradient for this loss")
-
-
-
 
 
