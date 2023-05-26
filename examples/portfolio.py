@@ -18,11 +18,11 @@ N = 10 #Number of samples
 X = np.array([1,0]) 
 X = np.tile(X,(N,1)) #Duplicate the above line N times
 
-print(X)
+print("Value of the samples:", X)
 
 #Giving conditions on xi
-C = np.array([1,0],
-             [1,0])
+C = np.array([[1,0],
+             [1,0]])
 d = np.array([1,0])
 
 #Creating the estimator and solving the problem

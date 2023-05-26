@@ -182,13 +182,15 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     #Constraints
     constraints = [np.sum(theta) == 1]
 
+    for j in range(len(theta)):
+        constraints.append(theta[j] >= 0)
+
     if isinstance(cost, NormCost): #Obtain the q-norm for the dual norm
         p = cost.p
         if p != 1:
             q = 1 - (1/p)
         elif p == 1:
             q = np.inf
-            pass
     else:
         raise TypeError("Please define NormCost instance for cost attribute to define dual norm")
 
@@ -203,5 +205,5 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
     problem.solve(verbose=False)
 
-    return theta, fit_intercept, [s,lam,gamma,tau]
+    return theta, fit_intercept, lam
 
