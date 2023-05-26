@@ -153,8 +153,8 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         return beta.value[:d], 0.0 , beta.value[d]
 
-def WDROPortfolioSolver(WDROProblem, cost, C, d, eta, alpha, fit_intercept=None):
-    return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=cost, eta=eta, \
+def WDROPortfolioSolver(WDROProblem, C, d, eta, alpha, fit_intercept=None):
+    return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=WDROProblem.cost, eta=eta, \
                                        alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.P.samples)
 
 
@@ -164,9 +164,9 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     '''
 
     #Problem data
-    a = np.array([-1, -1 - eta/alpha])
-    b = np.array([eta, eta*(1-(1/alpha))])
-    N = samples.shape[0]
+    a = [-1, -1 - eta/alpha]
+    b = [eta, eta(1-(1/alpha))]
+    N = samples.size
     K = 2
 
     #Decision variables of the problem
@@ -193,6 +193,7 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
             q = 1/(1 - (1/p))
         elif p == 1:
             q = np.inf
+            pass
     else:
         raise TypeError("Please define NormCost instance for cost attribute to define dual norm")
 
