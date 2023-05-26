@@ -203,5 +203,5 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
     problem.solve(verbose=False)
 
-    return theta
+    return theta, fit_intercept, [s,lam,gamma,tau]
 
