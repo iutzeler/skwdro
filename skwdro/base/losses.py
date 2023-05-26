@@ -189,3 +189,40 @@ class QuadraticLoss(Loss):
             return grad/m
 
 
+class PortfolioLoss(Loss):
+
+    def __init__(self, l2_reg=None, name="Portfolio loss", eta=0, alpha=.95,\
+            fit_intercept="False"):
+        
+        self.l2_reg = l2_reg
+        self.name = name
+        self.eta = eta
+        self.alpha = alpha
+        self.fit_intercept = fit_intercept
+
+    def value(self, theta, X):
+
+        #Define coefficients linked to the problem
+        a1 = -1
+        a2 = -1 - self.eta/self.alpha
+        b1 = self.eta
+        b2 = self.eta(1-(1/self.alpha))
+
+        #Transform theta to respect the simplex condition
+        '''
+        tmax_vector = np.amax(theta) * np.ones(len(theta))
+        theta_tilde = softmax(theta - tmax_vector)
+
+        return_cost = np.dot(theta_tilde.T, X)
+        return max(a1*return_cost+b1*self.tau, a2*return_cost+b2*self.tau)
+        '''
+
+        return NotImplementedError("TODO: Create the loss after the Cvxopt part")
+
+    def grad_theta(self, theta, xi):
+        return NotImplementedError("TODO: Compute the gradient for this loss")
+
+
+
+
+
