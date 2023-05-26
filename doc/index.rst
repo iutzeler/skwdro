@@ -23,6 +23,7 @@ scikit-learn compatible classes.
 
    user_guide
    api
+   solvers
 
 .. toctree::
    :maxdepth: 2

@@ -2,6 +2,8 @@ import numpy as np
 from cvxopt import matrix, solvers
 import cvxpy as cp 
 
+from skwdro.base.costs import Cost, NormCost
+
 def WDRONewsvendorSolver(WDROProblem):
     return WDRONewsvendorSpecificSolver(k=WDROProblem.loss.k,u=WDROProblem.loss.u,rho=WDROProblem.rho,samples=WDROProblem.P.samples)
 
@@ -150,3 +152,56 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
         problem.solve(verbose=False)
 
         return beta.value[:d], 0.0 , beta.value[d]
+
+def WDROPortfolioSolver(WDROProblem, C, d, eta, alpha, fit_intercept=None):
+    return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=WDROProblem.cost, eta=eta, \
+                                       alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.P.samples)
+
+
+def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, samples=None, fit_intercept=None):
+    '''
+    Solver for the dual program linked to Mean-Risk portfolio problem (Kuhn 2017).
+    '''
+
+    #Problem data
+    a = [-1, -1 - eta/alpha]
+    b = [eta, eta(1-(1/alpha))]
+    N = samples.size
+    K = 2
+
+    #Decision variables of the problem
+    lam = cp.Variable(1)
+    s = cp.Variable(N)
+    theta = cp.Variable(m)
+    tau = cp.Variable(1)
+    gamma = cp.Variable(N*K)
+
+    #Objective function
+    obj = lam*rho + (1/N)*np.sum(s)
+
+    #Constraints
+    constraints = [np.sum(theta) == 1]
+
+    if isinstance(cost, NormCost): #Obtain the q-norm for the dual norm
+        p = cost.p
+        if p != 1:
+            q = 1 - (1/p)
+        elif p == 1:
+            q = np.inf
+            pass
+    else:
+        raise TypeError("Please define NormCost instance for cost attribute to define dual norm")
+
+    for i in range(N):
+        xii_hat = samples[i]
+        for k in range(K):
+            constraints.append(b[k]*tau + a[k]*np.dot(theta,xii_hat) + np.dot(gamma[i][k], d - np.dot(C,xii_hat)) <= s[i])
+            constraints.append(cp.norm(np.dot(C.T,gamma[i][k]) - a[k]*theta, q) <= lam)
+            constraints.append(gamma[i][k] >= 0)
+
+    #Solving the problem
+    problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
+    problem.solve(verbose=False)
+
+    return theta, fit_intercept, [s,lam,gamma,tau]
+

@@ -9,9 +9,9 @@ from sklearn.metrics import euclidean_distances
 
 
 
-from skwdro.base.problems import *
-from skwdro.base.losses import *
-from skwdro.base.losses_torch import *
+from skwdro.base.problems import WDROProblem, EmpiricalDistribution
+from skwdro.base.losses import NewsVendorLoss
+from skwdro.base.losses_torch import NewsVendorLoss_torch
 from skwdro.base.costs import *
 
 import skwdro.solvers.specific_solvers as spS
