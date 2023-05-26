@@ -11,12 +11,12 @@ from skwdro.base.losses import PortfolioLoss
 # from skwdro.base.losses_torch import *
 from skwdro.base.costs import Cost, NormCost
 
-# TODO: Import Portfolio's specific solver when implemented
+import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 
 class Portfolio(BaseEstimator):
-    """ A Wasserstein Distributionally Robust portfolio regressor.
+    """ A Wasserstein Distributionally Robust portfolio estimator.
     
     The cost function is XXX
     Uncertainty is XXX
@@ -28,7 +28,7 @@ class Portfolio(BaseEstimator):
     eta: float > 0, default=0
         Risk-aversion parameter linked to the Conditional Value at Risk
     alpha: float in (0,1], default=0.95
-        Confindence level of the Conditional Value at Risk
+        Confidence level of the Conditional Value at Risk
     fit_intercept: boolean, default=None
         Determines if an intercept is fit or not
     cost: Loss, default=NormCost(p=1)
@@ -37,6 +37,13 @@ class Portfolio(BaseEstimator):
         Solver to be used: 'entropic' or 'dedicated'
     solver_reg: float, default=1.0
         regularization value for the entropic solver
+        
+    Attributes
+    ----------
+    C : (nb_constraints, nb_assets)
+        Matrix of constraints observed by the user.
+    d : (nb_constraints,)
+        Vector of constraints observed by the user.
 
     Examples(TODO)
     --------
@@ -69,29 +76,59 @@ class Portfolio(BaseEstimator):
 
         self.problem = WDROProblem(
                 cost=cost,
-                Xi_bounds=[-1e8,1e8],
-                Theta_bounds=[-1e8,1e8],
+                Xi_bounds=[-np.inf,np.inf],
+                Theta_bounds=[-np.inf,np.inf],
                 rho=rho,
                 loss=PortfolioLoss(l2_reg=None, eta=eta, alpha=alpha)
             )
 
-    def fit(self, X):
+    def fit(self, X, C, d):
         """Fits the WDRO regressor.
 
         Parameters
         ----------
-        X : array-like, shape (n_samples,)
+        X : array-like, shape (n_samples,m)
             The training input samples.
 
         """
 
-        # Check that X and y have correct shape
-        #X, y = check_X_y(X, y)
+        # Check that X has correct shape
+        X = check_array(X)
 
         # Store data
         self.X_ = X
 
-        return NotImplementedError("TODO: fit function to finish")
+        # Setup problem parameters
+        m = np.shape(X)[0]
+        emp = EmpiricalDistribution(m=m, samples=X)
+
+        self.problem.P = emp
+        self.problem.d = m
+        self.problem.n = m
+
+        # Setup values C and d that define the polyhedron of xi_maj
+
+        if C is None or d is None:
+            raise ValueError("Constraints linked to xi are missing")
+        elif np.shape(C)[1] != m: #Check that the matrix-vector product is well-defined
+            raise ValueError("The number of columns of C don't match the number of lines of any xi")
+        
+        self.C_ = C
+        self.d_ = d
+
+        if self.solver == "entropic":
+            raise NotImplementedError("Entropic solver for Portfolio not implemented yet")
+        elif self.solver == "dedicated":
+            self.coef_, _, self.dual_var_ = spS.WDROPortfolioSolver(self.problem, self.C_, \
+                                                                    self.d_, self.eta, self.alpha)
+        else:
+            raise NotImplementedError("Designation for solver not recognized")
+        
+        self.is_fitted_ = True
+
+        #Return the estimator
+        return self
+
 
 
 

@@ -210,6 +210,8 @@ class PortfolioLoss(Loss):
 
         #Transform theta to respect the simplex condition
         '''
+        TODO: Implement the loss value 
+
         tmax_vector = np.amax(theta) * np.ones(len(theta))
         theta_tilde = softmax(theta - tmax_vector)
 
@@ -217,10 +219,10 @@ class PortfolioLoss(Loss):
         return max(a1*return_cost+b1*self.tau, a2*return_cost+b2*self.tau)
         '''
 
-        return NotImplementedError("TODO: Create the loss after the Cvxopt part")
+        raise NotImplementedError("TODO: Create the loss after the Cvxopt part")
 
     def grad_theta(self, theta, xi):
-        return NotImplementedError("TODO: Compute the gradient for this loss")
+        raise NotImplementedError("TODO: Compute the gradient for this loss")
 
 
 
