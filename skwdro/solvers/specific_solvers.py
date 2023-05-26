@@ -153,11 +153,15 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         return beta.value[:d], 0.0 , beta.value[d]
 
-def WDROPortfolioSolver(WDROProblem, fit_intercept=None):
-    return NotImplementedError("TODO: Implement this method for the Portfolio problem")
+def WDROPortfolioSolver(WDROProblem, C, d, eta, alpha, fit_intercept=None):
+    return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=WDROProblem.cost, eta=eta, \
+                                       alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.P.samples)
 
 
 def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, samples=None, fit_intercept=None):
+    '''
+    Solver for the dual program linked to Mean-Risk portfolio problem (Kuhn 2017).
+    '''
 
     #Problem data
     a = [-1, -1 - eta/alpha]
@@ -178,17 +182,26 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     #Constraints
     constraints = [np.sum(theta) == 1]
 
-    if isinstance(cost, NormCost):
-        pass #To implement
+    if isinstance(cost, NormCost): #Obtain the q-norm for the dual norm
+        p = cost.p
+        if p != 1:
+            q = 1 - (1/p)
+        elif p == 1:
+            q = np.inf
+            pass
     else:
-        pass
+        raise TypeError("Please define NormCost instance for cost attribute to define dual norm")
 
     for i in range(N):
         xii_hat = samples[i]
         for k in range(K):
             constraints.append(b[k]*tau + a[k]*np.dot(theta,xii_hat) + np.dot(gamma[i][k], d - np.dot(C,xii_hat)) <= s[i])
+            constraints.append(cp.norm(np.dot(C.T,gamma[i][k]) - a[k]*theta, q) <= lam)
+            constraints.append(gamma[i][k] >= 0)
 
+    #Solving the problem
+    problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
+    problem.solve(verbose=False)
 
-
-    return NotImplementedError("TODO: Implement this method for the Portfolio problem")
+    return theta
 
