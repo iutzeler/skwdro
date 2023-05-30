@@ -1,16 +1,30 @@
 import torch as pt
 import torch.nn as nn
 
-class Loss:
+from samplers.torch.base_samplers import LabeledSampler, BaseSampler, NoLabelsSampler
+
+class Loss(nn.Module):
     """ Base class for loss functions """
+    def __init__(self, sampler: BaseSampler):
+        super(Loss, self).__init__()
+        self.sampler = sampler
 
     def value(self,theta,xi):
         raise NotImplementedError("Please Implement this method")
 
+    def sample_pi0(self, n_samples: int):
+        self.sampler.sample(n_samples)
+
 
 class NewsVendorLoss_torch(Loss):
 
-    def __init__(self, k=5, u=7, name="NewsVendor loss"):
+    def __init__(
+            self,
+            sampler: NoLabelsSampler,
+            *,
+            k=5, u=7,
+            name="NewsVendor loss"):
+        super(NewsVendorLoss_torch, self).__init__(sampler)
         self.k = k
         self.u = u
         self.name = name
@@ -20,15 +34,25 @@ class NewsVendorLoss_torch(Loss):
 
 class WeberLoss_torch(Loss):
 
-    def __init__(self, name="Weber loss"):
+    def __init__(
+            self,
+            sampler: LabeledSampler,
+            *,
+            name="Weber loss"):
+        super(WeberLoss_torch, self).__init__(sampler)
         self.name = name
 
     def value(self,y,x,w):
         return w*pt.linalg.norm(x-y)
 
-class LogisticLoss(Loss, nn.Module):
-    def __init__(self, d: int=0, fit_intercept: bool=False) -> None:
-        super(LogisticLoss, self).__init__()
+class LogisticLoss(Loss):
+    def __init__(
+            self,
+            sampler: LabeledSampler,
+            *,
+            d: int=0,
+            fit_intercept: bool=False) -> None:
+        super(LogisticLoss, self).__init__(sampler)
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         self.classif = nn.Tanh()
