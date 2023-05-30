@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 import torch as pt
 import torch.distributions as dst
 
@@ -6,7 +6,7 @@ from base_samplers import IsOptionalCovarianceSampler, NoLabelsSampler
 
 class NewsVendorNormalSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
     def __init__(self, xi, *,
-                 sigma: Optional[float]=None,
+                 sigma: Optional[Union[pt.Tensor, float]]=None,
                  tril: Optional[pt.Tensor]=None,
                  prec: Optional[pt.Tensor]=None,
                  cov: Optional[pt.Tensor]=None
