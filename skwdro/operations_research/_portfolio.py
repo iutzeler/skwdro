@@ -9,7 +9,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from skwdro.base.problems import WDROProblem, EmpiricalDistribution
 from skwdro.base.losses import PortfolioLoss 
 # from skwdro.base.losses_torch import *
-from skwdro.base.costs import Cost, NormCost
+from skwdro.base.costs import *
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
@@ -55,7 +55,7 @@ class Portfolio(BaseEstimator):
                  eta=0,
                  alpha=.95,
                  fit_intercept=None,
-                 cost: Cost=NormCost(p=1),
+                 cost=NormCost(),
                  solver="entropic",
                  solver_reg=1.0
                  ):
