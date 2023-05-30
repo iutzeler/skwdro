@@ -2,7 +2,7 @@ from typing import Optional, Union
 import torch as pt
 import torch.distributions as dst
 
-from base_samplers import IsOptionalCovarianceSampler, NoLabelsSampler
+from skwdro.base.samplers.torch.base_samplers import IsOptionalCovarianceSampler, NoLabelsSampler
 
 class NewsVendorNormalSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
     def __init__(self, xi, *,
