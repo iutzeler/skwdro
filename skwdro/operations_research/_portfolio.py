@@ -9,7 +9,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from skwdro.base.problems import WDROProblem, EmpiricalDistribution
 from skwdro.base.losses import PortfolioLoss 
 # from skwdro.base.losses_torch import *
-from skwdro.base.costs import Cost, NormCost
+from skwdro.base.costs import *
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
@@ -55,7 +55,7 @@ class Portfolio(BaseEstimator):
                  eta=0,
                  alpha=.95,
                  fit_intercept=None,
-                 cost: Cost=NormCost(p=1),
+                 cost=NormCost(),
                  solver="entropic",
                  solver_reg=1.0
                  ):
@@ -99,8 +99,9 @@ class Portfolio(BaseEstimator):
         self.X_ = X
 
         # Setup problem parameters
-        m = np.shape(X)[0]
-        emp = EmpiricalDistribution(m=m, samples=X)
+        N = np.shape(X)[0] #N samples for the empirical distribution
+        m = np.shape(X)[1] #m assets
+        emp = EmpiricalDistribution(m=N, samples=X)
 
         self.problem.P = emp
         self.problem.d = m
@@ -123,7 +124,7 @@ class Portfolio(BaseEstimator):
         if self.solver == "entropic":
             raise NotImplementedError("Entropic solver for Portfolio not implemented yet")
         elif self.solver == "dedicated":
-            self.coef_, _, self.dual_var_ = spS.WDROPortfolioSolver(self.problem, self.C_, \
+            self.coef_, _, self.dual_var_ = spS.WDROPortfolioSolver(self.problem, self.cost, self.C_, \
                                                                     self.d_, self.eta, self.alpha)
         else:
             raise NotImplementedError("Designation for solver not recognized")

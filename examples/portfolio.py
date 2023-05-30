@@ -1,6 +1,6 @@
 """
 ===================
-Mean-Rist Portfolio
+Mean-Risk Portfolio
 ===================
 
 An example of resolution of the mean-risk portfolio problem.
@@ -33,9 +33,4 @@ print("Value of C (after fitting):", estimator.C_)
 print("Value of d (after fitting):", estimator.d_)
 
 print("Value of theta: ", estimator.coef_)
-print("Value of dual variables: ", estimator.dual_var_)
-
-
-
-
-
+print("Value of lambda: ", estimator.dual_var_)
