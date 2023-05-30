@@ -2,11 +2,8 @@
 Linear Regression
 """
 import numpy as np
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils.multiclass import unique_labels
-from sklearn.metrics import euclidean_distances
-from scipy.special import expit
 
 
 
@@ -16,12 +13,12 @@ from skwdro.base.losses import QuadraticLoss
 from skwdro.base.costs import Cost, NormCost
 from skwdro.solvers.optim_cond import OptCond
 
-import skwdro.solvers.specific_solvers as spS
+#import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
-import skwdro.solvers.entropic_dual_torch as entTorch
+#import skwdro.solvers.entropic_dual_torch as entTorch
 
 
-class LinearRegression(ClassifierMixin, BaseEstimator):
+class LinearRegression(BaseEstimator):
     """ A Wasserstein Distributionally Robust linear regression.
 
 

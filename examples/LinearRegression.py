@@ -9,7 +9,8 @@ An example of linear regression.
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from skwdro.linear_models import LinearRegression
+from sklearn.linear_model import LinearRegression
+from skwdro.linear_models import LinearRegression as RobustLinearRegression
 
 
 d = 10
@@ -24,8 +25,14 @@ y = X.dot(x0) +  np.random.randn(m)
 X_train, X_test, y_train, y_test = train_test_split(X,y)
 
 
-rob_lin = LinearRegression()
-
+rob_lin = RobustLinearRegression(rho=0.1)
 rob_lin.fit(X_train, y_train)
+y_pred_rob = rob_lin.predict(X_test)
 
-rob_lin.score(X_test,y_test)
+lin = LinearRegression()
+lin.fit(X_train, y_train)
+y_pred = lin.predict(X_test)
+
+
+print(f"sklearn error: {np.linalg.norm(y_pred-y_test)} " )
+print(f"skwdro error: {np.linalg.norm(y_pred_rob-y_test)}")
