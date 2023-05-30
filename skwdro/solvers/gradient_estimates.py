@@ -28,7 +28,7 @@ from skwdro.solvers.utils import non_overflow_exp_mean
 
 # LR - schedule
 # #############
-def lr_decay_schedule(iter_idx, offset: int=10, lr0=1e-1) -> float:
+def lr_decay_schedule(iter_idx, offset: int=10, lr0=1e-3) -> float:
     r"""
     For gradient descent, usually schedule looking like:
 
@@ -80,6 +80,7 @@ def step_lam_wl(xi, xi_labels, zeta, zeta_labels, theta, lam, cost, loss, t, rho
     # Compute the coefficients that we will exponentiate (the dots in the top formula)
     c = cost(xi[None, :, :], zeta, xi_labels[None, :, :], zeta_labels) # (n_samples, m, 1)
     loss_outputs = loss(theta, zeta, zeta_labels)
+
     exps_coefs = loss_outputs - lam * c
     exps_coefs /= epsilon
 

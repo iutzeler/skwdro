@@ -145,7 +145,7 @@ class QuadraticLoss(Loss):
     def valueSplit(self,theta,X,y,intercept=0.0):
         if len(X.shape) > 2:
             # Parallelized
-            return self._parallel_grad_theta_split(theta, X, y)
+            return self._parallel_value_split(theta, X, y)
         else:
             m = np.size(y)
 
@@ -171,9 +171,9 @@ class QuadraticLoss(Loss):
         # shapes out:
         # value: (n_samples, m)
         # NOTE: no mean on m !!!!
-        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
-        return 0.5*np.linalg.norm(linear-y)**2
-
+        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] - y # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
+        return 0.5*linear*linear
+    
     def grad_thetaSplit(self,theta,X,y,intercept=0.0):
         if len(X.shape) > 2:
             # Parallelized
@@ -207,8 +207,8 @@ class QuadraticLoss(Loss):
         # shapes out:
         # grad: (n_samples, m, d)
         # NOTE: no mean on m !!!!
-        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
-        grads = np.dot(linear, linear-y) # (n_samples, m, d)
+        linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] - y # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
+        grads   = X*linear
         return grads
     
 
