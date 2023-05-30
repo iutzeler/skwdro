@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Union
 import torch as pt
 import torch.distributions as dst
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 class BaseSampler(ABC):
     @abstractmethod
@@ -18,12 +18,20 @@ class BaseSampler(ABC):
     def __next__(self):
         return self.sample(1)
 
+    @abstractproperty
+    def produces_labels(self) -> bool:
+        raise NotImplementedError()
+
 class NoLabelsSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution):
         self.data_s = data_sampler
 
     def sample(self, n_sample: int):
         return self.data_s.rsample(pt.Size((n_sample,)))
+
+    @property
+    def produces_labels(self):
+        return False
 
 class LabeledSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution):
@@ -40,6 +48,10 @@ class LabeledSampler(BaseSampler, ABC):
 
     def sample_labels(self, n_sample: int):
         return self.labels_s.rsample(pt.Size((n_sample,)))
+
+    @property
+    def produces_labels(self):
+        return True
 
 class IsOptionalCovarianceSampler(ABC):
     def init_covar(
