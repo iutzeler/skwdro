@@ -153,8 +153,8 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         return beta.value[:d], 0.0 , beta.value[d]
 
-def WDROPortfolioSolver(WDROProblem, C, d, eta, alpha, fit_intercept=None):
-    return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=WDROProblem.cost, eta=eta, \
+def WDROPortfolioSolver(WDROProblem, cost, C, d, eta, alpha, fit_intercept=None):
+    return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=cost, eta=eta, \
                                        alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.P.samples)
 
 
@@ -164,9 +164,9 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     '''
 
     #Problem data
-    a = [-1, -1 - eta/alpha]
-    b = [eta, eta(1-(1/alpha))]
-    N = samples.size
+    a = np.array([-1, -1 - eta/alpha])
+    b = np.array([eta, eta*(1-(1/alpha))])
+    N = samples.shape[0]
     K = 2
 
     #Decision variables of the problem
@@ -174,21 +174,23 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     s = cp.Variable(N)
     theta = cp.Variable(m)
     tau = cp.Variable(1)
-    gamma = cp.Variable(N*K)
+    gamma = [cp.Variable(d.shape[0]) for _ in range(N*K)] #The gamma[i][k] variables are vectors
 
     #Objective function
-    obj = lam*rho + (1/N)*np.sum(s)
+    obj = lam*rho + (1/N)*cp.sum(s)
 
     #Constraints
-    constraints = [np.sum(theta) == 1]
+    constraints = [cp.sum(theta) == 1]
 
-    for j in range(len(theta)):
+    constraints.append(lam >= 0)
+
+    for j in range(m):
         constraints.append(theta[j] >= 0)
 
     if isinstance(cost, NormCost): #Obtain the q-norm for the dual norm
         p = cost.p
         if p != 1:
-            q = 1 - (1/p)
+            q = 1/(1 - (1/p))
         elif p == 1:
             q = np.inf
     else:
@@ -196,14 +198,15 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
 
     for i in range(N):
         xii_hat = samples[i]
+        constraints.append(s[i] >= 0)
         for k in range(K):
-            constraints.append(b[k]*tau + a[k]*np.dot(theta,xii_hat) + np.dot(gamma[i][k], d - np.dot(C,xii_hat)) <= s[i])
-            constraints.append(cp.norm(np.dot(C.T,gamma[i][k]) - a[k]*theta, q) <= lam)
-            constraints.append(gamma[i][k] >= 0)
+            constraints.append(b[k]*tau + a[k]*(theta@xii_hat) + (gamma[i*K+k]@(d - (C@xii_hat))) <= s[i])
+            constraints.append(cp.norm((C.T)@gamma[i*K+k] - a[k]*theta, q) <= lam)
+            constraints.append(gamma[i*K+k] >= 0)
 
     #Solving the problem
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
-    problem.solve(verbose=False)
+    problem.solve(verbose=True)
 
-    return theta, fit_intercept, lam
+    return theta.value, fit_intercept, lam.value
 
