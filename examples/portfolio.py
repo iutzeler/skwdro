@@ -21,13 +21,12 @@ X = np.tile(X,(N,1)) #Duplicate the above line N times
 print("Value of the samples:", X)
 
 #Giving conditions on xi
-C = np.array([[1,0],
-             [1,0]])
-d = np.array([1,0])
+C = np.array([[0,0],[0,0]])
+d = np.array([1,1])
 
 #Creating the estimator and solving the problem
-estimator = Portfolio(solver="dedicated")
-estimator.fit(X, C, d)
+estimator = Portfolio(solver="dedicated", rho=1e-10)
+estimator.fit(X)
 
 print("Value of C (after fitting):", estimator.C_)
 print("Value of d (after fitting):", estimator.d_)
