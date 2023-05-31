@@ -6,7 +6,7 @@ Mean-Risk Portfolio
 An example of resolution of the mean-risk portfolio problem.
 """
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import numpy as np
 
 from skwdro.operations_research import Portfolio
