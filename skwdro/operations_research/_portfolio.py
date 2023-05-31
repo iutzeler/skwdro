@@ -8,7 +8,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistribution
 from skwdro.base.losses import PortfolioLoss 
-# from skwdro.base.losses_torch import *
+from skwdro.base.losses_torch import *
 from skwdro.base.costs import *
 
 import skwdro.solvers.specific_solvers as spS
