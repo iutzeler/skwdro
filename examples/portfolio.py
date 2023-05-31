@@ -30,5 +30,10 @@ estimator.fit(X)
 print("Value of C (after fitting):", estimator.C_)
 print("Value of d (after fitting):", estimator.d_)
 
-print("Value of theta: ", estimator.coef_)
-print("Value of lambda: ", estimator.dual_var_)
+theta = estimator.coef_
+lam = estimator.dual_var_
+
+print("Value of theta: ", theta)
+print("Value of lambda: ", lam)
+
+print("Optimal value: ", estimator.problem.loss.value(theta=theta,X=X))

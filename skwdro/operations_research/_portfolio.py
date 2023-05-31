@@ -8,7 +8,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistribution
 from skwdro.base.losses import PortfolioLoss 
-# from skwdro.base.losses_torch import *
+from skwdro.base.losses_torch import *
 from skwdro.base.costs import *
 
 import skwdro.solvers.specific_solvers as spS
@@ -79,7 +79,7 @@ class Portfolio(BaseEstimator):
                 Xi_bounds=[-np.inf,np.inf],
                 Theta_bounds=[-np.inf,np.inf],
                 rho=rho,
-                loss=PortfolioLoss(l2_reg=None, eta=eta, alpha=alpha)
+                loss=PortfolioLoss_torch(eta=eta, alpha=alpha)
             )
 
     def fit(self, X, C=None, d=None):
