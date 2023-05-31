@@ -23,8 +23,14 @@ def test_fit_low_radius():
     estimator = Portfolio(solver="dedicated", rho=1e-10)
     estimator.fit(X)
 
-    assert np.isclose(estimator.coef_[0], 1)
-    assert np.isclose(estimator.coef_[1], 0)
+    theta = estimator.coef_
+
+    #Assertions on optimal decisions
+    assert np.isclose(theta[0], 1)
+    assert np.isclose(theta[1], 0)
+
+    #Assertions on optimal value
+    assert np.isclose(estimator.problem.loss.value(theta=theta, X=X), -theta[0])
 
 def test_fit_high_radius():
     '''
@@ -39,5 +45,11 @@ def test_fit_high_radius():
     estimator = Portfolio(solver="dedicated", rho=10)
     estimator.fit(X)
 
-    assert np.isclose(estimator.coef_[0], 0.5)
-    assert np.isclose(estimator.coef_[1], 0.5)
+    theta = estimator.coef_
+
+    #Assertions on optimal decisions
+    assert np.isclose(theta[0], 0.5)
+    assert np.isclose(theta[1], 0.5)
+
+    #Assertions on optimal value
+    assert np.isclose(estimator.problem.loss.value(theta=theta, X=X), -theta[0])

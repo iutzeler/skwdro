@@ -1,11 +1,14 @@
 from abc import abstractclassmethod, abstractmethod
 from typing import Optional
 import torch as pt
+import torch
 import torch.nn as nn
 
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler, BaseSampler, NoLabelsSampler
 from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+import numpy as np
+from sqwash import SuperquantileReducer
 
 class Loss(nn.Module):
     """ Base class for loss functions """
@@ -102,4 +105,28 @@ class LogisticLoss(Loss):
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
-        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon)
+        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon)    
+
+class PortfolioLoss_torch(Loss):
+
+    def __init__(self, eta, alpha, name="Portfolio loss"):
+        self.eta = eta
+        self.alpha = alpha
+        self.name = name
+
+    def value(self, theta, X):
+        #Conversion np.array to torch.tensor if necessary
+        if isinstance(theta, (np.ndarray,np.generic)):
+            theta = torch.from_numpy(theta)
+        if isinstance(X, (np.ndarray,np.generic)):
+            X = torch.from_numpy(X)
+
+        N = X.size()[0]
+
+        #We add a double cast in the dot product to solve torch type issues for torch.dot
+        in_sample_products = torch.tensor([torch.dot(theta, X[i].double()) for i in range(N)]) 
+        expected_value = -(1/N) * torch.sum(in_sample_products)
+        reducer = SuperquantileReducer(superquantile_tail_fraction=self.alpha)
+        reduce_loss = reducer(in_sample_products)
+
+        return expected_value + self.eta*reduce_loss
