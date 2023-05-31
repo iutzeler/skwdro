@@ -13,7 +13,7 @@ doc/modules/generated/
 doc/datasets/generated/
 
 # Distribution / packaging
-
+.venv
 .Python
 env/
 build/
