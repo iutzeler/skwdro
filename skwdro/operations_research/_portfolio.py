@@ -87,7 +87,7 @@ class Portfolio(BaseEstimator):
 
         Parameters
         ----------
-        X : array-like, shape (n_samples,m)
+        X : array-like, shape (n_samples_train,m)
             The training input samples.
 
         """
@@ -131,8 +131,20 @@ class Portfolio(BaseEstimator):
 
         #Return the estimator
         return self
-
-
-
-
     
+    def eval(self, X):
+
+        '''
+        Evaluates the loss with the theta obtained from the fit function.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples_test,m)
+            The testing input samples.
+        '''
+        
+        assert self.is_fitted_ == True #We have to fit before evaluating
+
+        return self.problem.loss.value(theta=self.coef_, X=X)
+
+
