@@ -82,7 +82,7 @@ class Portfolio(BaseEstimator):
                 loss=PortfolioLoss(l2_reg=None, eta=eta, alpha=alpha)
             )
 
-    def fit(self, X, C=np.array([]), d=np.array([])):
+    def fit(self, X, C=None, d=None):
         """Fits the WDRO regressor.
 
         Parameters
@@ -109,16 +109,14 @@ class Portfolio(BaseEstimator):
 
         # Setup values C and d that define the polyhedron of xi_maj
 
-        if (C is None or d is None) or (np.logical_xor(np.any(C), np.any(d)) is True): #Treating missing constraints
-            raise ValueError("Constraints linked to xi are missing")
-        elif(np.any(C) is False and np.any(d) is False): #Treating default values
+        if (C is None or d is None):
             self.C_ = np.zeros((1,m))
-            self.d = np.zeros((1,1))
+            self.d_ = np.zeros((1,1))
         else:
             self.C_ = C
             self.d_ = d
 
-        if np.shape(C)[1] != m: #Check that the matrix-vector product is well-defined
+        if np.shape(self.C_)[1] != m: #Check that the matrix-vector product is well-defined
             raise ValueError("The number of columns of C don't match the number of lines of any xi")
 
         if self.solver == "entropic":
