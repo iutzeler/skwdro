@@ -199,7 +199,6 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
 
     for i in range(N):
         xii_hat = samples[i]
-        constraints.append(s[i] >= 0)
         for k in range(K):
             constraints.append(b[k]*tau + a[k]*(theta@xii_hat) + (gamma[i*K+k]@(d - (C@xii_hat))) <= s[i])
             constraints.append(cp.norm((C.T)@gamma[i*K+k] - a[k]*theta, q) <= lam)
@@ -207,7 +206,7 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
 
     #Solving the problem
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
-    problem.solve(verbose=True)
+    problem.solve(verbose=False)
 
     return theta.value, fit_intercept, lam.value
 
