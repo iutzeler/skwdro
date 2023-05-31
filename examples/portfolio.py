@@ -19,6 +19,11 @@ X = np.tile(X,(N,1)) #Duplicate the above line N times
 
 print("Value of the samples:", X)
 
+#Giving conditions on xi
+C = np.array([[1,0],
+             [1,0]])
+d = np.array([1,0])
+
 #Creating the estimator and solving the problem
 estimator = Portfolio(solver="dedicated", rho=1e-10)
 estimator.fit(X)
