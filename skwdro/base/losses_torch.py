@@ -33,6 +33,7 @@ class PortfolioLoss_torch(Loss):
         self.eta = eta
         self.alpha = alpha
         self.name = name
+        self.reducer = SuperquantileReducer(superquantile_tail_fraction=self.alpha)
 
     def value(self, theta, X):
         #Conversion np.array to torch.tensor if necessary
@@ -44,9 +45,8 @@ class PortfolioLoss_torch(Loss):
         N = X.size()[0]
 
         #We add a double cast in the dot product to solve torch type issues for torch.dot
-        in_sample_products = torch.tensor([torch.dot(theta, X[i].double()) for i in range(N)]) 
+        in_sample_products = torch.matmul(torch.t(theta), torch.t(X.double()))
         expected_value = -(1/N) * torch.sum(in_sample_products)
-        reducer = SuperquantileReducer(superquantile_tail_fraction=self.alpha)
-        reduce_loss = reducer(in_sample_products)
+        reduce_loss = self.reducer(in_sample_products)
 
         return expected_value + self.eta*reduce_loss
