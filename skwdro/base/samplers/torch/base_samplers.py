@@ -27,7 +27,7 @@ class NoLabelsSampler(BaseSampler, ABC):
         self.data_s = data_sampler
 
     def sample(self, n_sample: int):
-        return self.data_s.rsample(pt.Size((n_sample,)))
+        return self.data_s.rsample(pt.Size((n_sample,))), None
 
     @property
     def produces_labels(self):
@@ -71,7 +71,7 @@ class IsOptionalCovarianceSampler(ABC):
         * prec: defines the precision matrix C^-1, only useful for fast CDF computation and bad otherwise
         """
         if sigma is not None:
-            return {"scale_tril": pt.eye(d) / sigma}
+            return {"scale_tril": pt.eye(d) * sigma}
         elif tril is not None:
             return {"scale_tril": tril}
         elif cov is not None:

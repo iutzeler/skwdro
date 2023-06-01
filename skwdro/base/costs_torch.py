@@ -1,7 +1,11 @@
 from typing import Optional
-from .costs import Cost
-
 import torch as pt
+import torch.distributions as dst
+
+from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler, LabeledSampler
+from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
+from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+from skwdro.base.costs import Cost
 
 class NormCost(Cost):
     """ p-norm to some power, with torch arguments
@@ -32,6 +36,23 @@ class NormCost(Cost):
         diff = (xi - zeta).reshape(-1)
         return pt.norm(diff, p=self.p)**self.power
 
+    def _sampler_data(self, xi, epsilon):
+        if self.power == 1:
+            if self.p == 1:
+                return dst.Laplace(
+                            loc=xi,
+                            scale=epsilon
+                        )
+            elif self.p == 2:
+                return dst.MultivariateNormal(
+                        loc=xi,
+                        scale_tril=epsilon*pt.eye(xi.size(-1))
+                    )
+            else: raise NotImplementedError()
+        else: raise NotImplementedError()
+
+    def _sampler_labels(self, xi_labels, epsilon):
+        return None
 
 class NormLabelCost(NormCost):
     """ p-norm of the ground metric to change data + label
@@ -52,13 +73,13 @@ class NormLabelCost(NormCost):
         assert kappa >= 0, f"Input kappa={kappa}<0 is illicit since it 'encourages' flipping labels in the database, and thus makes no sense wrt the database in terms of 'trust' to the labels."
 
     @classmethod
-    def _label_penalty(cls, y: float, y_prime: float):
-        return abs(y - y_prime)
+    def _label_penalty(cls, y: float, y_prime: float, p: float):
+        return pt.norm(y - y_prime, p=p)
 
     @classmethod
     def _data_penalty(cls, x: pt.Tensor, x_prime: pt.Tensor, p: float):
         diff = (x - x_prime).reshape(-1)
-        return float(pt.norm(diff, p=p))
+        return pt.norm(diff, p=p)
 
     def value(self, x: pt.Tensor, x_prime: pt.Tensor, y: float, y_prime: float):
         r"""
@@ -81,12 +102,27 @@ class NormLabelCost(NormCost):
             # Writing convention: if kappa=+oo we put all cost on switching labels
             #  so the cost is reported on y.
             # To provide a tractable computation, we yield the y-penalty alone.
-            return self._label_penalty(y, y_prime)**self.power
+            return self._label_penalty(y, y_prime, self.p)**self.power
         elif self.kappa == 0.:
             # Writing convention: if kappa is null we put all cost on moving the data itself, so the worst-case distribution is free to switch the labels.
             # Warning : this usecase should not make sense anyway.
             return self._data_penalty(x, x_prime, self.p)**self.power
         else:
             distance = self._data_penalty(x, x_prime, self.p) \
-                + self.kappa * self._label_penalty(y, y_prime)
+                + self.kappa * self._label_penalty(y, y_prime, self.p)
             return distance**self.power
+
+    def _sampler_labels(self, xi_labels, epsilon):
+        if self.power == 1:
+            if self.p == 1:
+                return dst.Laplace(
+                            loc=xi_labels,
+                            scale=epsilon/self.kappa
+                        )
+            elif self.p == 2:
+                return dst.MultivariateNormal(
+                        loc=xi_labels,
+                        scale_tril=epsilon*pt.eye(xi_labels.size(-1))/self.kappa
+                    )
+            else: raise NotImplementedError()
+        else: raise NotImplementedError()
