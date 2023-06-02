@@ -13,8 +13,9 @@ import time
 from skwdro.operations_research import Portfolio
 from sklearn.model_selection import train_test_split
 
-from joblib import Parallel, delayed
 import multiprocessing as mp
+
+from tqdm import tqdm
 
 M = 10 #Number of assets
 ALPHA = 0.2 #Confidence level
@@ -74,7 +75,7 @@ def plot_curves():
         plt.title("Impact of the Wasserstein Radius (Kuhn 2017) for N = %i" %size)
         plt.xticks(rho_values)
         plt.plot(rho_values, mean_eval_data_test)
-        plt.show()
+        #plt.show()
     
     end = time.time()
     print("Simulations with curves took ", end-start, " seconds")
@@ -84,7 +85,7 @@ def for_loop_histograms(N, nb_simulations):
     eval_data_train = np.array([])
     eval_data_test = np.array([])
 
-    for i in range(nb_simulations):
+    for i in tqdm(range(nb_simulations)):
 
         #Define the training and tesing data
         X_train, X_test = generate_data(N=N, m=M)
@@ -101,11 +102,11 @@ def for_loop_histograms(N, nb_simulations):
         eval_data_train = np.append(eval_data_train, eval_train)
         eval_data_test = np.append(eval_data_test, eval_test)
 
-        print("Simulations done: ", i*100/nb_simulations, "%")
+        #print("Simulations done: ", i*100/nb_simulations, "%")
 
     return eval_data_train, eval_data_test
 
-def parallel_for_loop_histograms(N, eval_data_train, eval_data_test):
+def parallel_for_loop_histograms(N):
 
     #Define the training and tesing data
     X_train, X_test = generate_data(N=N, m=M)
@@ -123,8 +124,7 @@ def parallel_for_loop_histograms(N, eval_data_train, eval_data_test):
     eval_data_train = np.append(eval_data_train, eval_train)
     eval_data_test = np.append(eval_data_test, eval_test)
     '''
-    eval_data_train.put(eval_train)
-    eval_data_test.put(eval_test)
+    return eval_train, eval_test
 
 
 def plot_histograms():
@@ -145,38 +145,6 @@ def plot_histograms():
     print("Simulations with histograms took ", end-start, " seconds")
     plt.show()
 
-'''
-def parallel_plot_histograms():
-
-    start = time.time()
-    
-    N = 30 #Number of samples
-    nb_simulations = 10000
-
-    print("Before parallel computations")
-
-    eval_data_train, eval_data_test = \
-        Parallel(n_jobs=int(mp.cpu_count()), timeout=99999)\
-            (delayed(for_loop_histograms)(N=N, nb_simulations=simu) for simu in range(nb_simulations))
-
-    pool = mp.Pool(mp.cpu_count())
-    eval_data_train, eval_data_test = pool.map(for_loop_histograms, [simu for simu in range(nb_simulations)])
-    pool.close()
-    pool.join()
-    
-    print("After parallel computations")
-
-    #Create the histograms
-    plt.xlabel("Mean-risk objective")
-    plt.ylabel("Probability")
-    plt.title("DRO Solution with scarce data (Kuhn 2017)")
-    plt.hist(eval_data_train, bins=20, density=True, histtype="bar", color="green")
-    plt.hist(eval_data_test, bins=20, density=True, histtype="bar", color="red")
-    end = time.time()
-    print("Simulations with histograms took ", end-start, " seconds")
-    plt.show()
-'''
-
 def parallel_plot_histograms():
 
     start = time.time()
@@ -191,9 +159,9 @@ def parallel_plot_histograms():
         #eval_data_train = np.array([])
         #eval_data_test = np.array([])
 
-        eval_data_train = mp.Queue
-        eval_data_test = mp.Queue
-        pool.map(parallel_for_loop_histograms, ((N,eval_data_train, eval_data_test) for _ in range(nb_simulations)))
+        eval_data = pool.map(parallel_for_loop_histograms, (N for _ in range(nb_simulations)))
+        eval_data_train = [x for x, _ in eval_data]
+        eval_data_test = [y for _, y in eval_data]
 
     print("After parallel computations")
     
@@ -210,7 +178,7 @@ def parallel_plot_histograms():
 
 def main():
     #plot_histograms()
-    #parallel_plot_histograms()
-    plot_curves()
+    parallel_plot_histograms()
+    #plot_curves()
 
 main()

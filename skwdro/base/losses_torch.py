@@ -1,7 +1,6 @@
 from abc import abstractclassmethod, abstractmethod
 from typing import Optional
 import torch as pt
-import torch
 import torch.nn as nn
 
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler, BaseSampler, NoLabelsSampler
@@ -110,6 +109,7 @@ class LogisticLoss(Loss):
 class PortfolioLoss_torch(Loss):
 
     def __init__(self, eta, alpha, name="Portfolio loss"):
+        super(PortfolioLoss_torch, self).__init__()
         self.eta = eta
         self.alpha = alpha
         self.name = name
@@ -118,15 +118,15 @@ class PortfolioLoss_torch(Loss):
     def value(self, theta, X):
         #Conversion np.array to torch.tensor if necessary
         if isinstance(theta, (np.ndarray,np.generic)):
-            theta = torch.from_numpy(theta)
+            theta = pt.from_numpy(theta)
         if isinstance(X, (np.ndarray,np.generic)):
-            X = torch.from_numpy(X)
+            X = pt.from_numpy(X)
 
         N = X.size()[0]
 
         #We add a double cast in the dot product to solve torch type issues for torch.dot
-        in_sample_products = torch.matmul(torch.t((-1)*theta), torch.t(X.double()))
-        expected_value = -(1/N) * torch.sum(in_sample_products)
+        in_sample_products = pt.matmul(pt.t((-1)*theta), pt.t(X.double()))
+        expected_value = -(1/N) * pt.sum(in_sample_products)
         reduce_loss = self.reducer(in_sample_products)
 
         return expected_value + self.eta*reduce_loss
