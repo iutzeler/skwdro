@@ -12,7 +12,7 @@ from sklearn.metrics import euclidean_distances
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 #from skwdro.base.losses import WeberLoss
 from skwdro.base.losses_torch import WeberLoss_torch
-from skwdro.base.costs import *
+from skwdro.base.costs import NormLabelCost
 
 #import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
@@ -50,7 +50,7 @@ class Weber(BaseEstimator):
     Weber()
     """
 
-    def __init__(self, rho = 1e-1, cost = NormCost(), solver="entropic_torch"):
+    def __init__(self, rho = 1e-1, cost = NormLabelCost(kappa=10.0), solver="entropic_torch"):
 
         self.rho    = rho
         self.cost   = cost
