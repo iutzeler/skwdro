@@ -16,7 +16,7 @@ from skwdro.base.problems import WDROProblem
 #           ]
 
 
-def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 10,fit_intercept=False):
+def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 5,fit_intercept=False):
     return approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, n_samples=Nsamples, fit_intercept=fit_intercept)
     # return Approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
 
@@ -37,8 +37,11 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
         xi = torch.Tensor(WDROProblem.P.samples)
         xi_labels = None
     else:
-        xi = torch.Tensor(WDROProblem.P.samplesX)
-        xi_labels  = torch.Tensor(WDROProblem.P.samplesY)
+        if isinstance(WDROProblem.P.samplesX, np.ndarray):
+            xi = torch.from_numpy(WDROProblem.P.samplesX.copy()).float()
+        else:
+            xi = torch.Tensor(WDROProblem.P.samplesX)
+        xi_labels  = torch.Tensor(WDROProblem.P.samplesY.copy())
     kappa = 1e3 # controls the relative weight between points and labels
 
     # Init
@@ -79,8 +82,10 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
     zeta = zeta.swapdims(0, 2).swapdims(0, 1)
     zeta.clip(*WDROProblem.Xi_bounds)
 
-    def EntropicProblem( theta, lam, intercept=0.0, rho=rho, epsilon=epsilon ):
-        if not NoLabels: zeta_labels = zeta_labels[..., :]
+
+    
+    def EntropicProblem( theta, lam, intercept=0.0, rho=rho, epsilon=epsilon, zeta=zeta, zeta_labels=zeta_labels ):
+        if not NoLabels: zeta_labels = zeta_labels[..., :].swapdims(0, 1)
         #if lam < 0:
         #    return torch.inf
 
@@ -94,7 +99,7 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
                 loss += (torch.logsumexp(integrand,0) - math.log(n_samples))*epsilon/m
             else: # w/labels (and no intercept)
                 for j in range(n_samples):
-                    integrand[j] = (WDROProblem.loss.value(theta , zeta[i,:,j],zeta_labels[i,j]) -lam*(c(xi[i],zeta[i,:,j])+kappa*c(xi_labels[i],zeta_labels[i,j])))/epsilon
+                    integrand[j] = (WDROProblem.loss.value(theta , zeta[i,:,j],zeta_labels[i,j]) -lam*(c(xi[i],zeta[i,:,j],xi_labels[i],zeta_labels[i,j])))/epsilon
                 loss += (torch.logsumexp(integrand,0) - math.log(n_samples))*epsilon/m
 
         return loss
@@ -103,7 +108,7 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
 
     lbfgs = optim.LBFGS([theta,lam],
                         history_size=10,
-                        max_iter=100,
+                        max_iter=10,
                         tolerance_grad = 1e-4,
                         line_search_fn="strong_wolfe")
 
@@ -113,10 +118,14 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
         objective.backward()
         return objective
 
-    T = 1
+    # print(theta,lam)
+    # print(EntropicProblem(theta, lam))
+    # print("Begin opt")
+    T = 10
     for t in range(T):
         lbfgs.step(closure)
         # print(theta,lam)
+        # print(EntropicProblem(theta, lam))
 
     return theta.detach().numpy(), intercept.detach().numpy(), lam.detach().numpy()
 
