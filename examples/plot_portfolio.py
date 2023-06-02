@@ -42,11 +42,11 @@ def plot_curves():
     nb_simulations = 200
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
-    eval_data_test = np.array([])
-
-    for i in range(nb_simulations):
-        for size in samples_size:
-            for rho_value in rho_values:
+    for size in samples_size:
+        mean_eval_data_test = np.array([]) #Mean value of the out-of-sample performance for each rho
+        for rho_value in rho_values:
+            eval_data_test = np.array([])
+            for i in range(nb_simulations):
 
                 #Define the training and tesing data
                 N = size #Number of samples
@@ -62,16 +62,23 @@ def plot_curves():
                 #Stock the evaluated losses
                 eval_data_test = np.append(eval_data_test, eval_test)
 
-        print("Simulations done: ", i*100/nb_simulations, "%")
+                print("Simulations done for size", size, ": ",  i*100/nb_simulations, "%")
+            
+            #At the end of each set of 200 simulations, we compute the mean value for the out-of-sample performance
+            mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
 
-    #Create the curves
-    plt.xlabel("Wasserstein radius")
-    plt.ylabel("Out-of-sample performance")
-    plt.title("Impact of the Wasserstein Radius (Kuhn 2017)")
-    plt.plot(rho_values, eval_data_test)
+        #Create the curves
+        plt.figure(size)
+        plt.xlabel("Wasserstein radius")
+        plt.ylabel("Out-of-sample performance")
+        plt.title("Impact of the Wasserstein Radius (Kuhn 2017) for N = %i" %size)
+        plt.xticks(rho_values)
+        plt.plot(rho_values, mean_eval_data_test)
+        plt.show()
+    
     end = time.time()
     print("Simulations with curves took ", end-start, " seconds")
-    plt.show()
+    plt.show() #Show all three figures at once 
 
 def for_loop_histograms(N, nb_simulations):
     eval_data_train = np.array([])
@@ -112,8 +119,12 @@ def parallel_for_loop_histograms(N, eval_data_train, eval_data_test):
     eval_test = estimator.eval(X_test)
 
     #Stock the evaluated losses
+    '''
     eval_data_train = np.append(eval_data_train, eval_train)
     eval_data_test = np.append(eval_data_test, eval_test)
+    '''
+    eval_data_train.put(eval_train)
+    eval_data_test.put(eval_test)
 
 
 def plot_histograms():
@@ -176,8 +187,12 @@ def parallel_plot_histograms():
     print("Before parallel computations")
 
     with mp.Pool(processes=4) as pool:
-        eval_data_train = np.array([])
-        eval_data_test = np.array([])
+
+        #eval_data_train = np.array([])
+        #eval_data_test = np.array([])
+
+        eval_data_train = mp.Queue
+        eval_data_test = mp.Queue
         pool.map(parallel_for_loop_histograms, ((N,eval_data_train, eval_data_test) for _ in range(nb_simulations)))
 
     print("After parallel computations")
