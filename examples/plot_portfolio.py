@@ -123,8 +123,6 @@ def parallel_for_loop_histograms(N):
     '''
     eval_data_train = np.append(eval_data_train, eval_train)
     eval_data_test = np.append(eval_data_test, eval_test)
-    '''
-    return eval_train, eval_test
 
 
 def plot_histograms():
