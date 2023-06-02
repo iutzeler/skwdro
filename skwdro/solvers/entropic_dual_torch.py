@@ -79,8 +79,9 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
     zeta = zeta.swapdims(0, 2).swapdims(0, 1)
     zeta.clip(*WDROProblem.Xi_bounds)
 
-    def EntropicProblem( theta, lam, intercept=0.0, rho=rho, epsilon=epsilon ):
-        if not NoLabels: zeta_labels = zeta_labels[..., :]
+    
+    def EntropicProblem( theta, lam, intercept=0.0, rho=rho, epsilon=epsilon, zeta=zeta, zeta_labels=zeta_labels ):
+        if not NoLabels: zeta_labels = zeta_labels[..., :].swapdims(0, 1)
         #if lam < 0:
         #    return torch.inf
 
@@ -113,7 +114,7 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
         objective.backward()
         return objective
 
-    T = 1
+    T = 3
     for t in range(T):
         lbfgs.step(closure)
         # print(theta,lam)
