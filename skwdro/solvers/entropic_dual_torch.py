@@ -16,7 +16,7 @@ from skwdro.base.problems import WDROProblem
 #           ]
 
 
-def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 1,fit_intercept=False):
+def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 5,fit_intercept=False):
     return approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, n_samples=Nsamples, fit_intercept=fit_intercept)
     # return Approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
 
@@ -37,8 +37,11 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
         xi = torch.Tensor(WDROProblem.P.samples)
         xi_labels = None
     else:
-        xi = torch.Tensor(WDROProblem.P.samplesX)
-        xi_labels  = torch.Tensor(WDROProblem.P.samplesY)
+        if isinstance(WDROProblem.P.samplesX, np.ndarray):
+            xi = torch.from_numpy(WDROProblem.P.samplesX.copy()).float()
+        else:
+            xi = torch.Tensor(WDROProblem.P.samplesX)
+        xi_labels  = torch.Tensor(WDROProblem.P.samplesY.copy())
     kappa = 1e3 # controls the relative weight between points and labels
 
     # Init
@@ -115,14 +118,14 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
         objective.backward()
         return objective
 
-    print(theta,lam)
-    print(EntropicProblem(theta, lam))
-    print("Begin opt")
+    # print(theta,lam)
+    # print(EntropicProblem(theta, lam))
+    # print("Begin opt")
     T = 10
     for t in range(T):
         lbfgs.step(closure)
-        print(theta,lam)
-        print(EntropicProblem(theta, lam))
+        # print(theta,lam)
+        # print(EntropicProblem(theta, lam))
 
     return theta.detach().numpy(), intercept.detach().numpy(), lam.detach().numpy()
 
