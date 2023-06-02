@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "skwdro"
 dynamic = ["version"]
 description = "A Robust ML toolbox"
-readme = "README.rst"
+readme = "README.md"
 maintainers = [
     { name = "F. Iutzeler", email = "franck.iutzeler@univ-grenoble-alpes.fr" },
 ]
