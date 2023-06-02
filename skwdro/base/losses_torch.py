@@ -74,7 +74,7 @@ class WeberLoss_torch(Loss):
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
-        raise NotImplementedError()
+        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
 
 class LogisticLoss(Loss):
     def __init__(
