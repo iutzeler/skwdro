@@ -33,11 +33,14 @@ dependencies = [
     "cvxopt",
     "cvxpy",
     "torch",
+    "sqwash"
 ]
 
 [project.optional-dependencies]
 examples = [
     "matplotlib",
+    "tqdm",
+    "multiprocess"
 ]
 docs = [
     "numpydoc",
