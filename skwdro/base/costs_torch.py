@@ -35,7 +35,7 @@ class NormCost(Cost):
             Data point towards which ``xi`` is displaced
         """
         diff = (xi - zeta).reshape(-1)
-        return pt.norm(diff, p=self.p)**self.power
+        return pt.norm(diff, p=self.p, dim=-1)**self.power
 
     def _sampler_data(self, xi, epsilon):
         if self.power == 1:
@@ -75,12 +75,12 @@ class NormLabelCost(NormCost):
 
     @classmethod
     def _label_penalty(cls, y: pt.Tensor, y_prime: pt.Tensor, p: float):
-        return pt.norm(y - y_prime, p=p)
+        return pt.norm(y - y_prime, p=p, dim=-1)
 
     @classmethod
     def _data_penalty(cls, x: pt.Tensor, x_prime: pt.Tensor, p: float):
         diff = (x - x_prime).reshape(-1)
-        return pt.norm(diff, p=p)
+        return pt.norm(diff, p=p, dim=-1)
 
     def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: pt.Tensor, zeta_labels: pt.Tensor):
         r"""

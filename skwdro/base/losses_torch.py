@@ -1,4 +1,5 @@
 from abc import abstractclassmethod, abstractmethod
+from types import NoneType
 from typing import Optional
 import torch as pt
 import torch.nn as nn
@@ -13,7 +14,10 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self._sampler = sampler
 
-    def value(self,theta,xi):
+    def value_old(self,theta,xi):
+        raise NotImplementedError("Please Implement this method")
+
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
         raise NotImplementedError("Please Implement this method")
 
     def sample_pi0(self, n_samples: int):
@@ -51,12 +55,16 @@ class NewsVendorLoss_torch(Loss):
         self.k = k
         self.u = u
         self.name = name
+        self.theta = pt.rand(1, requires_grad=True)
 
-    def value(self,theta,xi):
+    def value_old(self,theta,xi):
         return self.k*theta-self.u*pt.minimum(theta,xi)
 
+    def value(self, xi: pt.Tensor, xi_labels: NoneType=None):
+        return self.k*self.theta - self.u*pt.minimum(self.theta, xi)
+
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon):
+    def default_sampler(cls, xi: pt.Tensor, xi_labels: NoneType, epsilon):
         return NewsVendorNormalSampler(xi, sigma=epsilon)
 
 class WeberLoss_torch(Loss):
@@ -67,10 +75,14 @@ class WeberLoss_torch(Loss):
             *,
             name="Weber loss"):
         super(WeberLoss_torch, self).__init__(sampler)
+        self.w = pt.rand(1)
         self.name = name
 
-    def value(self,y,x,w):
+    def value_old(self,y,x,w):
         return w*pt.linalg.norm(x-y)
+
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+        return self.w * pt.linalg.norm(xi - xi_labels, dim=-1)
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
@@ -93,7 +105,7 @@ class LogisticLoss(Loss):
         coefs = self.linear(X)
         return self.classif(coefs), coefs
 
-    def value(self, X, y):
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
         _, coefs = self.__call__(X)
         return self.L(
                 coefs,

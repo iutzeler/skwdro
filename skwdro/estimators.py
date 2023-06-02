@@ -54,7 +54,7 @@ class NewsVendor(BaseEstimator):
     NewsVendor()
     """
 
-    def __init__(self, rho = 1e-2,  k=5, u=7, cost = NormCost(), solver="entropic"):
+    def __init__(self, rho = 1e-2,  k=5, u=7, cost: Cost=NormCost(), solver="entropic"):
 
         self.rho    = rho
         self.k      = k

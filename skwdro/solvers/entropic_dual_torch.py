@@ -3,6 +3,7 @@ import torch as pt
 import torch.optim as optim
 
 import math
+from skwdro.solvers.oracle_torch import entropic_loss_oracle
 
 from skwdro.solvers.utils import *
 from skwdro.base.problems import WDROProblem
@@ -28,6 +29,8 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
 
     m = WDROProblem.P.m
     rho = WDROProblem.rho
+    if isinstance(rho, float): rho = pt.tensor(rho)
+    if isinstance(epsilon, float): epsilon = pt.tensor(epsilon)
 
     c = WDROProblem.c
 
@@ -39,7 +42,7 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
     else:
         xi = torch.Tensor(WDROProblem.P.samplesX)
         xi_labels  = torch.Tensor(WDROProblem.P.samplesY)
-    kappa = 1e3 # controls the relative weight between points and labels
+    kappa = pt.tensor(1e3)# controls the relative weight between points and labels
 
     # Init
     theta = torch.normal(0,1,size=(n,))
@@ -79,6 +82,10 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
     zeta = zeta.swapdims(0, 2).swapdims(0, 1)
     zeta.clip(*WDROProblem.Xi_bounds)
 
+    # l = entropic_loss_oracle(lam, zeta, zeta_labels, xi, xi_labels, rho, epsilon, loss, WDROProblem.c)
+    # print(l)
+    # l.backward()
+    # raise
     def EntropicProblem( theta, lam, intercept=0.0, rho=rho, epsilon=epsilon ):
         if not NoLabels: zeta_labels = zeta_labels[..., :]
         #if lam < 0:
