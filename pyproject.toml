@@ -1,0 +1,92 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "skwdro"
+dynamic = ["version"]
+description = "A Robust ML toolbox"
+readme = "README.md"
+maintainers = [
+    { name = "F. Iutzeler", email = "franck.iutzeler@univ-grenoble-alpes.fr" },
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 2.7",
+    "Programming Language :: Python :: 3.5",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development",
+]
+dependencies = [
+    "numpy",
+    "scikit-learn",
+    "scipy",
+    "cvxopt",
+    "cvxpy",
+    "torch",
+]
+
+[project.optional-dependencies]
+examples = [
+    "matplotlib",
+]
+docs = [
+    "numpydoc",
+    "sphinx",
+    "sphinx-gallery",
+    "sphinx_rtd_theme",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+
+[project.urls]
+Download = "https://github.com/iutzeler/skwdro"
+
+[tool.hatch.version]
+path = "skwdro/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/skwdro",
+]
+
+[tool.hatch.envs.test]
+features = ["test"]
+[tool.hatch.envs.test.scripts]
+test = "pytest ."
+
+[tool.hatch.envs.examples]
+pre-install-commands = [
+  "pip install --editable ../skwdro"
+]
+features = ["examples"]
+
+[tool.hatch.envs.docs]
+# Could add a hook to build the doc here...
+features = ["docs"]
+
+[tool.hatch.envs.dev]
+pre-install-commands = [
+  "pip install --editable ../skwdro"
+]
+features = [
+    "test",
+    "examples",
+    "docs"
+]
+[tool.hatch.envs.dev.scripts]
+test = "pytest ."
+
+[tool.hatch.envs.static]
+dev-mode = false
