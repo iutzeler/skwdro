@@ -3,14 +3,14 @@ import pytest
 from sklearn.base import clone
 from sklearn.utils.estimator_checks import check_estimator
 
-from skwdro.operations_research import Weber, NewsVendor
-from skwdro.linear_models import LogisticRegression, LinearRegression
+from skwdro.operations_research import Weber, Portfolio
 
 
 dict_wdro_estimators = {}
 
 
-dict_wdro_estimators["Weber"] = Weber() 
+dict_wdro_estimators["Weber"] = Weber()
+dict_wdro_estimators["Portfolio"] = Portfolio()
 
 dict_wdro_estimators["NewsVendor"] = NewsVendor(solver="dedicated")
 
@@ -25,7 +25,7 @@ dict_wdro_estimators["LinearReg"] = LinearRegression(
 
 @pytest.mark.parametrize(
     "estimator_name",
-    ["Weber", "NewsVendor", "Logistic", "LinearReg"]
+    dict_wdro_estimators.keys()
 )
 def test_all_estimators(estimator_name):
 
