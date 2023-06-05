@@ -14,6 +14,10 @@ class NoLabelsCostSampler(NoLabelsSampler):
             ):
         super(NoLabelsCostSampler, self).__init__(cost._sampler_data(xi, epsilon))
         self.generating_cost = cost
+        self.epsilon = epsilon
+
+    def reset_mean(self, xi, xi_labels):
+        self.__init__(self.generating_cost, xi, self.epsilon)
 
 class LabeledCostSampler(LabeledSampler):
     def __init__(
@@ -25,3 +29,7 @@ class LabeledCostSampler(LabeledSampler):
             ):
         super(LabeledCostSampler, self).__init__(cost._sampler_data(xi, epsilon), cost._sampler_labels(xi_labels, epsilon))
         self.generating_cost = cost
+        self.epsilon = epsilon
+
+    def reset_mean(self, xi, xi_labels):
+        self.__init__(self.generating_cost, xi, xi_labels, self.epsilon)
