@@ -1,4 +1,4 @@
-from abc import abstractclassmethod, abstractmethod
+from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 from types import NoneType
 from typing import Optional
 import torch as pt
@@ -43,8 +43,18 @@ class Loss(nn.Module):
     def default_sampler(cls, xi, xi_labels, epsilon) -> BaseSampler:
         raise NotImplementedError("Please Implement this method")
 
-class NewsVendorLoss_torch(Loss):
+    def forward(self, *args):
+        return self.value(*args)
 
+    @abstractproperty
+    def theta(self):
+        raise NotImplementedError("Please Implement this property")
+
+    @abstractproperty
+    def intercept(self):
+        raise NotImplementedError("Please Implement this property")
+
+class NewsVendorLoss_torch(Loss):
     def __init__(
             self,
             sampler: Optional[NoLabelsSampler]=None,
@@ -55,17 +65,25 @@ class NewsVendorLoss_torch(Loss):
         self.k = nn.Parameter(pt.tensor(float(k)), requires_grad=False)
         self.u = nn.Parameter(pt.tensor(float(u)), requires_grad=False)
         self.name = name
-        self.theta = nn.Parameter(pt.rand(1))
+        self._theta = nn.Parameter(pt.rand(1))
 
     def value_old(self,theta,xi):
         return self.k*theta-self.u*pt.minimum(theta,xi)
 
     def value(self, xi: pt.Tensor, xi_labels: NoneType=None):
-        return self.k*self.theta - self.u*pt.minimum(self.theta, xi)
+        return self.k*self.theta - self.u*pt.minimum(self.theta, xi).squeeze(dim=-1)
 
     @classmethod
     def default_sampler(cls, xi: pt.Tensor, xi_labels: NoneType, epsilon):
         return NewsVendorNormalSampler(xi, sigma=epsilon)
+
+    @property
+    def theta(self) -> pt.Tensor:
+        return self._theta
+
+    @property
+    def intercept(self) -> NoneType:
+        return None
 
 class WeberLoss_torch(Loss):
 
@@ -88,6 +106,14 @@ class WeberLoss_torch(Loss):
     def default_sampler(cls, xi, xi_labels, epsilon):
         return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
 
+    @property
+    def theta(self) -> pt.Tensor:
+        return self.w
+
+    @property
+    def intercept(self) -> NoneType:
+        return None
+
 class LogisticLoss(Loss):
     def __init__(
             self,
@@ -99,19 +125,26 @@ class LogisticLoss(Loss):
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         self.classif = nn.Tanh()
-        self.L = nn.BCEWithLogitsLoss()
+        self.L = nn.BCEWithLogitsLoss(reduction='none')
 
-    def forward(self, X):
+    def logprobs(self, X):
         coefs = self.linear(X)
         return self.classif(coefs), coefs
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
-        _, coefs = self.__call__(xi)
+        _, coefs = self.logprobs(xi)
         return self.L(
                 coefs,
-                (xi_labels == 1).long(),
-                reduction='none')
+                (xi_labels + 1.) * .5)
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
-        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon)
+        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
+
+    @property
+    def theta(self) -> pt.Tensor:
+        return self.linear.weight
+
+    @property
+    def intercept(self) -> pt.Tensor:
+        return self.linear.bias

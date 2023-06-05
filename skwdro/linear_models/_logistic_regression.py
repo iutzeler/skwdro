@@ -2,7 +2,8 @@
 Logistic Regression
 """
 import numpy as np
-from sklearn.base import BaseEstimator
+import torch as pt
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.metrics import euclidean_distances
@@ -12,16 +13,18 @@ from scipy.special import expit
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses import LogisticLoss
-# from skwdro.base.losses_torch import *
+from skwdro.base.losses_torch import LogisticLoss as LogisticLossTorch
 from skwdro.base.costs import Cost, NormCost
+from skwdro.base.costs_torch import NormLabelCost
 from skwdro.solvers.optim_cond import OptCond
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
+from skwdro.solvers.oracle_torch import DualLoss
 
 
-class LogisticRegression(BaseEstimator):
+class LogisticRegression(BaseEstimator, ClassifierMixin):
     """ A Wasserstein Distributionally Robust logistic regression classifier.
 
 
@@ -68,6 +71,7 @@ class LogisticRegression(BaseEstimator):
     """
 
     def __init__(self,
+                 d: int=0,
                  rho=1e-2,
                  l2_reg=None,
                  fit_intercept=True,
@@ -92,6 +96,17 @@ class LogisticRegression(BaseEstimator):
                 rho=rho,
                 loss=LogisticLoss(l2_reg=l2_reg)
             )
+        assert d>0
+        self.problem.d = d
+
+        if solver == "entropic_torch":
+            self.problem.loss = DualLoss(
+                    LogisticLossTorch(None, d=self.problem.d, fit_intercept=self.fit_intercept),
+                    NormLabelCost(2., 1., 1e5),
+                    n_samples=10,
+                    epsilon_0=pt.tensor(.1),
+                    rho_0=pt.tensor(.1)
+                )
 
 
     def fit(self, X, y):
@@ -121,7 +136,7 @@ class LogisticRegression(BaseEstimator):
 
         # Setup problem parameters ################
         m, d = np.shape(X)
-        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y)
+        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:, None])
         self.problem.n = d
         self.problem.d = d
         self.problem.dLabel = 1
@@ -142,6 +157,13 @@ class LogisticRegression(BaseEstimator):
                     y=y,
                     fit_intercept=self.fit_intercept
             )
+        elif self.solver == "entropic_torch":
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+                    self.problem,
+                    epsilon=.1,
+                    Nsamples=10,
+                    fit_intercept=self.fit_intercept
+                )
         else:
             raise NotImplementedError
 
