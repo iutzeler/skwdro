@@ -30,7 +30,7 @@ def test_fit_low_radius():
     assert np.isclose(theta[1], 0)
 
     #Assertions on optimal value
-    assert np.isclose(estimator.problem.loss.value(theta=theta, X=X), -theta[0])
+    assert np.isclose(estimator.problem_.loss.value(theta=theta, X=X), theta[0])
 
 def test_fit_high_radius():
     '''
@@ -52,4 +52,4 @@ def test_fit_high_radius():
     assert np.isclose(theta[1], 0.5)
 
     #Assertions on optimal value
-    assert np.isclose(estimator.problem.loss.value(theta=theta, X=X), -theta[0])
+    assert np.isclose(estimator.problem_.loss.value(theta=theta, X=X), theta[0])

@@ -55,8 +55,8 @@ class Portfolio(BaseEstimator):
                  eta=0,
                  alpha=.95,
                  fit_intercept=None,
-                 cost=NormCost(),
-                 solver="entropic",
+                 cost=None,
+                 solver="dedicated",
                  solver_reg=1.0
                  ):
         
@@ -74,15 +74,9 @@ class Portfolio(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
 
-        self.problem = WDROProblem(
-                cost=cost,
-                Xi_bounds=[-np.inf,np.inf],
-                Theta_bounds=[-np.inf,np.inf],
-                rho=rho,
-                loss=PortfolioLoss_torch(eta=eta, alpha=alpha)
-            )
 
-    def fit(self, X, C=None, d=None):
+
+    def fit(self, X, y=None, C=None, d=None):
         """Fits the WDRO regressor.
 
         Parameters
@@ -101,11 +95,22 @@ class Portfolio(BaseEstimator):
         # Setup problem parameters
         N = np.shape(X)[0] #N samples for the empirical distribution
         m = np.shape(X)[1] #m assets
+        self.n_features_in_ = m
         emp = EmpiricalDistribution(m=N, samples=X)
 
-        self.problem.P = emp
-        self.problem.d = m
-        self.problem.n = m
+        self.cost_ = NormCost()
+        self.problem_ = WDROProblem(
+                cost=self.cost_,
+                Xi_bounds=[-np.inf,np.inf],
+                Theta_bounds=[-np.inf,np.inf],
+                rho=self.rho,
+                loss=PortfolioLoss_torch(eta=self.eta, alpha=self.alpha)
+            )
+        
+
+        self.problem_.P = emp
+        self.problem_.d = m
+        self.problem_.n = m
 
         # Setup values C and d that define the polyhedron of xi_maj
 
@@ -122,7 +127,7 @@ class Portfolio(BaseEstimator):
         if self.solver == "entropic":
             raise NotImplementedError("Entropic solver for Portfolio not implemented yet")
         elif self.solver == "dedicated":
-            self.coef_, _, self.dual_var_ = spS.WDROPortfolioSolver(self.problem, self.cost, self.C_, \
+            self.coef_, _, self.dual_var_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
                                                                     self.d_, self.eta, self.alpha)
         else:
             raise NotImplementedError("Designation for solver not recognized")
@@ -145,6 +150,6 @@ class Portfolio(BaseEstimator):
         
         assert self.is_fitted_ == True #We have to fit before evaluating
 
-        return self.problem.loss.value(theta=self.coef_, X=X)
+        return self.problem_.loss.value(theta=self.coef_, X=X)
 
 
