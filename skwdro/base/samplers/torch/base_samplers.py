@@ -22,6 +22,10 @@ class BaseSampler(ABC):
     def produces_labels(self) -> bool:
         raise NotImplementedError()
 
+    @abstractmethod
+    def reset_mean(self, xi, xi_labels):
+        raise NotImplementedError()
+
 class NoLabelsSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution):
         self.data_s = data_sampler
