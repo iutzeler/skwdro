@@ -24,8 +24,19 @@ def generate_data(N,m):
             X = np.array(xi_i)
         else:
             X = np.vstack((X,xi_i))
+
+    return X
+
+def generate_train_test_data(N,m):
+    X = generate_data(N,m)
     X_train, X_test = train_test_split(X, train_size=0.5, test_size=0.5)
     return X_train, X_test
+
+def stochastic_problem_approx(estimator,size=10000):
+    X = generate_data(N=size, m=estimator.problem_.d)
+    approx_obj_value = estimator.eval(X)
+    return approx_obj_value
+
 
 def compute_histograms(N, nb_simulations, rho, compute):
     eval_data_train = np.array([])
@@ -43,7 +54,7 @@ def compute_histograms(N, nb_simulations, rho, compute):
         for i in tqdm(range(nb_simulations)):
 
             #Define the training and tesing data
-            X_train, X_test = generate_data(N=N, m=M)
+            X_train, X_test = generate_train_test_data(N=N, m=M)
 
             #Create the estimator and solve the problem
             estimator = Portfolio(solver="dedicated", alpha=ALPHA, eta=ETA, rho=rho)
@@ -71,7 +82,7 @@ def compute_histograms(N, nb_simulations, rho, compute):
 def parallel_for_loop_histograms(N, rho):
 
         #Define the training and tesing data
-        X_train, X_test = generate_data(N=N, m=M)
+        X_train, X_test = generate_train_test_data(N=N, m=M)
 
         #Create the estimator and solve the problem
         estimator = Portfolio(solver="dedicated", alpha=ALPHA, eta=ETA, rho=rho)
@@ -108,45 +119,112 @@ def parallel_compute_histograms(N, nb_simulations, rho, compute):
 
     return filename
 
+def parallel_for_loop_curves(N, rho):
 
-def compute_curves(nb_simulations, compute):
-    samples_size = np.array([30,300,3000])
+    reliability_cpt = 0
+
+    #Define the training and tesing data
+    X_train, X_test = generate_train_test_data(N=N, m=M)
+    
+    #Create the estimator and solve the problem
+    estimator = Portfolio(solver="dedicated", rho=rho, alpha=ALPHA, eta=ETA)
+    estimator.fit(X_train)
+
+    #Evaluate the loss value for the testing dataset
+    eval_test = estimator.eval(X_test)
+
+    #Approximate the real loss value and compate it to the WDRO loss value
+    eval_approx_loss = stochastic_problem_approx(estimator)
+    if eval_approx_loss <= eval_test:
+        reliability_cpt += 1
+
+    return eval_test, reliability_cpt
+
+
+def parallel_compute_curves(nb_simulations, compute):
+    samples_size = np.array([30])
+    #samples_size = np.array([30,300,3000])
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
+
+    filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
 
     if compute is True:
 
-        with open ('./examples/stored_data/portfolio_curves_data.npy', 'wb') as f:
+        with open (filename, 'wb') as f:
 
             np.save(f, rho_values)
 
             for size in samples_size:
                 mean_eval_data_test = np.array([]) #Mean value of the out-of-sample performance for each rho
+                reliability_test = np.array([]) #Probability array that the WDRO objective value is a supremum of the real value
+                for rho_value in rho_values:
+                    with mp.Pool(processes=4) as pool:
+                        eval_reliability_data_test = pool.starmap(parallel_for_loop_curves, zip((size for _ in range(nb_simulations)), \
+                                                           (rho_value for _ in range(nb_simulations))))
+                        eval_data_test = [x for x, _ in eval_reliability_data_test]
+                        reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
+                    #At the end of each set of 200 simulations, we compute the mean value for the out-of-sample performance
+                    mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
+                    reliability_test = np.append(reliability_test, reliability)
+                    print(reliability_test)
+                np.save(f, mean_eval_data_test)
+                np.save(f, reliability_test)
+
+        f.close()
+
+    return samples_size, filename
+
+
+def compute_curves(nb_simulations, compute):
+    samples_size = np.array([30])
+    #samples_size = np.array([30,300,3000])
+    rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
+
+    filename = './examples/stored_data/portfolio_curve_data.npy'
+
+    if compute is True:
+
+        with open (filename, 'wb') as f:
+
+            np.save(f, rho_values)
+
+            for size in samples_size:
+                mean_eval_data_test = np.array([]) #Mean value of the out-of-sample performance for each rho
+                reliability_test = np.array([]) #Probability array that the WDRO objective value is a supremum of the real value
                 for rho_value in rho_values:
                     eval_data_test = np.array([])
+                    reliability_cpt = 0
                     for i in range(nb_simulations):
 
                         #Define the training and tesing data
                         N = size #Number of samples
-                        X_train, X_test = generate_data(N=N, m=M)
+                        X_train, X_test = generate_train_test_data(N=N, m=M)
                         
                         #Create the estimator and solve the problem
                         estimator = Portfolio(solver="dedicated", rho=rho_value, alpha=ALPHA, eta=ETA)
                         estimator.fit(X_train)
 
-                        #Evaluate the loss value for the training and testing datasets
+                        #Evaluate the loss value for the testing dataset
                         eval_test = estimator.eval(X_test)
 
                         #Stock the evaluated losses
                         eval_data_test = np.append(eval_data_test, eval_test)
 
+                        #Approximate the real loss value and compate it to the WDRO loss value
+                        eval_approx_loss = stochastic_problem_approx(estimator)
+                        if eval_approx_loss <= eval_test:
+                            reliability_cpt += 1
+                        
                         print("Simulations done for size", size, ": ",  i*100/nb_simulations, "%")
                     
                     #At the end of each set of 200 simulations, we compute the mean value for the out-of-sample performance
                     mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
-
-                print(mean_eval_data_test)
+                    reliability = reliability_cpt/nb_simulations
+                    reliability_test = np.append(reliability_test, reliability)
+                    print(reliability_test)
                 np.save(f, mean_eval_data_test)
+                np.save(f, reliability_test)
             
         f.close()
 
-    return samples_size
+    return samples_size, filename
