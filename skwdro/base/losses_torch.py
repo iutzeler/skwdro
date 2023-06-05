@@ -9,6 +9,9 @@ from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNorma
 import numpy as np
 from sqwash import SuperquantileReducer
 
+#Strategy when manipulating torch tensor during parallelization
+pt.multiprocessing.set_sharing_strategy('file_system')
+
 class Loss(nn.Module):
     """ Base class for loss functions """
     def __init__(self, sampler: Optional[BaseSampler]=None):

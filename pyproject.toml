@@ -41,6 +41,7 @@ dependencies = [
 examples = [
     "matplotlib",
     "tqdm",
+    "seaborn",
     "multiprocess"
 ]
 docs = [

@@ -3,6 +3,7 @@ import numpy as np
 
 from skwdro.operations_research import Portfolio
 from sklearn.model_selection import train_test_split
+import torch as pt
 
 import multiprocessing as mp
 
@@ -30,6 +31,13 @@ def compute_histograms(N, nb_simulations, rho, compute):
     eval_data_train = np.array([])
     eval_data_test = np.array([])
 
+    if rho == 0:
+        filename = './examples/stored_data/portfolio_histogram_SAA_data.npy'
+    else:
+        filename = './examples/stored_data/portfolio_histogram_WDRO_data.npy'
+
+    print(filename)
+
     if compute is True:
 
         for i in tqdm(range(nb_simulations)):
@@ -52,21 +60,21 @@ def compute_histograms(N, nb_simulations, rho, compute):
             #print("Simulations done: ", i*100/nb_simulations, "%")
 
         #We store the computed data
-        with open ('./examples/stored_data/portfolio_histogram_data.npy', 'wb') as f:
+        with open (filename, 'wb') as f:
             np.save(f, eval_data_train)
             np.save(f, eval_data_test)
         
         f.close()
 
-def parallel_compute_histograms(N, nb_simulations, rho, compute):
+    return filename #We return filename for easier access to computed data
 
-    def parallel_for_loop_histograms(N):
+def parallel_for_loop_histograms(N, rho):
 
         #Define the training and tesing data
         X_train, X_test = generate_data(N=N, m=M)
 
         #Create the estimator and solve the problem
-        estimator = Portfolio(solver="dedicated", alpha=ALPHA, eta=ETA, rho=1/np.sqrt(N))
+        estimator = Portfolio(solver="dedicated", alpha=ALPHA, eta=ETA, rho=rho)
         estimator.fit(X_train)
 
         #Evaluate the loss value for the training and testing datasets
@@ -75,20 +83,30 @@ def parallel_compute_histograms(N, nb_simulations, rho, compute):
 
         return eval_train, eval_test
 
+def parallel_compute_histograms(N, nb_simulations, rho, compute):
+    
+    if rho == 0:
+        filename = './examples/stored_data/parallel_portfolio_histogram_SAA_data.npy'
+    else:
+        filename = './examples/stored_data/parallel_portfolio_histogram_WDRO_data.npy'
+
     if compute is True:
 
         with mp.Pool(processes=4) as pool:
 
-            eval_data = pool.map(parallel_for_loop_histograms, (N for _ in range(nb_simulations)))
+            eval_data = pool.starmap(parallel_for_loop_histograms, zip((N for _ in range(nb_simulations)), \
+                                        (rho for _ in range(nb_simulations))))
             eval_data_train = [x for x, _ in eval_data]
             eval_data_test = [y for _, y in eval_data]
 
         #We store the computed data
-        with open ('./examples/stored_data/portfolio_histogram_data.npy', 'wb') as f:
+        with open (filename, 'wb') as f:
             np.save(f, eval_data_train)
             np.save(f, eval_data_test)
         
         f.close()
+
+    return filename
 
 
 def compute_curves(nb_simulations, compute):
@@ -97,7 +115,7 @@ def compute_curves(nb_simulations, compute):
 
     if compute is True:
 
-        with open ('./examples/stored_data/portfolio_histogram_data.npy', 'wb') as f:
+        with open ('./examples/stored_data/portfolio_curves_data.npy', 'wb') as f:
 
             np.save(f, rho_values)
 
@@ -126,6 +144,7 @@ def compute_curves(nb_simulations, compute):
                     #At the end of each set of 200 simulations, we compute the mean value for the out-of-sample performance
                     mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
 
+                print(mean_eval_data_test)
                 np.save(f, mean_eval_data_test)
             
         f.close()
