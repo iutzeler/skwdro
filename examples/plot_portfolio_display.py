@@ -53,23 +53,35 @@ def parallel_plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True)
 def plot_curves(nb_simulations=200, compute=True):
     start = time.time()
 
-    samples_size = compute_curves(nb_simulations, compute)
+    print("Before parallel computations")
 
-    with open ('./examples/stored_data/portfolio_curves_data.npy', 'rb') as f:
-        rho_values = np.load(f, allow_pickle=True)
+    samples_size, filename = compute_curves(nb_simulations, compute)
+    #samples_size, filename = parallel_compute_curves(nb_simulations, compute)
+
+    print("After parallel computations")
+
+    with open (filename, 'rb') as f:
+        rho_values = np.load(f)
 
         for size in samples_size:
 
             mean_eval_data_test = np.load(f)
+            reliability_test = np.load(f)
 
             #Create the curves
-            plt.figure(size)
-            plt.xlabel("Wasserstein radius")
-            plt.ylabel("Out-of-sample performance")
-            plt.title("Impact of the Wasserstein Radius (Kuhn 2017) for N = %i" %size)
-            plt.xticks(rho_values)
-            plt.xscale("log")
-            plt.plot(rho_values, mean_eval_data_test)
+
+            _, ax1 = plt.subplots(num=size)
+
+            ax1.set_xlabel("Wasserstein radius")
+            ax1.set_ylabel("Out-of-sample performance")
+            ax1.set_title("Impact of the Wasserstein Radius (Kuhn 2017) for N = %i" %size)
+            ax1.set_xticks(rho_values)
+            ax1.set_xscale("log")
+            ax1.plot(rho_values, mean_eval_data_test, color='blue')
+
+            ax2 = ax1.twinx()
+            ax2.set_ylabel("Reliability")
+            ax2.plot(rho_values, reliability_test, linestyle='dashed', color='red')
     
     f.close()
     end = time.time()
