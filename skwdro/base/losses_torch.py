@@ -52,10 +52,10 @@ class NewsVendorLoss_torch(Loss):
             k=5, u=7,
             name="NewsVendor loss"):
         super(NewsVendorLoss_torch, self).__init__(sampler)
-        self.k = k
-        self.u = u
+        self.k = nn.Parameter(pt.tensor(float(k)), requires_grad=False)
+        self.u = nn.Parameter(pt.tensor(float(u)), requires_grad=False)
         self.name = name
-        self.theta = pt.rand(1, requires_grad=True)
+        self.theta = nn.Parameter(pt.rand(1))
 
     def value_old(self,theta,xi):
         return self.k*theta-self.u*pt.minimum(theta,xi)
@@ -75,7 +75,7 @@ class WeberLoss_torch(Loss):
             *,
             name="Weber loss"):
         super(WeberLoss_torch, self).__init__(sampler)
-        self.w = pt.rand(1)
+        self.w = nn.Parameter(pt.rand(1))
         self.name = name
 
     def value_old(self,y,x,w):
@@ -106,10 +106,10 @@ class LogisticLoss(Loss):
         return self.classif(coefs), coefs
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
-        _, coefs = self.__call__(X)
+        _, coefs = self.__call__(xi)
         return self.L(
                 coefs,
-                (y == 1).long(),
+                (xi_labels == 1).long(),
                 reduction='none')
 
     @classmethod
