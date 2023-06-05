@@ -1,26 +1,26 @@
 from examples.plot_portfolio_computations import *
 
+import seaborn as sns
 import time
 import matplotlib.pyplot as plt
 
 def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True):
 
-    compute_histograms(N, nb_simulations, rho, compute)
+    filename = compute_histograms(N, nb_simulations, rho, compute)
 
-    with open ('./examples/stored_data/portfolio_histogram_data.npy', 'rb') as f:
+    with open (filename, 'rb') as f:
         eval_data_train = np.load(f)
         eval_data_test = np.load(f)
     f.close()
 
     #Create the histograms
     plt.xlabel("Mean-risk objective")
-    plt.ylabel("Probability")
     if rho == 0:
         plt.title("SAA Solution with scarce data (Kuhn 2017)")
     else:
         plt.title("DRO Solution with scarce data (Kuhn 2017) with rho = %f" %rho)
-    plt.hist(eval_data_train, bins=20, density=True, histtype="bar", color="green")
-    plt.hist(eval_data_test, bins=20, density=True, histtype="bar", color="red")
+    sns.histplot(data=eval_data_train, bins=20, stat="probability", color="green")
+    sns.histplot(data=eval_data_test, bins=20, stat="probability", color="red")
     plt.show()
 
 def parallel_plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True):
@@ -29,7 +29,9 @@ def parallel_plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True)
 
     print("Before parallel computations")
 
-    with open ('./examples/stored_data/portfolio_histogram_data.npy', 'rb') as f:
+    filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, rho=rho, compute=compute)
+
+    with open (filename, 'rb') as f:
         eval_data_train = np.load(f)
         eval_data_test = np.load(f)
     f.close()
@@ -38,14 +40,13 @@ def parallel_plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True)
     
     #Create the histograms
     plt.xlabel("Mean-risk objective")
-    plt.ylabel("Probability")
     if rho == 0:
         plt.title("SAA Solution with scarce data (Kuhn 2017)")
     else:
         plt.title("DRO Solution with scarce data (Kuhn 2017) with rho = %f" %rho)
-    plt.hist(eval_data_train, bins=20, normed=True, density=True, histtype="bar", color="green")
-    plt.hist(eval_data_test, bins=20, normed=True, density=True, histtype="bar", color="red")
     end = time.time()
+    sns.histplot(data=eval_data_train, bins=20, stat="probability", color="green")
+    sns.histplot(data=eval_data_test, bins=20, stat="probability", color="red")
     print("Simulations with histograms took ", end-start, " seconds")
     plt.show()  
 
@@ -55,7 +56,7 @@ def plot_curves(nb_simulations=200, compute=True):
     samples_size = compute_curves(nb_simulations, compute)
 
     with open ('./examples/stored_data/portfolio_curves_data.npy', 'rb') as f:
-        rho_values = np.load(f)
+        rho_values = np.load(f, allow_pickle=True)
 
         for size in samples_size:
 
@@ -76,8 +77,13 @@ def plot_curves(nb_simulations=200, compute=True):
     plt.show() #Show all three figures at once 
 
 def main():
-    plot_histograms(rho=0, compute=False) 
-    plot_histograms(rho=1/np.sqrt(30), compute=False)
-    #plot_curves(nb_simulations=10, compute=True)
+    N = 30 #Size of samples for Kuhn's histograms
 
-main()
+    #plot_histograms(rho=0, compute=True) 
+    #plot_histograms(rho=1/np.sqrt(N), compute=True)
+    #parallel_plot_histograms(rho=0, compute=False)
+    #parallel_plot_histograms(rho=1/np.sqrt(N), compute=True)
+    plot_curves(nb_simulations=1, compute=True)
+
+if __name__ == "__main__":
+    main()

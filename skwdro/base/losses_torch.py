@@ -8,6 +8,9 @@ from skwdro.base.samplers.torch.base_samplers import LabeledSampler, BaseSampler
 from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 
+#Strategy when manipulating torch tensor during parallelization
+pt.multiprocessing.set_sharing_strategy('file_system')
+
 class Loss(nn.Module):
     """ Base class for loss functions """
     def __init__(self, sampler: Optional[BaseSampler]=None):
