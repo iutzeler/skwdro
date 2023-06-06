@@ -14,7 +14,7 @@ def launch_solver(fi: bool=False):
             fit_intercept=fi,
             cost=NormLabelCost(2., 1., 10**np.random.randint(-1, 4), "test"),
             solver="entropic",
-            solver_cond=OptCond(np.inf, 1e-6, 1e-6, -1) # No max_iter!
+            opt_cond=OptCond(np.inf, 1e-6, 1e-6, -1) # No max_iter!
             )
     X, y = generate_points()
     estimator.fit(X, y)

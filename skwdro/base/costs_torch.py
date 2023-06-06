@@ -7,6 +7,12 @@ from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler, LabeledSam
 from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 from skwdro.base.costs import Cost
+import torch.distributions as dst
+
+from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler, LabeledSampler
+from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
+from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+from skwdro.base.costs import Cost
 
 class NormCost(Cost):
     """ p-norm to some power, with torch arguments
@@ -37,6 +43,23 @@ class NormCost(Cost):
         diff = xi - zeta
         return pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
 
+    def _sampler_data(self, xi, epsilon):
+        if self.power == 1:
+            if self.p == 1:
+                return dst.Laplace(
+                            loc=xi,
+                            scale=epsilon
+                        )
+            elif self.p == 2:
+                return dst.MultivariateNormal(
+                        loc=xi,
+                        scale_tril=epsilon*pt.eye(xi.size(-1))
+                    )
+            else: raise NotImplementedError()
+        else: raise NotImplementedError()
+
+    def _sampler_labels(self, xi_labels, epsilon):
+        return None
     def _sampler_data(self, xi, epsilon):
         if self.power == 1:
             if self.p == 1:
@@ -113,6 +136,21 @@ class NormLabelCost(NormCost):
                 + self.kappa * self._label_penalty(xi_labels, zeta_labels, self.p)
             distance /= 1. + self.kappa
             return distance**self.power
+
+    def _sampler_labels(self, xi_labels, epsilon):
+        if self.power == 1:
+            if self.p == 1:
+                return dst.Laplace(
+                            loc=xi_labels,
+                            scale=epsilon/self.kappa
+                        )
+            elif self.p == 2:
+                return dst.MultivariateNormal(
+                        loc=xi_labels,
+                        scale_tril=epsilon*pt.eye(xi_labels.size(-1))/self.kappa
+                    )
+            else: raise NotImplementedError()
+        else: raise NotImplementedError()
 
     def _sampler_labels(self, xi_labels, epsilon):
         if self.power == 1:
