@@ -74,12 +74,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
 
     def __init__(self,
-                 d: int=0,
                  rho=1e-2,
                  l2_reg=None,
                  fit_intercept=True,
                  cost = "quad",
-                 solver="entropic",
+                 solver="entropic_torch",
                  solver_reg=0.01,
                  opt_cond=None
                  ):
@@ -91,7 +90,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.opt_cond = opt_cond
-        self.d = d
 
 
 
@@ -113,6 +111,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         """
         # Check that X and y have correct shape
         X, y = check_X_y(X, y)
+        X = np.array(X)
+        y = np.array(y)
 
         if len(y.shape) != 1:
             y = y.ravel()
@@ -125,8 +125,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         y = self.le_.fit_transform(y)
         y = (y-0.5)*2
 
-        # X = np.array(X)
-        # y = np.array(y)
+
 
         if len(self.classes_)>2:
             raise NotImplementedError(f"Multiclass classificaion is not implemented. ({len(self.classes_)} classes were found : {self.classes_})")
@@ -181,11 +180,19 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     fit_intercept=self.fit_intercept
             )
         elif self.solver == "entropic_torch":
+            self.problem_.loss = DualLoss(
+                    LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    NormLabelCost(2., 1., 1e8),
+                    n_samples=10,
+                    epsilon_0=pt.tensor(.1),
+                    rho_0=pt.tensor(.1)
+                )
+
             self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
-                    self.problem,
+                    self.problem_,
                     epsilon=.1,
                     Nsamples=10,
-                    fit_intercept=self.fit_intercept
+                    fit_intercept=self.fit_intercept,
                 )
         else:
             raise NotImplementedError
@@ -265,7 +272,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = np.array(X)
 
         proba = self.predict_proba_2Class(X)
-        out =  self.le_.inverse_transform((proba>0.5).astype('uint8'))
+        out =  self.le_.inverse_transform((proba>=0.5).astype('uint8'))
         return out
 
 
