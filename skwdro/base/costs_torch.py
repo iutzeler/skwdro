@@ -1,5 +1,12 @@
+from types import NoneType
 from typing import Optional
 import torch as pt
+import torch.distributions as dst
+
+from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler, LabeledSampler
+from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
+from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+from skwdro.base.costs import Cost
 import torch.distributions as dst
 
 from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler, LabeledSampler
@@ -22,7 +29,7 @@ class NormCost(Cost):
         self.p = p
         self.power = power
 
-    def value(self, xi: pt.Tensor, zeta: pt.Tensor):
+    def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: NoneType=None, zeta_labels: NoneType=None):
         r"""
         Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
 
@@ -33,9 +40,26 @@ class NormCost(Cost):
         zeta : Tensor
             Data point towards which ``xi`` is displaced
         """
-        diff = (xi - zeta).reshape(-1)
-        return pt.norm(diff, p=self.p)**self.power
+        diff = xi - zeta
+        return pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
 
+    def _sampler_data(self, xi, epsilon):
+        if self.power == 1:
+            if self.p == 1:
+                return dst.Laplace(
+                            loc=xi,
+                            scale=epsilon
+                        )
+            elif self.p == 2:
+                return dst.MultivariateNormal(
+                        loc=xi,
+                        scale_tril=epsilon*pt.eye(xi.size(-1))
+                    )
+            else: raise NotImplementedError()
+        else: raise NotImplementedError()
+
+    def _sampler_labels(self, xi_labels, epsilon):
+        return None
     def _sampler_data(self, xi, epsilon):
         if self.power == 1:
             if self.p == 1:
@@ -73,15 +97,15 @@ class NormLabelCost(NormCost):
         assert kappa >= 0, f"Input kappa={kappa}<0 is illicit since it 'encourages' flipping labels in the database, and thus makes no sense wrt the database in terms of 'trust' to the labels."
 
     @classmethod
-    def _label_penalty(cls, y: float, y_prime: float, p: float):
-        return pt.norm(y - y_prime, p=p)
+    def _label_penalty(cls, y: pt.Tensor, y_prime: pt.Tensor, p: float):
+        return pt.norm(y - y_prime, p=p, dim=-1, keepdim=True)
 
     @classmethod
     def _data_penalty(cls, x: pt.Tensor, x_prime: pt.Tensor, p: float):
-        diff = (x - x_prime).reshape(-1)
-        return pt.norm(diff, p=p)
+        diff = x - x_prime
+        return pt.norm(diff, p=p, dim=-1, keepdim=True)
 
-    def value(self, x: pt.Tensor, x_prime: pt.Tensor, y: float, y_prime: float):
+    def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: pt.Tensor, zeta_labels: pt.Tensor):
         r"""
         Cost to displace :math:`\xi:=\left[\begin{array}{c}\bm{X}\\y\end{array}\right]`
         to :math:`\zeta:=\left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]`
@@ -89,28 +113,44 @@ class NormLabelCost(NormCost):
 
         Parameters
         ----------
-        x : Tensor, shape (n_samples, n_features)
+        xi : Tensor, shape (n_samples, n_features)
             Data point to be displaced (without the label)
-        x_prime : Tensor, shape (n_samples, n_features)
+        zeta : Tensor, shape (n_samples, n_features)
             Data point towards which ``x`` is displaced
-        y : float
+        xi_labels : Tensor, shape (n_samples, n_features_y)
             Label or target for the problem/loss
-        y_prime : float
+        zeta_labels : Tensor, shape (n_samples, n_features_y)
             Label or target in the dataset
         """
-        if self.kappa is float("inf"):
+        if float(self.kappa) is float("inf"):
             # Writing convention: if kappa=+oo we put all cost on switching labels
             #  so the cost is reported on y.
             # To provide a tractable computation, we yield the y-penalty alone.
-            return self._label_penalty(y, y_prime, self.p)**self.power
+            return self._label_penalty(xi_labels, zeta_labels, self.p)**self.power
         elif self.kappa == 0.:
             # Writing convention: if kappa is null we put all cost on moving the data itself, so the worst-case distribution is free to switch the labels.
             # Warning : this usecase should not make sense anyway.
-            return self._data_penalty(x, x_prime, self.p)**self.power
+            return self._data_penalty(xi, zeta, self.p)**self.power
         else:
-            distance = self._data_penalty(x, x_prime, self.p) \
-                + self.kappa * self._label_penalty(y, y_prime, self.p)
+            distance = self._data_penalty(xi, zeta, self.p) \
+                + self.kappa * self._label_penalty(xi_labels, zeta_labels, self.p)
+            distance /= 1. + self.kappa
             return distance**self.power
+
+    def _sampler_labels(self, xi_labels, epsilon):
+        if self.power == 1:
+            if self.p == 1:
+                return dst.Laplace(
+                            loc=xi_labels,
+                            scale=epsilon/self.kappa
+                        )
+            elif self.p == 2:
+                return dst.MultivariateNormal(
+                        loc=xi_labels,
+                        scale_tril=epsilon*pt.eye(xi_labels.size(-1))/self.kappa
+                    )
+            else: raise NotImplementedError()
+        else: raise NotImplementedError()
 
     def _sampler_labels(self, xi_labels, epsilon):
         if self.power == 1:

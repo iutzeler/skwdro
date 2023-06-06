@@ -90,7 +90,7 @@ features = [
     "docs"
 ]
 [tool.hatch.envs.dev.scripts]
-test = "pytest ."
+test = "pytest -s -vv . "
 
 [tool.hatch.envs.static]
 dev-mode = false

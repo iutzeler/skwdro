@@ -21,9 +21,7 @@ def fit_estimator(fi=True):
             rho=1e-3,
             l2_reg=None,
             fit_intercept=fi,
-            cost=NormLabelCost(2., 1., 10**np.random.randint(2, 4), "test"),
-            solver="entropic",
-            solver_cond=OptCond(np.inf, 1e-6, 1e-6, 10000)
+            solver="entropic_torch"
         )
     X, y = generate_points()
     estimator.fit(X, y)

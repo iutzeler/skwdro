@@ -79,3 +79,7 @@ def sample_pi_0(epsilon, n_samples, xi):
     zeta = pi_0_raw_samples
     return zeta
 # ##############################################################
+
+def detach_tensor(tensor):
+    out = tensor.detach().cpu().numpy().flatten()
+    return float(out) if len(out) == 1 else out

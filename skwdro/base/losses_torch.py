@@ -1,4 +1,5 @@
-from abc import abstractclassmethod, abstractmethod
+from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
+from types import NoneType
 from typing import Optional
 import torch as pt
 import torch.nn as nn
@@ -13,7 +14,10 @@ class Loss(nn.Module):
         super(Loss, self).__init__()
         self._sampler = sampler
 
-    def value(self,theta,xi):
+    def value_old(self,theta,xi):
+        raise NotImplementedError("Please Implement this method")
+
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
         raise NotImplementedError("Please Implement this method")
 
     def sample_pi0(self, n_samples: int):
@@ -39,8 +43,18 @@ class Loss(nn.Module):
     def default_sampler(cls, xi, xi_labels, epsilon) -> BaseSampler:
         raise NotImplementedError("Please Implement this method")
 
-class NewsVendorLoss_torch(Loss):
+    def forward(self, *args):
+        return self.value(*args)
 
+    @abstractproperty
+    def theta(self):
+        raise NotImplementedError("Please Implement this property")
+
+    @abstractproperty
+    def intercept(self):
+        raise NotImplementedError("Please Implement this property")
+
+class NewsVendorLoss_torch(Loss):
     def __init__(
             self,
             sampler: Optional[NoLabelsSampler]=None,
@@ -48,12 +62,28 @@ class NewsVendorLoss_torch(Loss):
             k=5, u=7,
             name="NewsVendor loss"):
         super(NewsVendorLoss_torch, self).__init__(sampler)
-        self.k = k
-        self.u = u
+        self.k = nn.Parameter(pt.tensor(float(k)), requires_grad=False)
+        self.u = nn.Parameter(pt.tensor(float(u)), requires_grad=False)
         self.name = name
+        self._theta = nn.Parameter(pt.rand(1))
 
-    def value(self,theta,xi):
+    def value_old(self,theta,xi):
         return self.k*theta-self.u*pt.minimum(theta,xi)
+
+    def value(self, xi: pt.Tensor, xi_labels: NoneType=None):
+        return self.k*self.theta - self.u*pt.minimum(self.theta, xi).squeeze(dim=-1)
+
+    @classmethod
+    def default_sampler(cls, xi: pt.Tensor, xi_labels: NoneType, epsilon):
+        return NewsVendorNormalSampler(xi, sigma=epsilon)
+
+    @property
+    def theta(self) -> pt.Tensor:
+        return self._theta
+
+    @property
+    def intercept(self) -> NoneType:
+        return None
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
@@ -67,14 +97,26 @@ class WeberLoss_torch(Loss):
             *,
             name="Weber loss"):
         super(WeberLoss_torch, self).__init__(sampler)
+        self.w = nn.Parameter(pt.rand(1))
         self.name = name
 
-    def value(self,y,x,w):
+    def value_old(self,y,x,w):
         return w*pt.linalg.norm(x-y)
+
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+        return self.w * pt.linalg.norm(xi - xi_labels, dim=-1)
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
         return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
+
+    @property
+    def theta(self) -> pt.Tensor:
+        return self.w
+
+    @property
+    def intercept(self) -> NoneType:
+        return None
 
 class LogisticLoss(Loss):
     def __init__(
@@ -87,19 +129,26 @@ class LogisticLoss(Loss):
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         self.classif = nn.Tanh()
-        self.L = nn.BCEWithLogitsLoss()
+        self.L = nn.BCEWithLogitsLoss(reduction='none')
 
-    def forward(self, X):
+    def logprobs(self, X):
         coefs = self.linear(X)
         return self.classif(coefs), coefs
 
-    def value(self, X, y):
-        _, coefs = self.__call__(X)
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+        _, coefs = self.logprobs(xi)
         return self.L(
                 coefs,
-                (y == 1).long(),
-                reduction='none')
+                (xi_labels + 1.) * .5)
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
-        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon)
+        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
+
+    @property
+    def theta(self) -> pt.Tensor:
+        return self.linear.weight
+
+    @property
+    def intercept(self) -> pt.Tensor:
+        return self.linear.bias

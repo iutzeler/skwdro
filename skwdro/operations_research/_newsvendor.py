@@ -2,6 +2,7 @@
 WDRO Estimators
 """
 import numpy as np
+import torch as pt
 from sklearn.base import BaseEstimator, ClassifierMixin, TransformerMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
@@ -17,6 +18,7 @@ from skwdro.base.costs import *
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
+from skwdro.solvers.oracle_torch import DualLoss
 
 
 
@@ -65,7 +67,15 @@ class NewsVendor(BaseEstimator):
         self.problem = WDROProblem(d=1,Xi_bounds=[0,20],n=1,Theta_bounds=[0,np.inf],rho=rho,loss=NewsVendorLoss(k=k,u=u), cost = cost)
 
         if solver == "entropic_torch":
-            self.problem.loss = NewsVendorLoss_torch(k=k,u=u)
+            # self.problem.loss = NewsVendorLoss_torch(k=k,u=u)
+            self.problem.loss = DualLoss(
+                    NewsVendorLoss_torch(k=k,u=u),
+                    cost,
+                    #TODO: no hard-coding
+                    20,
+                    pt.tensor(.1),
+                    pt.tensor(.1),
+                    False)
 
 
     def fit(self, X, y=None):
