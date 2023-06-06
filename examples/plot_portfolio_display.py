@@ -55,8 +55,8 @@ def plot_curves(nb_simulations=200, compute=True):
 
     print("Before parallel computations")
 
-    samples_size, filename = compute_curves(nb_simulations, compute)
-    #samples_size, filename = parallel_compute_curves(nb_simulations, compute)
+    #samples_size, filename = compute_curves(nb_simulations, compute)
+    samples_size, filename = parallel_compute_curves(nb_simulations, compute)
 
     print("After parallel computations")
 
@@ -71,6 +71,8 @@ def plot_curves(nb_simulations=200, compute=True):
             #Create the curves
 
             _, ax1 = plt.subplots(num=size)
+
+            ax1.grid(True)
 
             ax1.set_xlabel("Wasserstein radius")
             ax1.set_ylabel("Out-of-sample performance")
@@ -95,7 +97,7 @@ def main():
     #plot_histograms(rho=1/np.sqrt(N), compute=True)
     #parallel_plot_histograms(rho=0, compute=False)
     #parallel_plot_histograms(rho=1/np.sqrt(N), compute=True)
-    plot_curves(nb_simulations=1, compute=True)
+    plot_curves(compute=True)
 
 if __name__ == "__main__":
     main()
