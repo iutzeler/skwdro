@@ -21,7 +21,7 @@ class Cost:
         self.name = name
         self.engine = engine
 
-    def value(self, x, y):
+    def value(self, x, y, *args):
         raise NotImplementedError("Please Implement this method")
 
     def __str__(self) -> str:
