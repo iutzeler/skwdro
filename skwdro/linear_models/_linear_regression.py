@@ -2,7 +2,8 @@
 Linear Regression
 """
 import numpy as np
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.exceptions import ConvergenceWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 
@@ -18,7 +19,7 @@ import skwdro.solvers.entropic_dual_solvers as entS
 #import skwdro.solvers.entropic_dual_torch as entTorch
 
 
-class LinearRegression(BaseEstimator):
+class LinearRegression(BaseEstimator, RegressorMixin):
     """ A Wasserstein Distributionally Robust linear regression.
 
 
@@ -63,10 +64,10 @@ class LinearRegression(BaseEstimator):
                  rho=1e-2,
                  l2_reg=None,
                  fit_intercept=True,
-                 cost: Cost=NormCost(p=2),
+                 cost=None,
                  solver="entropic",
                  solver_reg=1.0,
-                 solver_cond=OptCond(2)
+                 opt_cond=None
                  ):
 
         self.rho    = rho
@@ -75,15 +76,9 @@ class LinearRegression(BaseEstimator):
         self.fit_intercept = fit_intercept
         self.solver = solver
         self.solver_reg = solver_reg
-        self.opt_cond = solver_cond
+        self.opt_cond = opt_cond
 
-        self.problem = WDROProblem(
-                cost=cost,
-                Xi_bounds=[-1e8,1e8],
-                Theta_bounds=[-1e8,1e8],
-                rho=rho,
-                loss=QuadraticLoss(l2_reg=l2_reg)
-            )
+
 
 
     def fit(self, X, y):
@@ -102,30 +97,43 @@ class LinearRegression(BaseEstimator):
             Returns self.
         """
         # Check that X and y have correct shape
-        X, y = check_X_y(X, y)
-
-        # Store the classes seen during fit
-        #self.classes_ = unique_labels(y)
+        X, y = check_X_y(X, y, y_numeric=True)
+        X = np.array(X)
+        y = np.array(y)
 
         # Store data
         self.X_ = X
         self.y_ = y
 
-        # Setup problem parameters ################
         m, d = np.shape(X)
+
+        # Setup problem parameters ################
         emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y)
-        self.problem.n = d
-        self.problem.d = d
-        self.problem.dLabel = 1
-        self.problem.P = emp
+
+        self.problem_ = WDROProblem(
+                cost=NormCost(p=2),
+                Xi_bounds=[-1e8,1e8],
+                Theta_bounds=[-1e8,1e8],
+                rho=self.rho,
+                loss=QuadraticLoss(l2_reg=self.l2_reg)
+            )
+
+        self.problem_.n = d
+        self.problem_.d = d
+        self.problem_.dLabel = 1
+        self.problem_.P = emp
         # #########################################
 
         if self.solver=="entropic":
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
-                    self.problem,
+                    self.problem_,
                     fit_intercept=self.fit_intercept,
-                    opt_cond=self.opt_cond
+                    opt_cond=OptCond(2)
             )
+
+            if np.isnan(self.coef_).any() or np.isnan(self.intercept_):
+                raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
+
         elif self.solver=="dedicated":
             raise NotImplementedError
         else:
