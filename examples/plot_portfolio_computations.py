@@ -142,7 +142,7 @@ def parallel_for_loop_curves(N, rho):
 
 
 def parallel_compute_curves(nb_simulations, compute):
-    samples_size = np.array([30])
+    samples_size = np.array([3000])
     #samples_size = np.array([30,300,3000])
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
