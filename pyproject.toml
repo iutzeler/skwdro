@@ -26,13 +26,14 @@ classifiers = [
     "Topic :: Scientific/Engineering",
     "Topic :: Software Development",
 ]
+
 dependencies = [
     "numpy",
     "scikit-learn",
     "scipy",
     "cvxopt",
     "cvxpy",
-    "torch",
+    "torch @ https://download.pytorch.org/whl/cpu-cxx11-abi/torch-2.0.1%2Bcpu.cxx11.abi-cp311-cp311-linux_x86_64.whl"
 ]
 
 [project.optional-dependencies]
@@ -61,6 +62,9 @@ include = [
     "/skwdro",
 ]
 
+[tool.hatch.envs.default]
+python = "3.11"
+
 [tool.hatch.envs.test]
 features = ["test"]
 [tool.hatch.envs.test.scripts]
@@ -68,7 +72,7 @@ test = "pytest ."
 
 [tool.hatch.envs.examples]
 pre-install-commands = [
-  "pip install --editable ../skwdro"
+  "pip3 install --editable ../skwdro"
 ]
 features = ["examples"]
 
@@ -78,7 +82,7 @@ features = ["docs"]
 
 [tool.hatch.envs.dev]
 pre-install-commands = [
-  "pip install --editable ../skwdro"
+  "pip3 install --editable ../skwdro"
 ]
 features = [
     "test",
@@ -86,7 +90,10 @@ features = [
     "docs"
 ]
 [tool.hatch.envs.dev.scripts]
-test = "pytest ."
+test = "pytest -s -vv . "
 
 [tool.hatch.envs.static]
 dev-mode = false
+
+[tool.hatch.metadata]
+allow-direct-references = true

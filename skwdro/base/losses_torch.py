@@ -85,6 +85,10 @@ class NewsVendorLoss_torch(Loss):
     def intercept(self) -> NoneType:
         return None
 
+    @classmethod
+    def default_sampler(cls, xi, xi_labels, epsilon):
+        return NewsVendorNormalSampler(xi, sigma=epsilon)
+
 class WeberLoss_torch(Loss):
 
     def __init__(

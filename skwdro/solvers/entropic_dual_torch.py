@@ -62,7 +62,7 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
         lbfgs.step(closure)
 
     theta = detach_tensor(loss.theta)
-    intercept = None if NoLabels else detach_tensor(loss.intercept)
+    intercept = None if not fit_intercept else detach_tensor(loss.intercept)
     lambd = detach_tensor(loss.lam)
     return theta, intercept, lambd
 
@@ -167,7 +167,7 @@ def Approx_BFGS(WDROProblem=None, epsilon=0.1, Nsamples = 10,fit_intercept=False
     # intercept.requires_grad = True
 
 
-    T = 2
+    T = 3
     # bar = progressbar.ProgressBar(max_value=T,widgets=widgets).start()
     for t in range(T):
         lbfgs.step(closure)
