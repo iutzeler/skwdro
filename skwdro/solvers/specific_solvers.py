@@ -208,5 +208,8 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
     problem.solve(verbose=False)
 
-    return theta.value, fit_intercept, lam.value
+    #Getting the result of the dual objective value
+    result = problem.solve()
+
+    return theta.value, fit_intercept, lam.value, result
 

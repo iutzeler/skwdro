@@ -130,7 +130,7 @@ class Portfolio(BaseEstimator):
         if self.solver == "entropic":
             raise NotImplementedError("Entropic solver for Portfolio not implemented yet")
         elif self.solver == "dedicated":
-            self.coef_, _, self.dual_var_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
+            self.coef_, _, self.dual_var_, self.result_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
                                                                     self.d_, self.eta, self.alpha)
         else:
             raise NotImplementedError("Designation for solver not recognized")

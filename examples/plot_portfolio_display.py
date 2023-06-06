@@ -95,9 +95,9 @@ def main():
 
     #plot_histograms(rho=0, compute=True) 
     #plot_histograms(rho=1/np.sqrt(N), compute=True)
-    #parallel_plot_histograms(rho=0, compute=False)
-    #parallel_plot_histograms(rho=1/np.sqrt(N), compute=True)
-    plot_curves(compute=True)
+    parallel_plot_histograms(rho=0, compute=True)
+    parallel_plot_histograms(rho=1/np.sqrt(N), compute=True)
+    #plot_curves(compute=True)
 
 if __name__ == "__main__":
     main()
