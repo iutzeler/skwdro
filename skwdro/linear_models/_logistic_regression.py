@@ -3,10 +3,11 @@ Logistic Regression
 """
 import numpy as np
 import torch as pt
-from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
-from sklearn.metrics import euclidean_distances
+from sklearn.preprocessing import LabelEncoder
+from sklearn.exceptions import DataConversionWarning
 from scipy.special import expit
 
 
@@ -70,15 +71,17 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
     >>> estimator.score(X_test,y_test)
     """
 
+
+
     def __init__(self,
                  d: int=0,
                  rho=1e-2,
                  l2_reg=None,
                  fit_intercept=True,
-                 cost: Cost=NormCost(p=2),
+                 cost = "quad",
                  solver="entropic",
-                 solver_reg=1.0,
-                 solver_cond=OptCond(2)
+                 solver_reg=0.01,
+                 opt_cond=None
                  ):
 
         self.rho    = rho
@@ -87,26 +90,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.fit_intercept = fit_intercept
         self.solver = solver
         self.solver_reg = solver_reg
-        self.opt_cond = solver_cond
+        self.opt_cond = opt_cond
+        self.d = d
 
-        self.problem = WDROProblem(
-                cost=cost,
-                Xi_bounds=[-1e8,1e8],
-                Theta_bounds=[-1e8,1e8],
-                rho=rho,
-                loss=LogisticLoss(l2_reg=l2_reg)
-            )
-        assert d>0
-        self.problem.d = d
 
-        if solver == "entropic_torch":
-            self.problem.loss = DualLoss(
-                    LogisticLossTorch(None, d=self.problem.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e5),
-                    n_samples=10,
-                    epsilon_0=pt.tensor(.1),
-                    rho_0=pt.tensor(.1)
-                )
 
 
     def fit(self, X, y):
@@ -127,8 +114,31 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Check that X and y have correct shape
         X, y = check_X_y(X, y)
 
+        if len(y.shape) != 1:
+            y = y.ravel()
+            raise DataConversionWarning(f"Given y is {y.shape}, while expected shape is (n_sample,)")
+
         # Store the classes seen during fit
-        #self.classes_ = unique_labels(y)
+        self.classes_ = unique_labels(y)
+
+        self.le_ = LabelEncoder()
+        y = self.le_.fit_transform(y)
+        y = (y-0.5)*2
+
+        # X = np.array(X)
+        # y = np.array(y)
+
+        if len(self.classes_)>2:
+            raise NotImplementedError(f"Multiclass classificaion is not implemented. ({len(self.classes_)} classes were found : {self.classes_})")
+    
+        if len(self.classes_)<2:
+            raise ValueError(f"Found {len(self.classes_)} classes, while 2 are expected.")
+
+        if not np.issubdtype(X.dtype, np.number):
+            raise ValueError(f"Input X has dtype  {X.dtype}")
+        
+        # if not np.issubdtype(y.dtype, np.number):
+        #     raise ValueError(f"Input y has dtype  {y.dtype}")
 
         # Store data
         self.X_ = X
@@ -136,22 +146,35 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Setup problem parameters ################
         m, d = np.shape(X)
-        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:, None])
-        self.problem.n = d
-        self.problem.d = d
-        self.problem.dLabel = 1
-        self.problem.P = emp
+        self.n_features_in_ = d
+        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:,None])
+
+        self.cost_ = NormCost(p=2)
+        self.problem_ = WDROProblem(
+                cost=self.cost_,
+                Xi_bounds=[-1e8,1e8],
+                Theta_bounds=[-1e8,1e8],
+                rho=self.rho,
+                loss=LogisticLoss(l2_reg=self.l2_reg)
+            )
+
+        self.problem_.n = d
+        self.problem_.d = d
+        self.problem_.dLabel = 1
+        self.problem_.P = emp
+
+        self.opt_cond_ = OptCond(2)
         # #########################################
 
         if self.solver=="entropic":
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
-                    self.problem,
+                    self.problem_,
                     fit_intercept=self.fit_intercept,
-                    opt_cond=self.opt_cond
+                    opt_cond=self.opt_cond_
             )
         elif self.solver=="dedicated":
             self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLogisticSpecificSolver(
-                    rho=self.problem.rho,
+                    rho=self.problem_.rho,
                     kappa=1000,
                     X=X,
                     y=y,
@@ -191,7 +214,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Input validation
         X = check_array(X)
 
-        p = expit(X.dot(self.coef_)+self.intercept_)
+        if self.intercept_ is not None:
+            p = expit(X.dot(self.coef_)+self.intercept_)
+        else:
+            p = expit(X.dot(self.coef_))
         # p = 1 / (1 + np.exp(-(X.dot(self.coef_)+self.intercept_)))
         return p
 
@@ -236,7 +262,15 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Input validation
         X = check_array(X)
+        X = np.array(X)
 
         proba = self.predict_proba_2Class(X)
-        return np.sign(proba - 0.5)
+        out =  self.le_.inverse_transform((proba>0.5).astype('uint8'))
+        return out
 
+
+    def _more_tags(self):
+        return {'poor_score': True, # In order to pass with any rho...
+                'binary_only': True, # Only binary classification
+                'non_deterministic': True # For stochastic methods
+                }
