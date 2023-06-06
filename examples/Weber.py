@@ -13,7 +13,7 @@ from skwdro.operations_research import Weber
 import numpy as np
 import matplotlib.pyplot as plt
 
-m = 5
+m = 3
 
 X = np.random.randn(m,2)*10
 w = np.random.exponential(size=(m,1),scale=10)

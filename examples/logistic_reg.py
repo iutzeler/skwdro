@@ -14,7 +14,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from skwdro.linear_models import LogisticRegression
-from skwdro.base.costs import NormLabelCost, NormCost
+from skwdro.base.costs import NormCost
+from skwdro.base.costs_torch import NormLabelCost
 
 
 # Generate the random data ##################################################
@@ -27,8 +28,8 @@ y = 2 * y - 1 # type: ignore
 # Center data to avoid learning intercept
 X -= centers.mean(axis=0, keepdims=True) # type : ignore
 # ###########################################################################
-#cost=NormLabelCost(2., 1., 100., "Kappa-cost (w/ kappa=100)"),
-cost=NormCost(2., 1., "=")
+cost=NormLabelCost(2., 1., 100., "Kappa-cost (w/ kappa=100)")
+#cost=NormCost(2., 1., "=")
 
 
 # SPECIFIC SOLVER
@@ -61,7 +62,7 @@ estimator_ent = LogisticRegression(
         l2_reg=None,
         fit_intercept=True,
         cost=cost,
-        solver="entropic"
+        solver="entropic_torch"
         )
 
 

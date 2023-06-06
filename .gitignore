@@ -65,3 +65,5 @@ doc/generated/
 
 # PyBuilder
 target/
+.vscode/settings.json
+.vscode/launch.json

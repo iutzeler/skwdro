@@ -1,9 +1,12 @@
 import torch
+import torch as pt
 import torch.optim as optim
 
 import math
+from skwdro.solvers.oracle_torch import entropic_loss_oracle
 
 from skwdro.solvers.utils import *
+from skwdro.base.problems import WDROProblem
 
 # import progressbar
 # widgets = [' [',
@@ -15,7 +18,54 @@ from skwdro.solvers.utils import *
 
 
 def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 10,fit_intercept=False):
-    return Approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
+    return approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, n_samples=Nsamples, fit_intercept=fit_intercept)
+    # return Approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
+
+def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_samples: int=10, fit_intercept: bool=False):
+    """ Approximation and then BFGS"""
+
+    rho = WDROProblem.rho
+    if isinstance(rho, float): rho = pt.tensor(rho)
+    if isinstance(epsilon, float): epsilon = pt.tensor(epsilon)
+
+    NoLabels = WDROProblem.dLabel == 0
+
+    if NoLabels:
+        xi = torch.Tensor(WDROProblem.P.samples)
+        xi_labels = None
+    else:
+        xi = torch.Tensor(WDROProblem.P.samplesX)
+        xi_labels  = torch.Tensor(WDROProblem.P.samplesY)
+
+    loss = WDROProblem.loss
+    assert loss is not None
+    if loss._sampler is None:
+        loss.sampler = loss.default_sampler(xi, xi_labels, epsilon)
+    # zeta, zeta_labels = WDROProblem.loss.sample_pi0(n_samples)
+    # zeta = zeta.swapdims(0, 2).swapdims(0, 1)
+    # zeta.clip(*WDROProblem.Xi_bounds)
+
+    lbfgs = optim.LBFGS(params=loss.parameters(),
+                        history_size=10,
+                        max_iter=50,
+                        tolerance_grad=1e-4,
+                        line_search_fn="strong_wolfe")
+
+    def closure():
+        lbfgs.zero_grad()
+        objective = loss(xi, xi_labels) #NOTE: PostSampled case assumed here
+        objective.backward()
+        return objective
+
+    T = 30
+    for _ in range(T):
+        lbfgs.step(closure)
+
+    theta = detach_tensor(loss.theta)
+    intercept = None if not fit_intercept else detach_tensor(loss.intercept)
+    lambd = detach_tensor(loss.lam)
+    return theta, intercept, lambd
+
 
 
 def Approx_BFGS(WDROProblem=None, epsilon=0.1, Nsamples = 10,fit_intercept=False):
@@ -117,7 +167,7 @@ def Approx_BFGS(WDROProblem=None, epsilon=0.1, Nsamples = 10,fit_intercept=False
     # intercept.requires_grad = True
 
 
-    T = 2
+    T = 3
     # bar = progressbar.ProgressBar(max_value=T,widgets=widgets).start()
     for t in range(T):
         lbfgs.step(closure)
