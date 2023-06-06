@@ -6,7 +6,11 @@ from skwdro.operations_research import Weber
 from skwdro.linear_models import LogisticRegression
 
 rob_Weber = Weber()
-rob_LogReg = LogisticRegression()
+rob_LogReg = LogisticRegression(
+        rho=1e-4,
+        l2_reg=None,
+        fit_intercept=True,
+        solver="dedicated")
 
 @pytest.mark.parametrize(
     "estimator",

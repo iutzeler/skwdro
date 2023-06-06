@@ -9,7 +9,6 @@ from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSample
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 
 class Loss(nn.Module):
-class Loss(nn.Module):
     """ Base class for loss functions """
     def __init__(self, sampler: Optional[BaseSampler]=None):
         super(Loss, self).__init__()

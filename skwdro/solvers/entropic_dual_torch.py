@@ -169,7 +169,7 @@ def Approx_BFGS(WDROProblem=None, epsilon=0.1, Nsamples = 10,fit_intercept=False
     # intercept.requires_grad = True
 
 
-    T = 2
+    T = 3
     # bar = progressbar.ProgressBar(max_value=T,widgets=widgets).start()
     for t in range(T):
         lbfgs.step(closure)

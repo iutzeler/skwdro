@@ -12,18 +12,17 @@ def fit_estimator(fi=True):
             rho=1e-2,
             l2_reg=None,
             fit_intercept=fi,
-            cost=NormLabelCost(2., 1., 10**np.random.randint(-1, 4), "test"),
             solver="dedicated"
         )
     X, y = generate_points()
     estimator.fit(X, y)
     return estimator
 
-def test_fit_enthropic_fi():
+def test_fit_enthropic_fi(): # [WIP]
     estimator = fit_estimator()
     # Needs more tolerance for now since intercept difficult to estimate
     assert angle_to_northeast(estimator.coef_) < 10*ANGLE_TOL
 
-def test_fit_enthropic_lin():
+def test_fit_enthropic_lin():# [WIP]
     estimator = fit_estimator(False)
     assert angle_to_northeast(estimator.coef_) < ANGLE_TOL
