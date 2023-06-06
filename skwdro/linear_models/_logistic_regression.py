@@ -279,5 +279,5 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
     def _more_tags(self):
         return {'poor_score': True, # In order to pass with any rho...
                 'binary_only': True, # Only binary classification
-                'non_deterministic': True # For stochastic methods
+               # 'non_deterministic': True # For stochastic methods
                 }
