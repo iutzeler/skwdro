@@ -135,14 +135,14 @@ def parallel_for_loop_curves(N, rho):
 
     #Approximate the real loss value and compate it to the WDRO loss value
     eval_approx_loss = stochastic_problem_approx(estimator)
-    if eval_approx_loss <= eval_test:
+    if eval_approx_loss <= estimator.result_:
         reliability_cpt += 1
 
     return eval_test, reliability_cpt
 
 
 def parallel_compute_curves(nb_simulations, compute):
-    samples_size = np.array([3000])
+    samples_size = np.array([300])
     #samples_size = np.array([30,300,3000])
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
@@ -210,9 +210,9 @@ def compute_curves(nb_simulations, compute):
                         #Stock the evaluated losses
                         eval_data_test = np.append(eval_data_test, eval_test)
 
-                        #Approximate the real loss value and compate it to the WDRO loss value
+                        #Approximate the real loss value and compate it to the WDRO dual loss value
                         eval_approx_loss = stochastic_problem_approx(estimator)
-                        if eval_approx_loss <= eval_test:
+                        if eval_approx_loss <= estimator.result_:
                             reliability_cpt += 1
                         
                         print("Simulations done for size", size, ": ",  i*100/nb_simulations, "%")

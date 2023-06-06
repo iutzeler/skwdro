@@ -6,6 +6,7 @@ Mean-Risk Portfolio
 An example of resolution of the mean-risk portfolio problem.
 """
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from skwdro.operations_research import Portfolio
@@ -17,7 +18,6 @@ X = np.array([1,0])
 X = np.tile(X,(N,1)) #Duplicate the above line N times
 
 print("Value of the samples:", X)
-
 
 #Creating the estimator and solving the problem
 estimator = Portfolio(solver="dedicated", rho=1e-10)
@@ -32,4 +32,4 @@ lam = estimator.dual_var_
 print("Value of theta: ", theta)
 print("Value of lambda: ", lam)
 
-print("Optimal value: ", estimator.problem.loss.value(theta=theta,X=X))
+print("Optimal value: ", estimator.problem_.loss.value(theta=theta,X=X))
