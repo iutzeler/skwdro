@@ -16,6 +16,9 @@ def launch_solver(fi: bool=False):
             )
     X, y = generate_points()
     estimator.fit(X, y)
+    # print(X,y)
+    # print(estimator.coef_)
+    # print(estimator.predict(X))
     assert estimator.score(X, y) > .5
 
 

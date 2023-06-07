@@ -52,6 +52,15 @@ class Weber(BaseEstimator):
 
     def __init__(self, rho = 1e-1, kappa = 10.0, solver="entropic_torch"):
 
+        if rho is not float:
+            try:
+                rho = float(rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
+        
+        if rho < 0:
+            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
+
         self.rho    = rho
         self.kappa  = kappa
         self.solver = solver

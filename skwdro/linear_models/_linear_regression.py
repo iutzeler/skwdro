@@ -14,7 +14,7 @@ from skwdro.base.losses import QuadraticLoss
 from skwdro.base.costs import Cost, NormCost
 from skwdro.solvers.optim_cond import OptCond
 
-#import skwdro.solvers.specific_solvers as spS
+import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 #import skwdro.solvers.entropic_dual_torch as entTorch
 
@@ -69,6 +69,15 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  solver_reg=1.0,
                  opt_cond=None
                  ):
+        
+        if rho is not float:
+            try:
+                rho = float(rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
+        
+        if rho < 0:
+            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
         self.rho    = rho
         self.l2_reg = l2_reg
@@ -106,6 +115,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.y_ = y
 
         m, d = np.shape(X)
+        self.n_features_in_ = d
 
         # Setup problem parameters ################
         emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y)
@@ -135,7 +145,12 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
 
         elif self.solver=="dedicated":
-            raise NotImplementedError
+            self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(
+                    rho=self.problem_.rho,
+                    X=X,
+                    y=y,
+                    fit_intercept=self.fit_intercept
+            )
         else:
             raise NotImplementedError
 

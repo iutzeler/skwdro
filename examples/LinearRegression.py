@@ -29,10 +29,18 @@ rob_lin = RobustLinearRegression(rho=0.1)
 rob_lin.fit(X_train, y_train)
 y_pred_rob = rob_lin.predict(X_test)
 
+
+rob_lin2 = RobustLinearRegression(rho=0.1,solver="dedicated",fit_intercept=True)
+rob_lin2.fit(X_train, y_train)
+y_pred_rob2 = rob_lin2.predict(X_test)
+
 lin = LinearRegression()
 lin.fit(X_train, y_train)
 y_pred = lin.predict(X_test)
 
 
+
+
 print(f"sklearn error: {np.linalg.norm(y_pred-y_test)} " )
 print(f"skwdro error: {np.linalg.norm(y_pred_rob-y_test)}")
+print(f"skwdro error w/dedicated: {np.linalg.norm(y_pred_rob2-y_test)}")
