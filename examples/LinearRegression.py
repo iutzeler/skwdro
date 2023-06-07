@@ -25,14 +25,19 @@ y = X.dot(x0) +  np.random.randn(m)
 X_train, X_test, y_train, y_test = train_test_split(X,y)
 
 
-rob_lin = RobustLinearRegression(rho=0.1)
+rob_lin = RobustLinearRegression(rho=0.1,solver="entropic",fit_intercept=True)
 rob_lin.fit(X_train, y_train)
 y_pred_rob = rob_lin.predict(X_test)
 
 
-rob_lin2 = RobustLinearRegression(rho=0.1,solver="dedicated",fit_intercept=True)
+rob_lin2 = RobustLinearRegression(rho=0.1,solver="entropic_torch",fit_intercept=True)
 rob_lin2.fit(X_train, y_train)
 y_pred_rob2 = rob_lin2.predict(X_test)
+
+rob_lin3 = RobustLinearRegression(rho=0.1,solver="dedicated",fit_intercept=True)
+rob_lin3.fit(X_train, y_train)
+y_pred_rob3 = rob_lin3.predict(X_test)
+
 
 lin = LinearRegression()
 lin.fit(X_train, y_train)
@@ -42,5 +47,6 @@ y_pred = lin.predict(X_test)
 
 
 print(f"sklearn error: {np.linalg.norm(y_pred-y_test)} " )
-print(f"skwdro error: {np.linalg.norm(y_pred_rob-y_test)}")
-print(f"skwdro error w/dedicated: {np.linalg.norm(y_pred_rob2-y_test)}")
+print(f"skwdro error w/entropic: {np.linalg.norm(y_pred_rob-y_test)}")
+print(f"skwdro error w/torch: {np.linalg.norm(y_pred_rob2-y_test)}")
+print(f"skwdro error w/dedicated: {np.linalg.norm(y_pred_rob3-y_test)}")
