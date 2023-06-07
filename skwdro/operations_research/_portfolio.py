@@ -4,7 +4,7 @@ WDRO Estimators
 
 import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistribution
 from skwdro.base.losses import PortfolioLoss 
@@ -37,6 +37,9 @@ class Portfolio(BaseEstimator):
         Solver to be used: 'entropic' or 'dedicated'
     solver_reg: float, default=1.0
         regularization value for the entropic solver
+    random_state: int, default=None
+        Seed used by the random number generator when using non-deterministic methods
+        on the estimator
         
     Attributes
     ----------
@@ -63,7 +66,8 @@ class Portfolio(BaseEstimator):
                  fit_intercept=None,
                  cost=None,
                  solver="dedicated",
-                 solver_reg=1.0
+                 solver_reg=1.0,
+                 random_state=None
                  ):
         
         #Verifying conditions on rho, eta and alpha
@@ -81,6 +85,7 @@ class Portfolio(BaseEstimator):
         self.cost = cost
         self.solver = solver
         self.solver_reg = solver_reg
+        self.random_state = random_state
 
     def fit(self, X, y=None, C=None, d=None):
         """Fits the WDRO regressor.
@@ -94,6 +99,9 @@ class Portfolio(BaseEstimator):
 
         # Check that X has correct shape
         X = check_array(X)
+
+        # Check random state
+        self.random_state_ = check_random_state(self.random_state)
 
         # Store data
         self.X_ = X
