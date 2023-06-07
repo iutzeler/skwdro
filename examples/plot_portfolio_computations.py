@@ -76,7 +76,7 @@ def parallel_compute_histograms(N, nb_simulations, rho, compute):
 
     if compute is True:
 
-        with mp.Pool(processes=4) as pool:
+        with mp.Pool(processes=mp.cpu_count()) as pool:
 
             eval_data = pool.starmap(parallel_for_loop_histograms, zip((N for _ in range(nb_simulations)), \
                                         (rho for _ in range(nb_simulations))))
@@ -119,7 +119,7 @@ def parallel_compute_curves(nb_simulations, compute):
     '''
     Computes Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
     '''
-    samples_size = np.array([300])
+    samples_size = np.array([30, 300])
     #samples_size = np.array([30,300,3000])
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
@@ -135,7 +135,7 @@ def parallel_compute_curves(nb_simulations, compute):
                 mean_eval_data_test = np.array([]) #Mean value of the out-of-sample performance for each rho
                 reliability_test = np.array([]) #Probability array that the WDRO objective value is a supremum of the real value
                 for rho_value in rho_values:
-                    with mp.Pool(processes=4) as pool:
+                    with mp.Pool(processes=mp.cpu_count()) as pool:
                         eval_reliability_data_test = pool.starmap(parallel_for_loop_curves, zip((size for _ in range(nb_simulations)), \
                                                            (rho_value for _ in range(nb_simulations))))
                         eval_data_test = [x for x, _ in eval_reliability_data_test]
