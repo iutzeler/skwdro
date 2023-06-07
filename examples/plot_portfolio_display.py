@@ -5,29 +5,12 @@ import time
 import matplotlib.pyplot as plt
 
 def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True):
-
-    filename = compute_histograms(N, nb_simulations, rho, compute)
-
-    with open (filename, 'rb') as f:
-        eval_data_train = np.load(f)
-        eval_data_test = np.load(f)
-    f.close()
-
-    #Create the histograms
-    plt.xlabel("Mean-risk objective")
-    if rho == 0:
-        plt.title("SAA Solution with scarce data (Kuhn 2017)")
-    else:
-        plt.title("DRO Solution with scarce data (Kuhn 2017) with rho = %f" %rho)
-    sns.histplot(data=eval_data_train, bins=20, stat="probability", color="green")
-    sns.histplot(data=eval_data_test, bins=20, stat="probability", color="red")
-    plt.show()
-
-def parallel_plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True):
+    '''
+    Plots Kuhn's histograms that were presented at the DTU CEE Summer School 2018.
+    Setting rho=0 stands for the SAA method of resolution of the stochastic problem.
+    '''
 
     start = time.time()
-
-    print("Before parallel computations")
 
     filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, rho=rho, compute=compute)
 
@@ -35,8 +18,6 @@ def parallel_plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True)
         eval_data_train = np.load(f)
         eval_data_test = np.load(f)
     f.close()
-
-    print("After parallel computations")
     
     #Create the histograms
     plt.xlabel("Mean-risk objective")
@@ -51,14 +32,12 @@ def parallel_plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True)
     plt.show()  
 
 def plot_curves(nb_simulations=200, compute=True):
+    '''
+    Plots Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
+    '''
     start = time.time()
 
-    print("Before parallel computations")
-
-    #samples_size, filename = compute_curves(nb_simulations, compute)
     samples_size, filename = parallel_compute_curves(nb_simulations, compute)
-
-    print("After parallel computations")
 
     with open (filename, 'rb') as f:
         rho_values = np.load(f)
@@ -67,8 +46,6 @@ def plot_curves(nb_simulations=200, compute=True):
 
             mean_eval_data_test = np.load(f)
             reliability_test = np.load(f)
-
-            #Create the curves
 
             _, ax1 = plt.subplots(num=size)
 
@@ -93,11 +70,9 @@ def plot_curves(nb_simulations=200, compute=True):
 def main():
     N = 30 #Size of samples for Kuhn's histograms
 
-    #plot_histograms(rho=0, compute=True) 
-    #plot_histograms(rho=1/np.sqrt(N), compute=True)
-    parallel_plot_histograms(rho=0, compute=True)
-    parallel_plot_histograms(rho=1/np.sqrt(N), compute=True)
-    #plot_curves(compute=True)
+    plot_histograms(rho=0, compute=False)
+    plot_histograms(rho=1/np.sqrt(N), compute=False)
+    plot_curves(compute=False)
 
 if __name__ == "__main__":
     main()

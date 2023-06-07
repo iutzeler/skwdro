@@ -16,7 +16,7 @@ import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 
 class Portfolio(BaseEstimator):
-    """ A Wasserstein Distributionally Robust portfolio estimator.
+    """ A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
     
     The cost function is XXX
     Uncertainty is XXX
@@ -45,7 +45,13 @@ class Portfolio(BaseEstimator):
     d : (nb_constraints,)
         Vector of constraints observed by the user.
 
-    Examples(TODO)
+    Examples
+    >>> from skwdro.estimators import Portfolio
+    >>> import numpy as np
+    >>> X = np.random.normal(size=(10,2))
+    >>> estimator = Portfolio()
+    >>> estimator.fit(X)
+    Portfolio()
     --------
     
     """
@@ -60,8 +66,10 @@ class Portfolio(BaseEstimator):
                  solver_reg=1.0
                  ):
         
-        #Verifying conditions on eta and alpha
-        if (eta < 0):
+        #Verifying conditions on rho, eta and alpha
+        if rho < 0:
+            raise ValueError("The Wasserstein radius cannot be negative")
+        elif eta < 0:
             raise ValueError("Risk-aversion error eta cannot be negative")
         elif(alpha <= 0 or alpha > 1):
             raise ValueError("Confidence level alpha needs to be in the (0,1] interval")
@@ -73,8 +81,6 @@ class Portfolio(BaseEstimator):
         self.cost = cost
         self.solver = solver
         self.solver_reg = solver_reg
-
-
 
     def fit(self, X, y=None, C=None, d=None):
         """Fits the WDRO regressor.
@@ -139,9 +145,8 @@ class Portfolio(BaseEstimator):
 
         #Return the estimator
         return self
-    
-    def eval(self, X):
 
+    def eval(self, X):
         '''
         Evaluates the loss with the theta obtained from the fit function.
 
