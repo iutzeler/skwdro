@@ -26,9 +26,10 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, compute=True):
     else:
         plt.title("DRO Solution with scarce data (Kuhn 2017) with rho = %f" %rho)
     end = time.time()
-    sns.histplot(data=eval_data_train, bins=20, stat="probability", color="green")
-    sns.histplot(data=eval_data_test, bins=20, stat="probability", color="red")
+    sns.histplot(data=eval_data_train, bins=20, stat="probability", color="green", label="In-sample")
+    sns.histplot(data=eval_data_test, bins=20, stat="probability", color="red", label="Out-of-sample")
     print("Simulations with histograms took ", end-start, " seconds")
+    plt.legend()
     plt.show()  
 
 def plot_curves(nb_simulations=200, compute=True):
@@ -56,11 +57,12 @@ def plot_curves(nb_simulations=200, compute=True):
             ax1.set_title("Impact of the Wasserstein Radius (Kuhn 2017) for N = %i" %size)
             ax1.set_xticks(rho_values)
             ax1.set_xscale("log")
-            ax1.plot(rho_values, mean_eval_data_test, color='blue')
+            ax1.plot(rho_values, mean_eval_data_test, color='blue', label="Out-of-sample loss")
 
             ax2 = ax1.twinx()
             ax2.set_ylabel("Reliability")
-            ax2.plot(rho_values, reliability_test, linestyle='dashed', color='red')
+            ax2.plot(rho_values, reliability_test, linestyle='dashed', color='red', label="Reliability")
+            ax2.legend()
     
     f.close()
     end = time.time()
@@ -70,9 +72,9 @@ def plot_curves(nb_simulations=200, compute=True):
 def main():
     N = 30 #Size of samples for Kuhn's histograms
 
-    #plot_histograms(rho=0, compute=False)
-    #plot_histograms(rho=1/np.sqrt(N), compute=False)
-    plot_curves(compute=False)
+    plot_histograms(rho=0, compute=False)
+    plot_histograms(rho=1/np.sqrt(N), compute=True)
+    plot_curves(compute=True)
 
 if __name__ == "__main__":
     main()
