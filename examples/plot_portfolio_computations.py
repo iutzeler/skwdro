@@ -36,7 +36,7 @@ def generate_train_test_data(N,m):
     Generates data as described above and splits data into a training and a testing sample.
     '''
     X = generate_data(N,m)
-    X_train, X_test = train_test_split(X, train_size=0.5, test_size=0.5)
+    X_train, X_test = train_test_split(X, train_size=0.5, test_size=0.5, random_state=42)
     return X_train, X_test
 
 def stochastic_problem_approx(estimator,size=10000):
@@ -119,7 +119,8 @@ def parallel_compute_curves(nb_simulations, compute):
     '''
     Computes Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
     '''
-    samples_size = np.array([30,300,3000])
+    samples_size = np.array([300])
+    #samples_size = np.array([30,300,3000])
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
