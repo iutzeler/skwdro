@@ -143,7 +143,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
                     self.problem_,
                     fit_intercept=self.fit_intercept,
-                    opt_cond=OptCond(2)
+                    opt_cond=OptCond(2,max_iter=int(1e9),tol_theta=1e-6,tol_lambda=1e-6)
             )
 
             if np.isnan(self.coef_).any() or np.isnan(self.intercept_):
@@ -199,6 +199,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
         # Input validation
         X = check_array(X)
+
 
         return self.intercept_ + X@self.coef_
 

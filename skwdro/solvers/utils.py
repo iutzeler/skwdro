@@ -84,4 +84,4 @@ def sample_pi_0(epsilon, n_samples, xi):
 
 def detach_tensor(tensor):
     out = tensor.detach().cpu().numpy().flatten()
-    return float(out) if len(out) == 1 else out
+    return out # float(out) if len(out) == 1 else out
