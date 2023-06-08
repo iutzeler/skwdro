@@ -15,14 +15,9 @@ dict_wdro_estimators["Portfolio"] = Portfolio()
 
 dict_wdro_estimators["NewsVendor"] = NewsVendor(solver="dedicated")
 
-dict_wdro_estimators["Logistic"] = LogisticRegression(
-        rho=1e-4,
-        l2_reg=None,
-        fit_intercept=True,
-        solver="dedicated")
+dict_wdro_estimators["Logistic"] = LogisticRegression(solver="dedicated")
 
-dict_wdro_estimators["LinearReg"] = LinearRegression(
-        rho=1e-4)
+dict_wdro_estimators["LinearReg"] = LinearRegression(solver="dedicated")
 
 @pytest.mark.parametrize(
     "estimator_name",

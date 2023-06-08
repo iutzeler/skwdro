@@ -1,12 +1,17 @@
 from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
 from types import NoneType
 from typing import Optional
+
 import torch as pt
 import torch.nn as nn
+
+import numpy as np
 
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler, BaseSampler, NoLabelsSampler
 from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+
+from sqwash import SuperquantileReducer
 
 #Strategy when manipulating torch tensor during parallelization
 pt.multiprocessing.set_sharing_strategy('file_system')
