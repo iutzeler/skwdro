@@ -82,6 +82,15 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  solver_reg=0.01,
                  opt_cond=None
                  ):
+        
+        if rho is not float:
+            try:
+                rho = float(rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
+        
+        if rho < 0:
+            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
         self.rho    = rho
         self.l2_reg = l2_reg

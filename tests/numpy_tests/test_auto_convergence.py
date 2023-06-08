@@ -12,10 +12,13 @@ def launch_solver(fi: bool=False):
             rho=1e-2,
             l2_reg=None,
             fit_intercept=fi,
-            solver="entropic"
+            solver="entropic_torch"
             )
     X, y = generate_points()
     estimator.fit(X, y)
+    # print(X,y)
+    # print(estimator.coef_)
+    # print(estimator.predict(X))
     assert estimator.score(X, y) > .5
 
 

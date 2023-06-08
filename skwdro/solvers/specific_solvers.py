@@ -114,9 +114,6 @@ def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
 
 
 
-def WDROLogisticSolver(WDROProblem,fit_intercept=False):
-    return WDROLogisticSpecificSolver(k=WDROProblem.loss.k,u=WDROProblem.loss.u,rho=WDROProblem.rho,samples=WDROProblem.P.samples)
-
 def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=False):
     n,d = X.shape 
 
@@ -152,6 +149,37 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
         problem.solve(verbose=False)
 
         return beta.value[:d], 0.0 , beta.value[d]
+    
+
+
+def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.ndarray=np.array(None),fit_intercept: bool=False):
+    n,d = X.shape 
+
+    assert rho>0
+
+
+    coeff = cp.Variable(d)
+    intercept = cp.Variable(1)
+
+    loss = cp.norm(X @ coeff + intercept - y,2)/cp.sqrt(n) + rho*(cp.norm(coeff))
+
+
+
+    constraints = []
+
+
+    if not fit_intercept:
+        constraints.append(intercept == 0.0)
+  
+
+
+    problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
+
+    problem.solve(verbose=False)
+
+    return coeff.value, intercept.value , None
+
+
 
 def WDROPortfolioSolver(WDROProblem, cost, C, d, eta, alpha, fit_intercept=None):
     return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=cost, eta=eta, \
@@ -212,4 +240,5 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     result = problem.solve()
 
     return theta.value, fit_intercept, lam.value, result
+
 
