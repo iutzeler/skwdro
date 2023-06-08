@@ -72,7 +72,7 @@ def plot_curves(nb_simulations=200, compute=True):
 def main():
     N = 30 #Size of samples for Kuhn's histograms
 
-    plot_histograms(rho=0, compute=False)
+    plot_histograms(rho=0, compute=True)
     plot_histograms(rho=1/np.sqrt(N), compute=True)
     plot_curves(compute=True)
 

@@ -9,7 +9,7 @@ Rob_Portfolio = Portfolio()
 
 @pytest.mark.parametrize(
     "estimator",
-    [Weber_rob_est, Rob_portfolio]
+    [Weber_rob_est, Rob_Portfolio]
 )
 def test_all_estimators(estimator):
     return check_estimator(estimator)

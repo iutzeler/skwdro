@@ -6,8 +6,7 @@ from sklearn.model_selection import train_test_split
 import torch as pt
 
 import multiprocessing as mp
-
-from tqdm import tqdm
+from os import makedirs
 
 M = 10 #Number of assets
 ALPHA = 0.2 #Confidence level
@@ -69,6 +68,7 @@ def parallel_compute_histograms(N, nb_simulations, rho, compute):
     '''
     Computes Kuhn's histograms that were presented at the DTU CEE Summer School 2018.
     '''
+    makedirs("./examples/stored_data", exist_ok=True)
     if rho == 0:
         filename = './examples/stored_data/parallel_portfolio_histogram_SAA_data.npy'
     else:
