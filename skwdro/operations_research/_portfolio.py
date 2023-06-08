@@ -137,9 +137,6 @@ class Portfolio(BaseEstimator):
 
         if np.shape(self.C_)[1] != m: #Check that the matrix-vector product is well-defined
             raise ValueError("The number of columns of C don't match the number of lines of any xi")
-        
-        self.C_ = C
-        self.d_ = d
 
         if self.solver == "entropic":
             raise NotImplementedError("Entropic solver for Portfolio not implemented yet")
