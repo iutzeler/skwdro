@@ -19,10 +19,13 @@ dict_wdro_estimators["Logistic_ent"] = LogisticRegression(solver="entropic")
 dict_wdro_estimators["Logistic_torch"] = LogisticRegression(solver="entropic_torch")
 
 dict_wdro_estimators["LinearReg"] = LinearRegression(solver="dedicated")
+dict_wdro_estimators["LinearReg_ent"] = LogisticRegression(solver="entropic")
+dict_wdro_estimators["LinearReg_torch"] = LogisticRegression(solver="entropic_torch")
+
 
 @pytest.mark.parametrize(
     "estimator_name",
-    ["Weber", "NewsVendor", "Logistic", "Logistic_torch", "LinearReg"]
+    ["Weber", "NewsVendor", "Logistic", "Logistic_torch", "LinearReg", "LinearReg_ent", "LinearReg_torch"]
 )
 def test_all_estimators(estimator_name):
 
