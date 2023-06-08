@@ -69,7 +69,9 @@ def sample_pi_0(epsilon, n_samples, xi):
     """
     Sample from (truncated) normal distribution centered on the xi vectors
     """
-    m, d = xi.shape
+
+    m = xi.shape[0]
+    d = xi.shape[1]
 
     sigma = epsilon
     pi_0_noise = np.random.randn(n_samples, m, d)
@@ -82,4 +84,4 @@ def sample_pi_0(epsilon, n_samples, xi):
 
 def detach_tensor(tensor):
     out = tensor.detach().cpu().numpy().flatten()
-    return float(out) if len(out) == 1 else out
+    return out # float(out) if len(out) == 1 else out

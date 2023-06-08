@@ -2,22 +2,23 @@
 Linear Regression
 """
 import numpy as np
+import torch as pt
+
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.exceptions import ConvergenceWarning
+from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-
-
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses import QuadraticLoss
-# from skwdro.base.losses_torch import *
-from skwdro.base.costs import Cost, NormCost
+from skwdro.base.losses_torch import QuadraticLoss as QuadraticLossTorch
+from skwdro.base.costs import NormCost
+from skwdro.base.costs_torch import NormLabelCost
 from skwdro.solvers.optim_cond import OptCond
 
-#import skwdro.solvers.specific_solvers as spS
+import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
-#import skwdro.solvers.entropic_dual_torch as entTorch
-
+import skwdro.solvers.entropic_dual_torch as entTorch
+from skwdro.solvers.oracle_torch import DualLoss
 
 class LinearRegression(BaseEstimator, RegressorMixin):
     """ A Wasserstein Distributionally Robust linear regression.
@@ -69,6 +70,15 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  solver_reg=1.0,
                  opt_cond=None
                  ):
+        
+        if rho is not float:
+            try:
+                rho = float(rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
+        
+        if rho < 0:
+            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
         self.rho    = rho
         self.l2_reg = l2_reg
@@ -101,14 +111,19 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         X = np.array(X)
         y = np.array(y)
 
+        if len(y.shape) != 1:
+            y.flatten()
+            raise DataConversionWarning(f"y expects a shape (n_samples,) but receiced shape {y.shape}")
+
         # Store data
         self.X_ = X
         self.y_ = y
 
         m, d = np.shape(X)
+        self.n_features_in_ = d
 
         # Setup problem parameters ################
-        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y)
+        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:,None])
 
         self.problem_ = WDROProblem(
                 cost=NormCost(p=2),
@@ -128,14 +143,33 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
                     self.problem_,
                     fit_intercept=self.fit_intercept,
-                    opt_cond=OptCond(2)
+                    opt_cond=OptCond(2,max_iter=int(1e9),tol_theta=1e-6,tol_lambda=1e-6)
             )
 
             if np.isnan(self.coef_).any() or np.isnan(self.intercept_):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
+        elif self.solver == "entropic_torch":
+            self.problem_.loss = DualLoss(
+                    QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    NormLabelCost(2., 1., 1e8),
+                    n_samples=10,
+                    epsilon_0=pt.tensor(.1),
+                    rho_0=pt.tensor(.1)
+                )
 
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+                    self.problem_,
+                    epsilon=.1,
+                    Nsamples=10,
+                    fit_intercept=self.fit_intercept,
+                )
         elif self.solver=="dedicated":
-            raise NotImplementedError
+            self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(
+                    rho=self.problem_.rho,
+                    X=X,
+                    y=y,
+                    fit_intercept=self.fit_intercept
+            )
         else:
             raise NotImplementedError
 
@@ -165,6 +199,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
         # Input validation
         X = check_array(X)
+
 
         return self.intercept_ + X@self.coef_
 

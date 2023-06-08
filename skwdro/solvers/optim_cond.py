@@ -1,7 +1,7 @@
 import numpy as np
 
 class OptCond:
-    def __init__(self, order, tol_theta: float=1e-4, tol_lambda: float=1e-6, max_iter: int=int(1e4), mode: str="both"):
+    def __init__(self, order, tol_theta: float=1e-4, tol_lambda: float=1e-6, max_iter: int=int(1e5), mode: str="both"):
         assert order > 0
         self.p = order
         self.tol_t = tol_theta

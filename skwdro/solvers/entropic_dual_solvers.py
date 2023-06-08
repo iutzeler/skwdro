@@ -45,7 +45,7 @@ def wgx_v2_w_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss,
     Launch the optimization, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
     """
     xi, theta, zeta = prepare_data(data_structure.samplesX, m, d, n_samples, rho_eps[1], fit_intercept)
-    xi_labels = data_structure.samplesY[:, None]
+    xi_labels = data_structure.samplesY
     zeta_labels = sample_pi_0(rho_eps[1], n_samples, xi_labels)
 
     c = lambda samples_x, z_x, samples_y, z_y: cost(samples_x, z_x, samples_y, z_y)

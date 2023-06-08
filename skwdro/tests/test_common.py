@@ -3,7 +3,8 @@ import pytest
 from sklearn.base import clone
 from sklearn.utils.estimator_checks import check_estimator
 
-from skwdro.operations_research import Weber, Portfolio
+from skwdro.operations_research import Weber, NewsVendor, Portfolio
+from skwdro.linear_models import LogisticRegression, LinearRegression
 
 
 dict_wdro_estimators = {}
