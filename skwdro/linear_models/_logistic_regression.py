@@ -22,7 +22,7 @@ from skwdro.solvers.optim_cond import OptCond
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
 
 class LogisticRegression(BaseEstimator, ClassifierMixin):

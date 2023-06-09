@@ -1,9 +1,10 @@
+from typing import Optional
 import torch
 import torch as pt
 import torch.optim as optim
 
 import math
-from skwdro.solvers.oracle_torch import entropic_loss_oracle
+from skwdro.solvers.oracle_torch import _DualLoss
 
 from skwdro.solvers.utils import *
 from skwdro.base.problems import WDROProblem
@@ -18,17 +19,17 @@ from skwdro.base.problems import WDROProblem
 
 
 def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 10,fit_intercept=False):
-    return approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, n_samples=Nsamples, fit_intercept=fit_intercept)
+    return solve_dual(WDROProblem=WDROProblem, epsilon_0=epsilon, fit_intercept=fit_intercept)
     # return Approx_BFGS(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
 
-def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_samples: int=10, fit_intercept: bool=False):
-    """ Approximation and then BFGS"""
+def solve_dual(WDROProblem: WDROProblem, epsilon_0: pt.Tensor=pt.tensor(.1), fit_intercept: bool=False):
 
     rho = WDROProblem.rho
     if isinstance(rho, float): rho = pt.tensor(rho)
-    if isinstance(epsilon, float): epsilon = pt.tensor(epsilon)
+    if isinstance(epsilon_0, float): epsilon_0 = pt.tensor(epsilon_0)
 
 
+    #losses = []
     NoLabels = WDROProblem.dLabel == 0
 
     if NoLabels:
@@ -37,36 +38,80 @@ def approx_BFGS(WDROProblem:WDROProblem, epsilon: pt.Tensor=pt.tensor(.1), n_sam
     else:
         xi = torch.Tensor(WDROProblem.P.samplesX)
         xi_labels  = torch.Tensor(WDROProblem.P.samplesY)
-  
+
     loss = WDROProblem.loss
     assert loss is not None
     if loss._sampler is None:
-        loss.sampler = loss.default_sampler(xi, xi_labels, epsilon)
-    # zeta, zeta_labels = WDROProblem.loss.sample_pi0(n_samples)
-    # zeta = zeta.swapdims(0, 2).swapdims(0, 1)
-    # zeta.clip(*WDROProblem.Xi_bounds)
+        loss.sampler = loss.default_sampler(xi, xi_labels, loss.epsilon)
 
-    lbfgs = optim.LBFGS(params=loss.parameters(),
-                        history_size=10,
-                        max_iter=50,
-                        tolerance_grad=1e-4,
-                        line_search_fn="strong_wolfe")
+    optimizer = loss.optimizer
 
-    def closure():
-        lbfgs.zero_grad()
-        objective = loss(xi, xi_labels) #NOTE: PostSampled case assumed here
-        objective.backward()
-        return objective
+    if loss.presample:
+        np.save(
+                "test_pre.npy",
+                optim_presample(30, optimizer, xi, xi_labels, loss)
+            )
+    else:
+        np.save(
+                "test_post.npy",
+                optim_postsample(500, optimizer, xi, xi_labels, loss)
+            )
+    # def closure():
+    #     optimizer.zero_grad()
+    #     objective = loss(xi, xi_labels) #NOTE: PostSampled case assumed here
+    #     objective.backward()
+    #     return objective
 
-    T = 30
-    for _ in range(T):
-        lbfgs.step(closure)
-  
+    # T = 100
+    # for _ in range(T):
+    #     optimizer.step(closure)
+    #     #losses.append(loss(xi, xi_labels).item())
+
+    #np.save("test.npy", losses)
 
     theta = detach_tensor(loss.theta)
     intercept = None if not fit_intercept else detach_tensor(loss.intercept)
     lambd = detach_tensor(loss.lam)
     return theta, intercept, lambd
+
+def optim_presample(
+        n_iter: int,
+        optimizer: pt.optim.Optimizer,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        loss: _DualLoss):
+
+    zeta, zeta_labels = loss.generate_zetas()
+
+    def closure():
+        optimizer.zero_grad()
+        objective = loss(xi, xi_labels, zeta, zeta_labels)
+        objective.backward()
+        return objective
+
+    losses = []
+    for _ in range(n_iter):
+        optimizer.step(closure)
+        losses.append(loss(xi, xi_labels, zeta, zeta_labels).item())
+
+    return losses
+
+def optim_postsample(
+        n_iter: int,
+        optimizer: pt.optim.Optimizer,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        loss: _DualLoss):
+    losses = []
+
+    for _ in range(n_iter):
+        optimizer.zero_grad()
+        objective = loss(xi, xi_labels)
+        objective.backward()
+        optimizer.step()
+        losses.append(objective.item())
+
+    return losses
 
 
 
