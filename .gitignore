@@ -67,3 +67,6 @@ doc/generated/
 target/
 .vscode/settings.json
 .vscode/launch.json
+
+# Examples data
+examples/stored_data/*
