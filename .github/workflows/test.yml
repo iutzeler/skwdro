@@ -11,6 +11,7 @@ on:
     - dev
 
 concurrency:
+  group: ${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
