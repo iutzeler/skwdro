@@ -14,11 +14,12 @@ from skwdro.base.problems import WDROProblem, EmpiricalDistribution
 from skwdro.base.losses import NewsVendorLoss
 from skwdro.base.losses_torch import NewsVendorLoss_torch
 from skwdro.base.costs import NormCost
+from skwdro.base.costs_torch import NormCost as NormCostTorch
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
 
 
@@ -107,8 +108,9 @@ class NewsVendor(BaseEstimator):
 
 
         if self.solver == "entropic_torch":
+            self.cost = NormCostTorch(1, 1)
             # self.problem_.loss = NewsVendorLoss_torch(k=k,u=u)
-            self.problem_.loss = DualLoss(
+            self.problem_.loss = DualPreSampledLoss(
                     NewsVendorLoss_torch(k=self.k,u=self.u),
                     self.cost,
                     #TODO: no hard-coding

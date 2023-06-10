@@ -1,5 +1,5 @@
 from typing import Any, Tuple, Optional
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 
 import torch as pt
 import torch.nn.functional as F
@@ -16,6 +16,7 @@ class _DualLoss(nn.Module, ABC):
     def __init__(self,
                  loss: Loss,
                  cost: Cost,
+                 n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
                  gradient_hypertuning: bool=False
@@ -30,6 +31,7 @@ class _DualLoss(nn.Module, ABC):
         self._lam = nn.Parameter(1e-2 / rho_0)
 
         self._sampler = loss._sampler
+        self.n_samples = n_samples
 
     @abstractmethod
     def forward(self, *args):
@@ -53,11 +55,19 @@ class _DualLoss(nn.Module, ABC):
         second_term -= pt.log(pt.tensor(zeta.size(0)))
         return first_term + self.epsilon*second_term.mean()
 
-    def generate_zetas(self, n_samples):
-        return self.loss.sampler.sample(n_samples)
+    def generate_zetas(self, n_samples: Optional[int]=None):
+        if n_samples is None or n_samples <= 0:
+            # Default:
+            return self.loss.sampler.sample(self.n_samples)
+        else:
+            return self.loss.sampler.sample(n_samples)
 
     def default_sampler(self, xi, xi_labels, epsilon):
         return self.loss.default_sampler(xi, xi_labels, epsilon)
+
+    @abstractproperty
+    def presample(self):
+        raise NotImplementedError()
 
     @property
     def sampler(self):
@@ -81,7 +91,17 @@ class _DualLoss(nn.Module, ABC):
 
     @property
     def lam(self):
-        return F.relu(self._lam)
+        return F.softplus(self._lam)
+
+    @property
+    def optimizer(self) -> pt.optim.Optimizer:
+        if self._opti is None:
+            raise AttributeError("Optimizer for:\n"+self.__str__()+"\nis ill defined (None), please set it beforehand")
+        return self._opti
+
+    @optimizer.setter
+    def optimizer(self, o: pt.optim.Optimizer):
+        self._opti = o
 
 class DualPostSampledLoss(_DualLoss):
     def __init__(self,
@@ -92,8 +112,15 @@ class DualPostSampledLoss(_DualLoss):
                  rho_0: pt.Tensor,
                  gradient_hypertuning: bool=False
                  ) -> None:
-        super(DualPostSampledLoss, self).__init__(loss, cost, epsilon_0, rho_0, gradient_hypertuning)
-        self.n_samples = n_samples
+        super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, gradient_hypertuning)
+
+        self._opti = pt.optim.AdamW(
+                self.parameters(),
+                lr=1e-2,
+                betas=(.9, .99),
+                weight_decay=0.,
+                amsgrad=True,
+                foreach=True)
 
     def reset_sampler_mean(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None):
         self.loss.sampler.reset_mean(xi, xi_labels)
@@ -103,15 +130,32 @@ class DualPostSampledLoss(_DualLoss):
         zeta, zeta_labels = self.generate_zetas(self.n_samples)
         return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
 
+    def __str__(self):
+        return "Dual loss (sample IN for loop)\n" + 10*"-" + "\n".join(map(str, self.parameters()))
+
+    @property
+    def presample(self):
+        return False
+
 class DualPreSampledLoss(_DualLoss):
     def __init__(self,
                  loss: Loss,
                  cost: Cost,
+                 n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
                  gradient_hypertuning: bool=False
                  ) -> None:
-        super(DualPreSampledLoss, self).__init__(loss, cost, epsilon_0, rho_0, gradient_hypertuning)
+        super(DualPreSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, gradient_hypertuning)
+
+        self._opti = pt.optim.LBFGS(
+                self.parameters(),
+                lr=1.,
+                max_iter=1,
+                max_eval=10,
+                tolerance_grad=1e-4,
+                tolerance_change=1e-6,
+                history_size=30)
 
     def forward(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None, zeta: Optional[pt.Tensor]=None, zeta_labels: Optional[pt.Tensor]=None):
         if zeta is None:
@@ -119,6 +163,12 @@ class DualPreSampledLoss(_DualLoss):
         else:
             return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
 
+    def __str__(self):
+        return "Dual loss (sample BEFORE for loop)\n" + 10*"-" + "\n".join(map(str, self.parameters()))
+
+    @property
+    def presample(self):
+        return True
 
 DualLoss = DualPostSampledLoss
 

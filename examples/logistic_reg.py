@@ -26,7 +26,7 @@ X, y, centers = make_blobs(n, d, centers=2, shuffle=True, random_state=rng, retu
 y = 2 * y - 1 # type: ignore
 
 # Center data to avoid learning intercept
-X -= centers.mean(axis=0, keepdims=True) # type : ignore
+#X -= centers.mean(axis=0, keepdims=True) # type : ignore
 # ###########################################################################
 cost=NormLabelCost(2., 1., 100., "Kappa-cost (w/ kappa=100)")
 #cost=NormCost(2., 1., "=")
@@ -37,7 +37,7 @@ print("Specific solver w/ LP fast solve #####")
 t = time()
 print(".", end='')
 estimator = LogisticRegression(
-        rho=1e-2,
+        rho=1e-3,
         l2_reg=None,
         fit_intercept=True,
         cost=cost,
@@ -58,7 +58,7 @@ print("Sinkhorn solver #####")
 t = time()
 print(".", end='')
 estimator_ent = LogisticRegression(
-        rho=1e-2,
+        rho=1e-3,
         l2_reg=None,
         fit_intercept=True,
         cost=cost,
