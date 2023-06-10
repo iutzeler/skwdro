@@ -60,23 +60,6 @@ class NormCost(Cost):
 
     def _sampler_labels(self, xi_labels, epsilon):
         return None
-    def _sampler_data(self, xi, epsilon):
-        if self.power == 1:
-            if self.p == 1:
-                return dst.Laplace(
-                            loc=xi,
-                            scale=epsilon
-                        )
-            elif self.p == 2:
-                return dst.MultivariateNormal(
-                        loc=xi,
-                        scale_tril=epsilon*pt.eye(xi.size(-1))
-                    )
-            else: raise NotImplementedError()
-        else: raise NotImplementedError()
-
-    def _sampler_labels(self, xi_labels, epsilon):
-        return None
 
 class NormLabelCost(NormCost):
     """ p-norm of the ground metric to change data + label
