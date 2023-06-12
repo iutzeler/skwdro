@@ -16,8 +16,16 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    :caption: Documentation
 
    user_guide
-   api
+   models
    solvers
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: API
+
+   api
+   losses
 
 .. toctree::
    :maxdepth: 2

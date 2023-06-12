@@ -8,7 +8,7 @@ The following solvers are implemented in skwdro
 
 
 Entropic Solvers
-===========
+================
 
 .. currentmodule:: skwdro.solvers.entropic_dual_solvers
 
@@ -20,7 +20,7 @@ Entropic Solvers
 
 
 Entropic Solvers using torch
-===========
+============================
 
 .. currentmodule:: skwdro.solvers.entropic_dual_torch
 
@@ -32,7 +32,7 @@ Entropic Solvers using torch
 
 
 Specific Solvers
-===========
+================
 
 
 .. currentmodule:: skwdro.solvers.specific_solvers
