@@ -109,7 +109,6 @@ def optim_postsample(
         objective = loss(xi, xi_labels)
         objective.backward()
         optimizer.step()
-        print(loss.loss.linear.bias, loss.loss.linear.bias.grad)
         losses.append(objective.item())
 
     return losses
