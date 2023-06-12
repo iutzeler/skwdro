@@ -74,6 +74,27 @@ print("Lambda: ", estimator_ent.dual_var_)
 print("Theta: ", estimator_ent.coef_, estimator_ent.intercept_)
 print("Elapsed time: ", time()-t)
 
+# ENTROPIC SOLVER
+print("Sinkhorn pre-sampled solver #####")
+t = time()
+print(".", end='')
+estimator_pre = LogisticRegression(
+        rho=1e-2,
+        l2_reg=None,
+        fit_intercept=True,
+        cost=cost,
+        solver="entropic_torch_pre"
+        )
+
+
+print(".", end='')
+estimator_pre.fit(X, y)
+print(".")
+
+print("Lambda: ", estimator_pre.dual_var_)
+print("Theta: ", estimator_pre.coef_, estimator_pre.intercept_)
+print("Elapsed time: ", time()-t)
+
 def plot_line(est, x):
     c0, c1 = est.coef_
     return -(x*c0 + est.intercept_) / c1
@@ -82,7 +103,8 @@ plt.scatter(X[y==-1, 0], X[y==-1, 1], color="r")
 plt.scatter(X[y==1, 0], X[y==1, 1], color="b")
 line_plot = [X[:, 0].min(), X[:, 0].max()]
 plt.plot(line_plot, [plot_line(estimator, line_plot[0]), plot_line(estimator, line_plot[1])], 'k--', label=f"cvx: {estimator.score(X, y)}")
-plt.plot(line_plot, [plot_line(estimator_ent, line_plot[0]), plot_line(estimator_ent, line_plot[1])], 'k:', label=f"Manual enthropy solve: {estimator_ent.score(X, y)}")
+plt.plot(line_plot, [plot_line(estimator_ent, line_plot[0]), plot_line(estimator_ent, line_plot[1])], 'k:', label=f"Adam: {estimator_ent.score(X, y)}")
+plt.plot(line_plot, [plot_line(estimator_pre, line_plot[0]), plot_line(estimator_pre, line_plot[1])], 'k-', label=f"BFGS: {estimator_pre.score(X, y)}")
 
 plt.legend()
 plt.show()
