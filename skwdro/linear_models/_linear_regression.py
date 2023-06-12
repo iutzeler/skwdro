@@ -78,15 +78,16 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  cost=None,
                  solver="entropic",
                  solver_reg=1.0,
+                 n_zeta_samples: int=10,
                  opt_cond=None
                  ):
-        
+
         if rho is not float:
             try:
                 rho = float(rho)
             except:
                 raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-        
+
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -97,6 +98,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.opt_cond = opt_cond
+        self.n_samples = n_zeta_samples
 
 
 
@@ -136,17 +138,17 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:,None])
 
         self.problem_ = WDROProblem(
+                loss=QuadraticLoss(l2_reg=self.l2_reg),
                 cost=NormCost(p=2),
                 Xi_bounds=[-1e8,1e8],
                 Theta_bounds=[-1e8,1e8],
                 rho=self.rho,
-                loss=QuadraticLoss(l2_reg=self.l2_reg)
+                P=emp,
+                dLabel=1,
+                d=d,
+                n=d
             )
 
-        self.problem_.n = d
-        self.problem_.d = d
-        self.problem_.dLabel = 1
-        self.problem_.P = emp
         # #########################################
 
         if self.solver=="entropic":
@@ -156,21 +158,20 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                     opt_cond=OptCond(2,max_iter=int(1e9),tol_theta=1e-6,tol_lambda=1e-6)
             )
 
-            if np.isnan(self.coef_).any() or np.isnan(self.intercept_):
+            if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
                     QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=10,
-                    epsilon_0=pt.tensor(.1),
-                    rho_0=pt.tensor(.1)
+                    epsilon_0=pt.tensor(self.solver_reg),
+                    rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    epsilon=.1,
-                    Nsamples=10,
+                    sigma=self.solver_reg,
                     fit_intercept=self.fit_intercept,
                 )
         elif self.solver == "entropic_torch_pre":
@@ -178,14 +179,13 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                     QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=10,
-                    epsilon_0=pt.tensor(self.rho),
+                    epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    epsilon=.1,
-                    Nsamples=10,
+                    sigma=self.solver_reg,
                     fit_intercept=self.fit_intercept,
                 )
         elif self.solver=="dedicated":
@@ -202,9 +202,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
         # Return the classifier
         return self
-
-  
-
 
     def predict(self, X):
         """ Robust prediction.
