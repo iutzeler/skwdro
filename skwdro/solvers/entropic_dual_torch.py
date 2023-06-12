@@ -54,7 +54,7 @@ def solve_dual(WDROProblem: WDROProblem, epsilon_0: pt.Tensor=pt.tensor(.1), fit
     else:
         np.save(
                 "test_post.npy",
-                optim_postsample(500, optimizer, xi, xi_labels, loss)
+                optim_postsample(1000, optimizer, xi, xi_labels, loss)
             )
     # def closure():
     #     optimizer.zero_grad()
@@ -109,6 +109,7 @@ def optim_postsample(
         objective = loss(xi, xi_labels)
         objective.backward()
         optimizer.step()
+        print(loss.loss.linear.bias, loss.loss.linear.bias.grad)
         losses.append(objective.item())
 
     return losses

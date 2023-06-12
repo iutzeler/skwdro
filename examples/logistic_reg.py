@@ -37,7 +37,7 @@ print("Specific solver w/ LP fast solve #####")
 t = time()
 print(".", end='')
 estimator = LogisticRegression(
-        rho=1e-3,
+        rho=1e-2,
         l2_reg=None,
         fit_intercept=True,
         cost=cost,
@@ -58,7 +58,7 @@ print("Sinkhorn solver #####")
 t = time()
 print(".", end='')
 estimator_ent = LogisticRegression(
-        rho=1e-3,
+        rho=1e-2,
         l2_reg=None,
         fit_intercept=True,
         cost=cost,
