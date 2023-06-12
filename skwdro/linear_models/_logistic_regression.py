@@ -75,20 +75,21 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
     def __init__(self,
                  rho=1e-2,
-                 l2_reg=None,
-                 fit_intercept=True,
-                 cost = "quad",
+                 l2_reg: int=0,
+                 fit_intercept: bool=True,
+                 cost="quad",
                  solver="entropic_torch",
                  solver_reg=0.01,
+                 n_zeta_samples: int=10,
                  opt_cond=None
                  ):
-        
+
         if rho is not float:
             try:
                 rho = float(rho)
             except:
                 raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-        
+
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -99,6 +100,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.opt_cond = opt_cond
+        self.n_samples = n_zeta_samples
 
 
 
@@ -132,21 +134,18 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         self.le_ = LabelEncoder()
         y = self.le_.fit_transform(y)
-        y = (y-0.5)*2
-
-
+        if y is None: raise ValueError("Problem with labels, none out of label encoder")
+        else: y = np.array(y)
+        y[y==0] = -1
 
         if len(self.classes_)>2:
             raise NotImplementedError(f"Multiclass classificaion is not implemented. ({len(self.classes_)} classes were found : {self.classes_})")
-    
+
         if len(self.classes_)<2:
             raise ValueError(f"Found {len(self.classes_)} classes, while 2 are expected.")
 
         if not np.issubdtype(X.dtype, np.number):
             raise ValueError(f"Input X has dtype  {X.dtype}")
-        
-        # if not np.issubdtype(y.dtype, np.number):
-        #     raise ValueError(f"Input y has dtype  {y.dtype}")
 
         # Store data
         self.X_ = X
@@ -163,13 +162,12 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 Xi_bounds=[-1e8,1e8],
                 Theta_bounds=[-1e8,1e8],
                 rho=self.rho,
-                loss=LogisticLoss(l2_reg=self.l2_reg)
+                loss=LogisticLoss(l2_reg=self.l2_reg),
+                n=d,
+                d=d,
+                dLabel=1,
+                P=emp
             )
-
-        self.problem_.n = d
-        self.problem_.d = d
-        self.problem_.dLabel = 1
-        self.problem_.P = emp
 
         self.opt_cond_ = OptCond(2)
         # #########################################
@@ -193,14 +191,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=10,
-                    epsilon_0=pt.tensor(self.rho),
+                    epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    epsilon=.1,
-                    Nsamples=10,
+                    sigma=self.solver_reg,
                     fit_intercept=self.fit_intercept,
                 )
         elif self.solver == "entropic_torch_pre":
@@ -211,10 +208,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     epsilon_0=pt.tensor(self.rho),
                     rho_0=pt.tensor(self.rho)
                 )
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    epsilon=.1,
-                    Nsamples=10,
+                    sigma=self.solver_reg,
                     fit_intercept=self.fit_intercept,
                 )
         else:

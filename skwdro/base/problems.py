@@ -1,11 +1,35 @@
+from typing import List, Optional, Union
 import numpy as np
 
 from skwdro.base.costs import Cost
+from skwdro.base.losses import Loss as LossNumpy
+from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
+
+Bounds = Optional[List[float]]
+LossType = Union[LossNumpy, LossTorch]
+
+class Distribution:
+    empirical: bool
+    def __init__(self, m: int, name: str) -> None:
+        self.m = m
+        self.name = name
 
 class WDROProblem:
     """ Base class for WDRO problem """
 
-    def __init__(self, cost: Cost, n=0, Theta_bounds=None , d=0, Xi_bounds=None , dLabel=0, XiLabel_bounds=None , costLabel=None, loss=None, rho = 0., P = None,  name="WDRO Problem"):
+    def __init__(
+            self,
+            cost: Cost,
+            loss: LossType,
+            P: Distribution,
+            n: int=0,
+            Theta_bounds: Bounds=None,
+            d: int=0,
+            Xi_bounds: Bounds=None,
+            dLabel: int=0,
+            XiLabel_bounds: Bounds=None,
+            rho: float=0.,
+            name="WDRO Problem"):
 
         ## Optimization variable
         self.n = n # size of Theta
@@ -18,7 +42,6 @@ class WDROProblem:
         ## Uncertain labels
         self.dLabel = dLabel # size of Xi
         self.XiLabel_bounds = XiLabel_bounds
-        self.costLabel = costLabel
 
         ## Problem loss
         self.loss = loss
@@ -37,24 +60,23 @@ class WDROProblem:
 
 
 
-
-class EmpiricalDistribution:
+class EmpiricalDistribution(Distribution):
     """ Empirical Probability distribution """
 
     empirical = True
 
-    def __init__(self, m , samples , name="Empirical distribution"):
-        self.m = m
+    def __init__(self, m: int, samples: np.ndarray, name="Empirical distribution"):
+        super(EmpiricalDistribution, self).__init__(m, name)
         self.samples = samples
 
 
-class EmpiricalDistributionWithLabels:
+class EmpiricalDistributionWithLabels(Distribution):
     """ Empirical Probability distribution with Labels """
 
     empirical = True
 
-    def __init__(self, m , samplesX, samplesY , name="Empirical distribution"):
-        self.m = m
+    def __init__(self, m, samplesX: np.ndarray, samplesY: np.ndarray, name="Empirical distribution"):
+        super(EmpiricalDistributionWithLabels, self).__init__(m, name)
         self.samplesX = samplesX
         self.samplesY = samplesY
 

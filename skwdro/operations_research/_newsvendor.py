@@ -13,7 +13,7 @@ from sklearn.metrics import euclidean_distances
 from skwdro.base.problems import WDROProblem, EmpiricalDistribution
 from skwdro.base.losses import NewsVendorLoss
 from skwdro.base.losses_torch import NewsVendorLoss_torch
-from skwdro.base.costs import NormCost
+from skwdro.base.costs import NormCost, Cost
 from skwdro.base.costs_torch import NormCost as NormCostTorch
 
 import skwdro.solvers.specific_solvers as spS
@@ -57,7 +57,15 @@ class NewsVendor(BaseEstimator):
     NewsVendor()
     """
 
-    def __init__(self, rho = 1e-2,  k=5, u=7, cost = None, solver="entropic"):
+    def __init__(
+            self,
+            rho: float=1e-2,
+            k: int=5,
+            u: int=7,
+            cost: Cost=NormCost(),
+            solver_reg: float=.01,
+            n_zeta_samples: int=10,
+            solver: str="entropic"):
 
 
         if rho is not float:
@@ -65,7 +73,7 @@ class NewsVendor(BaseEstimator):
                 rho = float(rho)
             except:
                 raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-        
+
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -74,6 +82,8 @@ class NewsVendor(BaseEstimator):
         self.u      = u
         self.cost   = cost
         self.solver = solver
+        self.solver_reg = solver_reg
+        self.n_samples = n_zeta_samples
 
 
 
@@ -101,49 +111,48 @@ class NewsVendor(BaseEstimator):
         if d>1:
             raise ValueError(f"The input X should be one-dimensional, got {d}")
 
-        self.cost = NormCost()
-
-        self.problem_ = WDROProblem(d=1,Xi_bounds=[0,20],n=1,Theta_bounds=[0,np.inf],rho=self.rho,loss=NewsVendorLoss(k=self.k,u=self.u), cost = self.cost)
-
-
+        self.problem_ = WDROProblem(
+                loss=NewsVendorLoss(k=self.k, u=self.u),
+                cost=self.cost,
+                d=1,
+                Xi_bounds=[0, 20],
+                n=1,
+                Theta_bounds=[0, np.inf],
+                rho=self.rho,
+                P=EmpiricalDistribution(m=m,samples=X))
 
         if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
             self.cost = NormCostTorch(1, 1)
-            # self.problem_.loss = NewsVendorLoss_torch(k=k,u=u)
             self.problem_.loss = DualPreSampledLoss(
                     NewsVendorLoss_torch(k=self.k,u=self.u),
                     self.cost,
-                    #TODO: no hard-coding
-                    20,
-                    pt.tensor(.1),
-                    pt.tensor(.1),
-                    False)
+                    self.n_samples,
+                    epsilon_0=pt.tensor(self.solver_reg),
+                    rho_0=pt.tensor(self.rho),
+                    )
         elif self.solver == "entropic_torch_post":
             self.cost = NormCostTorch(1, 1)
             self.problem_.loss = DualLoss(
                     NewsVendorLoss_torch(k=self.k,u=self.u),
                     self.cost,
-                    #TODO: no hard-coding
-                    20,
-                    pt.tensor(.1),
-                    pt.tensor(.1),
-                    False)
+                    self.n_samples,
+                    epsilon_0=pt.tensor(self.solver_reg),
+                    rho_0=pt.tensor(self.rho),
+                    )
 
-        
-        emp = EmpiricalDistribution(m=m,samples=X)
-
-        self.problem_.P = emp
 
         if self.solver=="dedicated":
             self.coef_ = spS.WDRONewsvendorSolver(self.problem_)
             if self.coef_ == 0.0:
                 self.dual_var_ = 0.0
             else:
-                self.dual_var_ = self.u 
+                self.dual_var_ = self.u
         elif self.solver=="entropic":
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(self.problem_,epsilon=0.1)
-        elif self.solver=="entropic_torch" or self.solver == "entropic_torch_post" or self.solver == "entropic_torch_pre":
-            self.coef_ , self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(self.problem_,epsilon=0.1)
+        elif self.solver in {"entropic_torch", "entropic_torch_post", "entropic_torch_pre"}:
+            self.coef_ , self.intercept_, self.dual_var_ = entTorch.solve_dual(
+                    self.problem_,
+                    sigma=self.solver_reg)
         else:
             raise(NotImplementedError)
 
