@@ -193,8 +193,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=10,
-                    epsilon_0=pt.tensor(.1),
-                    rho_0=pt.tensor(.1)
+                    epsilon_0=pt.tensor(self.rho),
+                    rho_0=pt.tensor(self.rho)
                 )
 
             self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(

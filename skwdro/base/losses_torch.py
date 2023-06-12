@@ -133,17 +133,16 @@ class LogisticLoss(Loss):
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         self.classif = nn.Tanh()
-        self.L = nn.BCEWithLogitsLoss(reduction='none')
+        # self.L = nn.BCEWithLogitsLoss(reduction='none')
+        self.L = nn.SoftMarginLoss(reduction='none')
 
-    def logprobs(self, X):
+    def logprobs(self, X: pt.Tensor) -> pt.Tensor:
         coefs = self.linear(X)
-        return self.classif(coefs), coefs
+        return self.classif(coefs)
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
-        _, coefs = self.logprobs(xi)
-        return self.L(
-                coefs,
-                (xi_labels + 1.) * .5)
+        coefs = self.logprobs(xi)
+        return self.L(coefs, xi_labels)
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
