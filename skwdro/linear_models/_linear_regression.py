@@ -18,7 +18,7 @@ from skwdro.solvers.optim_cond import OptCond
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
 class LinearRegression(BaseEstimator, RegressorMixin):
     r""" A Wasserstein Distributionally Robust linear regression.
@@ -158,13 +158,28 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             if np.isnan(self.coef_).any() or np.isnan(self.intercept_):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
-        elif self.solver == "entropic_torch":
+        elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
                     QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=10,
                     epsilon_0=pt.tensor(.1),
                     rho_0=pt.tensor(.1)
+                )
+
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+                    self.problem_,
+                    epsilon=.1,
+                    Nsamples=10,
+                    fit_intercept=self.fit_intercept,
+                )
+        elif self.solver == "entropic_torch_pre":
+            self.problem_.loss = DualPreSampledLoss(
+                    QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    NormLabelCost(2., 1., 1e8),
+                    n_samples=10,
+                    epsilon_0=pt.tensor(self.rho),
+                    rho_0=pt.tensor(self.rho)
                 )
 
             self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
