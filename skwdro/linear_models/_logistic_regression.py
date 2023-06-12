@@ -188,7 +188,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     y=y,
                     fit_intercept=self.fit_intercept
             )
-        elif self.solver == "entropic_torch":
+        elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
                     LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
@@ -197,6 +197,20 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     rho_0=pt.tensor(self.rho)
                 )
 
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
+                    self.problem_,
+                    epsilon=.1,
+                    Nsamples=10,
+                    fit_intercept=self.fit_intercept,
+                )
+        elif self.solver == "entropic_torch_pre":
+            self.problem_.loss = DualPreSampledLoss(
+                    LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    NormLabelCost(2., 1., 1e8),
+                    n_samples=10,
+                    epsilon_0=pt.tensor(self.rho),
+                    rho_0=pt.tensor(self.rho)
+                )
             self.coef_, self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(
                     self.problem_,
                     epsilon=.1,

@@ -107,10 +107,20 @@ class NewsVendor(BaseEstimator):
 
 
 
-        if self.solver == "entropic_torch":
+        if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
             self.cost = NormCostTorch(1, 1)
             # self.problem_.loss = NewsVendorLoss_torch(k=k,u=u)
             self.problem_.loss = DualPreSampledLoss(
+                    NewsVendorLoss_torch(k=self.k,u=self.u),
+                    self.cost,
+                    #TODO: no hard-coding
+                    20,
+                    pt.tensor(.1),
+                    pt.tensor(.1),
+                    False)
+        elif self.solver == "entropic_torch_post":
+            self.cost = NormCostTorch(1, 1)
+            self.problem_.loss = DualLoss(
                     NewsVendorLoss_torch(k=self.k,u=self.u),
                     self.cost,
                     #TODO: no hard-coding
@@ -132,7 +142,7 @@ class NewsVendor(BaseEstimator):
                 self.dual_var_ = self.u 
         elif self.solver=="entropic":
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(self.problem_,epsilon=0.1)
-        elif self.solver=="entropic_torch":
+        elif self.solver=="entropic_torch" or self.solver == "entropic_torch_post" or self.solver == "entropic_torch_pre":
             self.coef_ , self.intercept_, self.dual_var_ = entTorch.WDROEntropicSolver(self.problem_,epsilon=0.1)
         else:
             raise(NotImplementedError)
