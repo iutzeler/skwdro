@@ -116,8 +116,8 @@ class DualPostSampledLoss(_DualLoss):
 
         self._opti = pt.optim.AdamW(
                 self.parameters(),
-                lr=1e-2,
-                betas=(.9, .99),
+                lr=5e-2,
+                betas=(.99, .999),
                 weight_decay=0.,
                 amsgrad=True,
                 foreach=True)
