@@ -26,6 +26,16 @@ def prerule_mwu(p):
 def postrule_mwu(p):
 	p.exp_()
 
+@prerule('mwu_simplex')
+def prerule_mwu_simplex(p):
+	assert (p > 0).all()
+	p.log_()
+
+@postrule('mwu_simplex')
+def postrule_mwu_simplex(p):
+	p.exp_()
+    p /= torch.sum(p)
+
 @postrule('non_neg')
 def postrule_non_neg(p):
 	p.clip_(0, None)
