@@ -141,7 +141,7 @@ class LogisticLoss(Loss):
         return self.classif(coefs)
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
-        coefs = self.logprobs(xi)
+        coefs = self.linear(xi)
         return self.L(coefs, xi_labels)
 
     @classmethod
