@@ -71,7 +71,7 @@ class Weber(BaseEstimator):
         self.kappa  = kappa
         self.solver = solver
         self.solver_reg = solver_reg
-        self.n_samples = n_zeta_samples
+        self.n_zeta_samples = n_zeta_samples
 
     def fit(self, X, y):
         """Fits a Weber WDRO model
@@ -102,7 +102,7 @@ class Weber(BaseEstimator):
                 loss=DualLoss(
                     WeberLoss_torch(),
                     cost,
-                    n_samples=self.n_samples,
+                    n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)),
                 cost = cost,
