@@ -100,7 +100,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.opt_cond = opt_cond
-        self.n_samples = n_zeta_samples
+        self.n_zeta_samples = n_zeta_samples
 
 
 

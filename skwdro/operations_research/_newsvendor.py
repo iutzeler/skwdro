@@ -83,7 +83,7 @@ class NewsVendor(BaseEstimator):
         self.cost   = cost
         self.solver = solver
         self.solver_reg = solver_reg
-        self.n_samples = n_zeta_samples
+        self.n_zeta_samples = n_zeta_samples
 
 
 
@@ -126,7 +126,7 @@ class NewsVendor(BaseEstimator):
             self.problem_.loss = DualPreSampledLoss(
                     NewsVendorLoss_torch(k=self.k,u=self.u),
                     self.cost,
-                    self.n_samples,
+                    self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho),
                     )
@@ -135,7 +135,7 @@ class NewsVendor(BaseEstimator):
             self.problem_.loss = DualLoss(
                     NewsVendorLoss_torch(k=self.k,u=self.u),
                     self.cost,
-                    self.n_samples,
+                    self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho),
                     )
