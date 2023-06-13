@@ -79,7 +79,7 @@ class NewsVendorLoss_torch(Loss):
         return self.k*theta-self.u*pt.minimum(theta,xi)
 
     def value(self, xi: pt.Tensor, xi_labels: NoneType=None):
-        return self.k*self.theta - self.u*pt.minimum(self.theta, xi).squeeze(dim=-1)
+        return self.k*self.theta - self.u*pt.minimum(self.theta, xi)
 
     @property
     def theta(self) -> pt.Tensor:
