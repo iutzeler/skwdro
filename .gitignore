@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Types
+.pytype*
+
 # C extensions
 *.so
 
@@ -25,7 +28,7 @@ eggs/
 lib/
 lib64/
 parts/
-sdist/
+sdist/habilitation à diriger des recherches
 var/
 *.egg-info/
 .installed.cfg

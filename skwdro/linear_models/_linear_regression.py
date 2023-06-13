@@ -125,7 +125,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.n_features_in_ = d
 
         # Setup problem parameters ################
-        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:,None])
+        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         self.problem_ = WDROProblem(
                 loss=QuadraticLoss(l2_reg=self.l2_reg),

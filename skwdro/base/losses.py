@@ -7,7 +7,13 @@ class Loss:
     def value(self,theta,xi):
         raise NotImplementedError("Please Implement this method")
 
-    def grad_theta(self,theta,xi):
+    def grad_theta(self, theta, xi, xi_labels):
+        raise NotImplementedError("Please Implement this method")
+
+    def value_split(self, theta, xi, xi_labels):
+        raise NotImplementedError("Please Implement this method")
+
+    def grad_theta_split(self, theta, xi, xi_labels):
         raise NotImplementedError("Please Implement this method")
 
 
@@ -31,7 +37,7 @@ class NewsVendorLoss(Loss):
         # NOTE: no mean on m !!!!
         grads = self.k*np.ones_like(X) - self.u*(X>theta).astype(int)
         return grads
-      
+
     def grad_theta(self,theta,xi):
         if len(xi) >= 2:
             # Parallelized
@@ -65,7 +71,7 @@ class LogisticLoss(Loss):
         return -log_expit(y * linear)
 
 
-    def valueSplit(self,theta,X,y,intercept=0.0):
+    def value_split(self,theta,X,y,intercept=0.0):
         if len(X.shape) > 2:
             # Parallelized
             return self._parallel_value_split(theta, X, y)
@@ -100,7 +106,7 @@ class LogisticLoss(Loss):
         grads = -y*X * expit(-y*linear) # (n_samples, m, d)
         return grads
 
-    def grad_thetaSplit(self,theta,X,y,intercept=0.0):
+    def grad_theta_split(self,theta,X,y,intercept=0.0):
         if len(X.shape) > 2:
             # Parallelized
             return self._parallel_grad_theta_split(theta, X, y)
@@ -142,7 +148,7 @@ class QuadraticLoss(Loss):
         self.l2_reg = l2_reg
         self.name = name
 
-    def valueSplit(self,theta,X,y,intercept=0.0):
+    def value_split(self,theta,X,y,intercept=0.0):
         if len(X.shape) > 2:
             # Parallelized
             return self._parallel_value_split(theta, X, y)
@@ -160,8 +166,8 @@ class QuadraticLoss(Loss):
                     val += 0.5*np.linalg.norm(np.dot(X[i,:],theta)+intercept-y[i])**2
 
                 return val/m
-            
-    
+
+
     def _parallel_value_split(self, theta, X, y):
         # New parallelized:
         # shapes in:
@@ -173,8 +179,8 @@ class QuadraticLoss(Loss):
         # NOTE: no mean on m !!!!
         linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] - y # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
         return 0.5*linear*linear
-    
-    def grad_thetaSplit(self,theta,X,y,intercept=0.0):
+
+    def grad_theta_split(self,theta,X,y,intercept=0.0):
         if len(X.shape) > 2:
             # Parallelized
             return self._parallel_grad_theta_split(theta, X, y)
@@ -188,7 +194,7 @@ class QuadraticLoss(Loss):
                 return np.dot(X.T , (np.dot(X,theta)+intercept-y) )
             else:
                 return np.dot(X.T , (np.dot(X,theta)+intercept-y) )
-                
+
                 # np.zeros(theta.shape)
                 # for i in range(m):
                 #     inner = np.dot(X[i,:],theta)+intercept-y[i]
@@ -210,7 +216,7 @@ class QuadraticLoss(Loss):
         linear = np.einsum("ijk,k->ij", X, theta)[:, :, None] - y # https://stackoverflow.com/questions/42983474/how-do-i-do-an-einsum-that-mimics-keepdims
         grads   = X*linear
         return grads
-    
+
 
     def grad_interceptSplit(self,theta,X,y,intercept=0.0):
         m = np.size(y)
@@ -231,7 +237,7 @@ class PortfolioLoss(Loss):
 
     def __init__(self, l2_reg=None, name="Portfolio loss", eta=0, alpha=.95,\
             fit_intercept="False"):
-        
+
         self.l2_reg = l2_reg
         self.name = name
         self.eta = eta
@@ -244,7 +250,7 @@ class PortfolioLoss(Loss):
         a1 = -1
         a2 = -1 - self.eta/self.alpha
         b1 = self.eta
-        b2 = self.eta(1-(1/self.alpha))
+        b2 = self.eta*(1-(1/self.alpha))
 
         #Transform theta to respect the simplex condition
         '''

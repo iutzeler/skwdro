@@ -1,13 +1,11 @@
 from typing import Optional, Union
 import torch
 import torch as pt
-import torch.optim as optim
 
-import math
 from skwdro.solvers.oracle_torch import _DualLoss
 
 from skwdro.solvers.utils import *
-from skwdro.base.problems import WDROProblem
+from skwdro.base.problems import EmpiricalDistributionWithoutLabels, WDROProblem
 
 
 def solve_dual(WDROProblem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tensor(.1), fit_intercept: bool=False):
@@ -16,17 +14,18 @@ def solve_dual(WDROProblem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tenso
     if isinstance(rho, float): rho = pt.tensor(rho)
     if isinstance(sigma, float): sigma = pt.tensor(sigma)
 
-    NoLabels = WDROProblem.dLabel == 0
+    NoLabels = isinstance(WDROProblem.P, EmpiricalDistributionWithoutLabels)
 
     if NoLabels:
         xi = torch.Tensor(WDROProblem.P.samples)
         xi_labels = None
     else:
-        xi = torch.Tensor(WDROProblem.P.samplesX)
-        xi_labels  = torch.Tensor(WDROProblem.P.samplesY)
+        xi = torch.Tensor(WDROProblem.P.samples_x)
+        xi_labels  = torch.Tensor(WDROProblem.P.samples_y)
 
     loss = WDROProblem.loss
     assert loss is not None
+    assert isinstance(loss, _DualLoss)
     if loss._sampler is None:
         loss.sampler = loss.default_sampler(xi, xi_labels, sigma)
 

@@ -95,7 +95,7 @@ class Weber(BaseEstimator):
 
         m,d = np.shape(X)
 
-        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y.reshape(-1,1))
+        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y.reshape(-1,1))
         cost = NormLabelCost(kappa=self.kappa)
 
         self.problem_ = WDROProblem(
