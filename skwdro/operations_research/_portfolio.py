@@ -90,7 +90,7 @@ class Portfolio(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
         self.random_state = random_state
-        self.n_samples = n_zeta_samples
+        self.n_zeta_samples = n_zeta_samples
 
     def fit(self, X, y=None, C=None, d=None):
         """Fits the WDRO regressor.
@@ -134,7 +134,7 @@ class Portfolio(BaseEstimator):
         torch_loss = DualLoss(
             PortfolioLoss_torch(eta=self.eta, alpha=self.alpha),
             NormCostTorch(1, 1., "L1 cost"),
-            n_samples=self.n_samples,
+            n_samples=self.n_zeta_samples,
             epsilon_0=pt.tensor(self.solver_reg),
             rho_0=pt.tensor(self.rho))
 
