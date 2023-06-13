@@ -10,7 +10,7 @@ from sklearn.metrics import euclidean_distances
 
 
 
-from skwdro.base.problems import WDROProblem, EmpiricalDistribution
+from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
 from skwdro.base.losses import NewsVendorLoss
 from skwdro.base.losses_torch import NewsVendorLoss_torch
 from skwdro.base.costs import NormCost, Cost
@@ -119,7 +119,7 @@ class NewsVendor(BaseEstimator):
                 n=1,
                 Theta_bounds=[0, np.inf],
                 rho=self.rho,
-                P=EmpiricalDistribution(m=m,samples=X))
+                P=EmpiricalDistributionWithoutLabels(m=m,samples=X))
 
         if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
             self.cost = NormCostTorch(1, 1)

@@ -154,7 +154,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Setup problem parameters ################
         m, d = np.shape(X)
         self.n_features_in_ = d
-        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:,None])
+        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         self.cost_ = NormCost(p=2)
         self.problem_ = WDROProblem(
