@@ -6,7 +6,7 @@ import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
 
-from skwdro.base.problems import WDROProblem, EmpiricalDistribution
+from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
 from skwdro.base.losses import PortfolioLoss
 from skwdro.base.losses_torch import *
 from skwdro.base.costs_torch import NormCost as NormCostTorch
@@ -115,7 +115,7 @@ class Portfolio(BaseEstimator):
         N = np.shape(X)[0] #N samples for the empirical distribution
         m = np.shape(X)[1] #m assets
         self.n_features_in_ = m
-        emp = EmpiricalDistribution(m=N, samples=X)
+        emp = EmpiricalDistributionWithoutLabels(m=N, samples=X)
 
         self.cost_ = NormCost(1, 1., "L1 cost")
         self.problem_ = WDROProblem(

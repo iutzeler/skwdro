@@ -1,6 +1,8 @@
 import numpy as np
 from numpy.random import sample
+from skwdro.base.losses import Loss
 
+from skwdro.base.problems import WDROProblem
 from skwdro.solvers.utils import *
 from skwdro.solvers.optim_cond import OptCond
 from skwdro.solvers.gradient_estimates import step_wgx_wol, step_wgx_wl
@@ -14,9 +16,9 @@ from skwdro.solvers.gradient_estimates import step_wgx_wol, step_wgx_wl
 #           ]
 
 
-def WDROEntropicSolver(WDROProblem=None, epsilon=1e-2, Nsamples = 20,fit_intercept=False, opt_cond=OptCond(2)):
+def WDROEntropicSolver(WDROProblem: WDROProblem, epsilon=1e-2, Nsamples = 20,fit_intercept=False, opt_cond=OptCond(2)):
     #return WangGaoXie_v1(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
-    return WangGaoXie_v2(WDROProblem=WDROProblem, epsilon=epsilon, n_samples = Nsamples,fit_intercept=fit_intercept, opt_cond=opt_cond)
+    return WangGaoXie_v2(wdro_problem=WDROProblem, epsilon=epsilon, n_samples = Nsamples,fit_intercept=fit_intercept, opt_cond=opt_cond)
 
 
 
@@ -44,8 +46,8 @@ def wgx_v2_w_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss,
     """
     Launch the optimization, stopping when opt_cond is fulfilled, when the model does not penalize label switching.
     """
-    xi, theta, zeta = prepare_data(data_structure.samplesX, m, d, n_samples, rho_eps[1], fit_intercept)
-    xi_labels = data_structure.samplesY
+    xi, theta, zeta = prepare_data(data_structure.samples_x, m, d, n_samples, rho_eps[1], fit_intercept)
+    xi_labels = data_structure.samples_y
     zeta_labels = sample_pi_0(rho_eps[1], n_samples, xi_labels)
 
     c = lambda samples_x, z_x, samples_y, z_y: cost(samples_x, z_x, samples_y, z_y)
@@ -61,7 +63,7 @@ def wgx_v2_w_labels(d, data_structure, m, rho_eps, lam_0, n_samples, cost, loss,
     return theta, lam
 # ##############################################################
 
-def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, opt_cond=OptCond(2)):
+def WangGaoXie_v2(wdro_problem: WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, opt_cond=OptCond(2)):
     r"""
     Full method to solve the dual problem of entropy-regularized WDRO.
 
@@ -86,19 +88,20 @@ def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, o
         Instance containing information for stopping criteria wrt gradient descent
     """
 
-    d = WDROProblem.d
+    d = wdro_problem.d
 
-    no_labels = WDROProblem.dLabel == 0
+    no_labels = wdro_problem.dLabel == 0
 
-    data_structure = WDROProblem.P
+    data_structure = wdro_problem.P
 
-    m = WDROProblem.P.m
-    rho =  WDROProblem.rho
+    m = wdro_problem.P.m
+    rho =  wdro_problem.rho
 
-    # Starting lambda is 1/rho  
+    # Starting lambda is 1/rho
     lam = 1.0/rho
 
-    loss = WDROProblem.loss
+    loss = wdro_problem.loss
+    assert isinstance(loss, Loss)
     if no_labels:
         theta, lam = wgx_v2_wo_labels(
                 d,
@@ -107,7 +110,7 @@ def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, o
                 (rho, epsilon),
                 lam,
                 n_samples,
-                WDROProblem.c,
+                wdro_problem.c,
                 (loss.value, loss.grad_theta),
                 fit_intercept,
                 opt_cond
@@ -120,8 +123,8 @@ def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, o
                 (rho, epsilon),
                 lam,
                 n_samples,
-                WDROProblem.c,
-                (loss.valueSplit, loss.grad_thetaSplit),
+                wdro_problem.c,
+                (loss.value_split, loss.grad_theta_split),
                 fit_intercept,
                 opt_cond
             )
@@ -135,6 +138,10 @@ def WangGaoXie_v2(WDROProblem, epsilon=0.1, n_samples=50, fit_intercept=False, o
     else:
         return theta, None, lam
 
+#############################################################################################
+# OLD
+# TODO: REMOVE
+#############################################################################################
 
 def WangGaoXie_v1(WDROProblem, epsilon=0.1, Nsamples = 50,fit_intercept=False):
     """ Algorithm of Wang et al. but with epsilon >0 and delta = 0 (regularization in the objective)"""
@@ -148,8 +155,8 @@ def WangGaoXie_v1(WDROProblem, epsilon=0.1, Nsamples = 50,fit_intercept=False):
         samples = WDROProblem.P.samples
         labels = np.zeros(samples.shape[0]) # placeholder for custom cost calls
     else:
-        samples = WDROProblem.P.samplesX
-        labels  = WDROProblem.P.samplesY
+        samples = WDROProblem.P.samples_x
+        labels  = WDROProblem.P.samples_y
 
 
     theta = np.random.rand(n)*0.5
