@@ -5,16 +5,9 @@ from typing import Optional
 import torch as pt
 import torch.nn as nn
 
-import numpy as np
-
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler, BaseSampler, NoLabelsSampler
 from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
-
-from sqwash import SuperquantileReducer
-
-#Strategy when manipulating torch tensor during parallelization
-pt.multiprocessing.set_sharing_strategy('file_system')
 
 class Loss(nn.Module):
     """ Base class for loss functions """
@@ -190,32 +183,3 @@ class QuadraticLoss(Loss):
     @property
     def intercept(self) -> pt.Tensor:
         return self.linear.bias
-
-
-class PortfolioLoss_torch(Loss):
-
-    def __init__(self, eta, alpha, name="Portfolio loss"):
-        super(PortfolioLoss_torch, self).__init__()
-        self.eta = eta
-        self.alpha = alpha
-        self.name = name
-        self.reducer = SuperquantileReducer(superquantile_tail_fraction=self.alpha)
-
-    def value(self, theta, X):
-        #Conversion np.array to torch.tensor if necessary
-        if isinstance(theta, (np.ndarray,np.generic)):
-            theta = pt.from_numpy(theta)
-        if isinstance(X, (np.ndarray,np.generic)):
-            X = pt.from_numpy(X)
-
-        N = X.size()[0]
-
-        #We add a double cast in the dot product to solve torch type issues for torch.dot
-        in_sample_products = -pt.matmul(pt.t(theta), pt.t(X.double()))
-        expected_value = (1/N) * pt.sum(in_sample_products)
-        reduce_loss = self.reducer(in_sample_products)
-
-        return expected_value + self.eta*reduce_loss
-    @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon) -> BaseSampler:
-        raise NotImplementedError("Please Implement this method")
