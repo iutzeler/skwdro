@@ -8,22 +8,20 @@ from skwdro.solvers.utils import *
 from skwdro.base.problems import EmpiricalDistributionWithoutLabels, WDROProblem
 
 
-def solve_dual(WDROProblem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tensor(.1), fit_intercept: bool=False):
+def solve_dual(wdro_problem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tensor(.1)):
 
-    rho = WDROProblem.rho
+    rho = wdro_problem.rho
     if isinstance(rho, float): rho = pt.tensor(rho)
     if isinstance(sigma, float): sigma = pt.tensor(sigma)
 
-    NoLabels = isinstance(WDROProblem.P, EmpiricalDistributionWithoutLabels)
-
-    if NoLabels:
-        xi = torch.Tensor(WDROProblem.P.samples)
-        xi_labels = None
+    if wdro_problem.P.with_labels:
+        xi = torch.Tensor(wdro_problem.P.samples_x)
+        xi_labels  = torch.Tensor(wdro_problem.P.samples_y)
     else:
-        xi = torch.Tensor(WDROProblem.P.samples_x)
-        xi_labels  = torch.Tensor(WDROProblem.P.samples_y)
+        xi = torch.Tensor(wdro_problem.P.samples)
+        xi_labels = None
 
-    loss = WDROProblem.loss
+    loss = wdro_problem.loss
     assert loss is not None
     assert isinstance(loss, _DualLoss)
     if loss._sampler is None:
@@ -43,7 +41,9 @@ def solve_dual(WDROProblem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tenso
             )
 
     theta = detach_tensor(loss.theta)
-    intercept = None if not fit_intercept else detach_tensor(loss.intercept)
+    intercept = loss.intercept
+    if intercept is not None:
+        intercept = detach_tensor(intercept)
     lambd = detach_tensor(loss.lam)
     return theta, intercept, lambd
 
