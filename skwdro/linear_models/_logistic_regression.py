@@ -198,7 +198,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
-                    fit_intercept=self.fit_intercept,
                 )
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
@@ -211,7 +210,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
-                    fit_intercept=self.fit_intercept,
                 )
         else:
             raise NotImplementedError
