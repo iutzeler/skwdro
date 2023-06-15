@@ -28,7 +28,7 @@ Entropic Solvers using torch
    :toctree: generated/
    :template: function.rst
 
-   approx_BFGS
+   solve_dual
 
 
 Specific Solvers
