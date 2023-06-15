@@ -1,5 +1,11 @@
 import numpy as np
+import torch as pt
 from scipy.special import logsumexp, expit, log_expit
+
+from sqwash import SuperquantileReducer
+
+#Strategy when manipulating torch tensor during parallelization
+pt.multiprocessing.set_sharing_strategy('file_system')
 
 class Loss:
     """ Base class for loss functions """
@@ -265,6 +271,31 @@ class PortfolioLoss(Loss):
 
     def grad_theta(self, theta, xi):
         return NotImplementedError("TODO: Compute the gradient for this loss")
+    
+class PortfolioLoss_torch(Loss):
+
+    def __init__(self, eta, alpha, name="Portfolio loss"):
+        super(PortfolioLoss_torch, self).__init__()
+        self.eta = eta
+        self.alpha = alpha
+        self.name = name
+        self.reducer = SuperquantileReducer(superquantile_tail_fraction=self.alpha)
+
+    def value(self, theta, xi):
+        #Conversion np.array to torch.tensor if necessary
+        if isinstance(theta, (np.ndarray,np.generic)):
+            theta = pt.from_numpy(theta)
+        if isinstance(xi, (np.ndarray,np.generic)):
+            xi = pt.from_numpy(xi)
+
+        N = xi.size()[0]
+
+        #We add a double cast in the dot product to solve torch type issues for torch.dot
+        in_sample_products = -pt.matmul(pt.t(theta), pt.t(xi.double()))
+        expected_value = (1/N) * pt.sum(in_sample_products)
+        reduce_loss = self.reducer(in_sample_products)
+
+        return expected_value + self.eta*reduce_loss
 
 
 
