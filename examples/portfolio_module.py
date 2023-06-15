@@ -38,7 +38,7 @@ def main():
 
     indexes = np.array([i for i in range(len(losses))])
 
-    print("Optimal value for the primal problem: ", estimator.problem_.loss.loss.value(X=X))
+    print("Optimal value for the primal problem: ", estimator.problem_.loss.loss.value(X=X).mean())
     print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, xi_labels=None))
 
     plt.xlabel("Iterations")
