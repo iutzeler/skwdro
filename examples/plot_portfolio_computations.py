@@ -56,9 +56,7 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     #Define the training and testing data
     X_train, X_test = generate_train_test_data(N=N, m=M, estimator_solver=estimator_solver)
 
-    #Define sigma for adversarial distribution pi_{0} and number of its samples
-    sigma = 0 if estimator_solver not in {"entropic", "entropic_torch"} else (rho if rho != 0 else 0.1)
-    n_zeta_samples = 0 if estimator_solver not in {"entropic", "entropic_torch"} else 10*N
+    X_train, X_test, y_train, y_test = generate_train_test_data(N=N, m=M, estimator=estimator)
 
     #Create the estimator and solve the problem
     estimator = Portfolio(solver=estimator_solver, solver_reg=sigma, alpha=ALPHA, eta=ETA, rho=rho, n_zeta_samples=n_zeta_samples)
