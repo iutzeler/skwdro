@@ -12,10 +12,11 @@ import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
 #USELESS FOR NOW: from skwdro.base.losses import PortfolioLoss 
 from skwdro.base.losses import PortfolioLoss_torch
-from skwdro.base.losses_torch import *
-from skwdro.base.costs_torch import NormCost as NormCostTorch
-from skwdro.base.costs import NormCost
-from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.base.losses_torch_portfolio import *
+from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
+
+import skwdro.base.costs as npcost
+import skwdro.base.costs_torch as ptcost
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.base.losses_torch_portfolio import *
 from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
