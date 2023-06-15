@@ -12,7 +12,10 @@ from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
+from skwdro.solvers.optim_cond import OptCond
 
+import skwdro.solvers.specific_solvers as spS
+import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
@@ -81,9 +84,6 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.n_neurons = n_neurons
-
-
-
 
     def fit(self, X, y):
         """Fits the WDRO classifier.
@@ -185,7 +185,6 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         y : ndarray, shape (n_samples,)
             The prediction
         """
-
         # Check is fit had been called
         check_is_fitted(self, ['X_', 'y_'])
 
@@ -196,4 +195,3 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         model.load_state_dict(self.parameters_)
 
         return model.pred(X).cpu().detach().numpy().flatten()
-

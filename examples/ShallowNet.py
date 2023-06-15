@@ -14,7 +14,6 @@ from sklearn.model_selection import train_test_split
 
 from sklearn.linear_model import LinearRegression
 from skwdro.neural_network import ShallowNet as RobustShallowNet
-
 class AuxNet(nn.Module):
     def __init__(self, d, n_neurons, fit_intercept):
         super(AuxNet, self).__init__()
@@ -27,36 +26,6 @@ class AuxNet(nn.Module):
 class ShallowNet:
     def __init__(self, d, n_neurons, fit_intercept):
         self.nn = AuxNet(d, n_neurons, fit_intercept)
-        self.optimizer = pt.optim.AdamW(self.nn.parameters(), lr=1e-2, weight_decay=1e-2)
-        self.loss_fn = nn.MSELoss()
-
-    def fit(self, X, Y):
-        X = pt.tensor(X, dtype=pt.float32, device="cpu")
-        Y = pt.tensor(Y, dtype=pt.float32, device="cpu")
-        for i in range(100):
-            self.optimizer.zero_grad()
-            loss = self.loss_fn(self.nn(X).flatten(), Y.flatten())
-            loss.backward()
-            self.optimizer.step()
-            #print(loss.item())
-
-    def predict(self, X):
-        X = pt.tensor(X, dtype=pt.float32, device="cpu")
-        return self.nn(X).cpu().detach().numpy().flatten()
-
-
-class AuxNet(nn.Module):
-    def __init__(self, d, nbneurone, fit_intercept):
-        super(AuxNet, self).__init__()
-        self.linear1 = nn.Linear(d, nbneurone, bias=fit_intercept) # d -> nbneurone
-        self.linear2 = nn.Linear(nbneurone, 1, bias=fit_intercept) # nbneurone -> 1
-
-    def forward(self, x):
-        return self.linear2(pt.relu(self.linear1(x)))
-
-class ShallowNet:
-    def __init__(self, d, nbneurone, fit_intercept):
-        self.nn = AuxNet(d, nbneurone, fit_intercept)
         self.optimizer = pt.optim.AdamW(self.nn.parameters(), lr=1e-2, weight_decay=1e-2)
         self.loss_fn = nn.MSELoss()
 
