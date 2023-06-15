@@ -100,7 +100,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.opt_cond = opt_cond
-        self.n_zeta_samples = n_zeta_samples
+        self.n_samples = n_zeta_samples
 
 
 
@@ -154,7 +154,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Setup problem parameters ################
         m, d = np.shape(X)
         self.n_features_in_ = d
-        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
+        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:,None])
 
         self.cost_ = NormCost(p=2)
         self.problem_ = WDROProblem(
@@ -198,6 +198,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
+                    fit_intercept=self.fit_intercept,
                 )
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
@@ -210,6 +211,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
+                    fit_intercept=self.fit_intercept,
                 )
         else:
             raise NotImplementedError

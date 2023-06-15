@@ -1,29 +1,32 @@
 from typing import Optional, Union
 import torch
 import torch as pt
+import torch.optim as optim
 
+import math
 from skwdro.solvers.oracle_torch import _DualLoss
 
 from skwdro.solvers.utils import *
-from skwdro.base.problems import EmpiricalDistributionWithoutLabels, WDROProblem
+from skwdro.base.problems import WDROProblem
 
 
-def solve_dual(wdro_problem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tensor(.1)):
+def solve_dual(WDROProblem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tensor(.1), fit_intercept: bool=False):
 
-    rho = wdro_problem.rho
+    rho = WDROProblem.rho
     if isinstance(rho, float): rho = pt.tensor(rho)
     if isinstance(sigma, float): sigma = pt.tensor(sigma)
 
-    if wdro_problem.P.with_labels:
-        xi = torch.Tensor(wdro_problem.P.samples_x)
-        xi_labels  = torch.Tensor(wdro_problem.P.samples_y)
-    else:
-        xi = torch.Tensor(wdro_problem.P.samples)
-        xi_labels = None
+    NoLabels = WDROProblem.dLabel == 0
 
-    loss = wdro_problem.loss
+    if NoLabels:
+        xi = torch.Tensor(WDROProblem.P.samples)
+        xi_labels = None
+    else:
+        xi = torch.Tensor(WDROProblem.P.samplesX)
+        xi_labels  = torch.Tensor(WDROProblem.P.samplesY)
+
+    loss = WDROProblem.loss
     assert loss is not None
-    assert isinstance(loss, _DualLoss)
     if loss._sampler is None:
         loss.sampler = loss.default_sampler(xi, xi_labels, sigma)
 
@@ -41,9 +44,7 @@ def solve_dual(wdro_problem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tens
             )
 
     theta = detach_tensor(loss.theta)
-    intercept = loss.intercept
-    if intercept is not None:
-        intercept = detach_tensor(intercept)
+    intercept = None if not fit_intercept else detach_tensor(loss.intercept)
     lambd = detach_tensor(loss.lam)
     return theta, intercept, lambd
 

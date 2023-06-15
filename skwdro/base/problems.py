@@ -10,56 +10,9 @@ LossType = Union[LossNumpy, LossTorch]
 
 class Distribution:
     empirical: bool
-    with_labels: bool
     def __init__(self, m: int, name: str) -> None:
         self.m = m
         self.name = name
-        self._samples   = None
-        self._samples_x = None
-        self._samples_y = None
-
-    @property
-    def samples(self):
-        if self.with_labels:
-            raise AttributeError()
-        else:
-            return self._samples
-
-    @property
-    def samples_y(self):
-        if self.with_labels:
-            return self._samples_y
-        else:
-            raise AttributeError()
-
-    @property
-    def samples_x(self):
-        if self.with_labels:
-            return self._samples_x
-        else:
-            raise AttributeError()
-
-    @samples.setter
-    def samples(self, data):
-        if isinstance(data, np.ndarray):
-            self._samples = data
-        else:
-            raise TypeError()
-
-    @samples_x.setter
-    def samples_x(self, data):
-        if isinstance(data, np.ndarray):
-            self._samples_x = data
-        else:
-            raise TypeError()
-
-    @samples_y.setter
-    def samples_y(self, labels):
-        if isinstance(labels, np.ndarray):
-            self._samples_y = labels
-        else:
-            raise TypeError()
-
 
 class WDROProblem:
     """ Base class for WDRO problem """
@@ -107,24 +60,24 @@ class WDROProblem:
 
 
 
-class EmpiricalDistributionWithoutLabels(Distribution):
+class EmpiricalDistribution(Distribution):
     """ Empirical Probability distribution """
 
     empirical = True
-    with_labels = False
 
     def __init__(self, m: int, samples: np.ndarray, name="Empirical distribution"):
-        super(EmpiricalDistributionWithoutLabels, self).__init__(m, name)
-        self._samples = samples
+        super(EmpiricalDistribution, self).__init__(m, name)
+        self.samples = samples
 
 
 class EmpiricalDistributionWithLabels(Distribution):
     """ Empirical Probability distribution with Labels """
 
     empirical = True
-    with_labels = True
 
-    def __init__(self, m: int, samples_x: np.ndarray, samples_y: np.ndarray, name="Empirical distribution"):
+    def __init__(self, m, samplesX: np.ndarray, samplesY: np.ndarray, name="Empirical distribution"):
         super(EmpiricalDistributionWithLabels, self).__init__(m, name)
-        self._samples_x = samples_x
-        self._samples_y = samples_y
+        self.samplesX = samplesX
+        self.samplesY = samplesY
+
+

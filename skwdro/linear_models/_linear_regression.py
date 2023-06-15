@@ -88,7 +88,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.opt_cond = opt_cond
-        self.n_zeta_samples = n_zeta_samples
+        self.n_samples = n_zeta_samples
 
 
 
@@ -125,7 +125,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.n_features_in_ = d
 
         # Setup problem parameters ################
-        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
+        emp = EmpiricalDistributionWithLabels(m=m,samplesX=X,samplesY=y[:,None])
 
         self.problem_ = WDROProblem(
                 loss=QuadraticLoss(l2_reg=self.l2_reg),
@@ -162,6 +162,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
+                    fit_intercept=self.fit_intercept,
                 )
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
@@ -175,6 +176,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
+                    fit_intercept=self.fit_intercept,
                 )
         elif self.solver=="dedicated":
             self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(

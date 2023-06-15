@@ -19,7 +19,6 @@ class _DualLoss(nn.Module, ABC):
                  n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
-                 n_iter: int,
                  gradient_hypertuning: bool=False
                  ) -> None:
         super(_DualLoss, self).__init__()
@@ -33,7 +32,6 @@ class _DualLoss(nn.Module, ABC):
 
         self._sampler = loss._sampler
         self.n_samples = n_samples
-        self.n_iter = n_iter
 
     @abstractmethod
     def forward(self, *args):
@@ -112,10 +110,9 @@ class DualPostSampledLoss(_DualLoss):
                  n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
-                 n_iter: int=10000,
                  gradient_hypertuning: bool=False
                  ) -> None:
-        super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning)
+        super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, gradient_hypertuning)
 
         self._opti = pt.optim.AdamW(
                 self.parameters(),
@@ -147,10 +144,9 @@ class DualPreSampledLoss(_DualLoss):
                  n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
-                 n_iter: int=50,
                  gradient_hypertuning: bool=False
                  ) -> None:
-        super(DualPreSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning)
+        super(DualPreSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, gradient_hypertuning)
 
         self._opti = pt.optim.LBFGS(
                 self.parameters(),

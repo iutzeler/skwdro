@@ -12,7 +12,6 @@ from sklearn.datasets import make_blobs
 from numpy.random import RandomState
 import matplotlib.pyplot as plt
 import numpy as np
-import torch as pt
 
 from skwdro.linear_models import LogisticRegression
 from skwdro.base.costs import NormCost
@@ -63,7 +62,6 @@ estimator_ent = LogisticRegression(
         l2_reg=None,
         fit_intercept=True,
         cost=cost,
-        n_zeta_samples=20,
         solver="entropic_torch"
         )
 
@@ -85,7 +83,6 @@ estimator_pre = LogisticRegression(
         l2_reg=None,
         fit_intercept=True,
         cost=cost,
-        n_zeta_samples=20,
         solver="entropic_torch_pre"
         )
 
