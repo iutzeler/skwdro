@@ -8,8 +8,10 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, ch
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
 from skwdro.base.losses import PortfolioLoss_torch
-#from skwdro.base.losses_torch import *
-from skwdro.base.costs import *
+from skwdro.base.losses_torch import *
+from skwdro.base.costs_torch import NormCost as NormCostTorch
+from skwdro.base.costs import NormCost
+from skwdro.solvers.oracle_torch import DualLoss
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
