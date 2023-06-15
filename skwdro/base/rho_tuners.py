@@ -35,10 +35,7 @@ class RhoTunedEstimator(BaseEstimator):
     def fit(self, X, y):
 
         #Verify that estimator has a score method
-        assert hasattr(self.estimator, "score"), "Score method not found for estimator for rho tuning"
-
-        #Fitting on the estimator
-        self.estimator.fit(X,y)
+        assert hasattr(self.estimator, "score")
 
         #Tuning rho using grid search
         param_grid_ = {"rho": [10**(-i) for i in range(self.max_power,self.min_power,-1)]}
