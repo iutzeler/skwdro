@@ -30,13 +30,3 @@ You can clone the ``skwdro`` repository::
 
 3. Developer mode
 -----------------
-
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-
->>>>>>> 2538b30 (Documentation (#41))
-=======
-
->>>>>>> 2538b30 (Documentation (#41))
