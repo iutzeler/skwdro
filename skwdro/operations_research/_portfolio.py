@@ -55,6 +55,7 @@ class Portfolio(BaseEstimator):
     >>> estimator = Portfolio()
     >>> estimator.fit(X)
     Portfolio()
+
     --------
 
     """
@@ -87,7 +88,7 @@ class Portfolio(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
         self.random_state = random_state
-        self.n_samples = n_zeta_samples
+        self.n_zeta_samples = n_zeta_samples
 
     def fit(self, X, y=None, C=None, d=None):
         """Fits the WDRO regressor.
