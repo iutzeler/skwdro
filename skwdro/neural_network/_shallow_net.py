@@ -9,9 +9,6 @@ from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
-#from skwdro.base.losses import QuadraticLoss
-from skwdro.base.losses import QuadraticLoss as ShallowNetLoss # big TODO?
-#from skwdro.base.losses_torch import QuadraticLoss as QuadraticLossTorch
 from skwdro.base.loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
@@ -132,7 +129,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         self.problem_ = WDROProblem(
-                loss=ShallowNetLoss(l2_reg=self.l2_reg),
+                loss=None,
                 cost=NormCost(p=2),
                 Xi_bounds=[-1e8,1e8],
                 Theta_bounds=[-1e8,1e8],
@@ -147,14 +144,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         # #########################################
 
         if self.solver=="entropic":
-            self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
-                    self.problem_,
-                    fit_intercept=self.fit_intercept,
-                    opt_cond=OptCond(2,max_iter=int(1e9),tol_theta=1e-6,tol_lambda=1e-6)
-            )
-
-            if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
-                raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
+            raise NotImplementedError
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
                     ShallowNetLossTorch(None, nbneurone=self.nbneurone, d=self.problem_.d, fit_intercept=self.fit_intercept),
@@ -183,12 +173,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                     sigma=self.solver_reg,
                 )
         elif self.solver=="dedicated":
-            self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(
-                    rho=self.problem_.rho,
-                    X=X,
-                    y=y,
-                    fit_intercept=self.fit_intercept
-            )
+            raise NotImplementedError
         else:
             raise NotImplementedError
 

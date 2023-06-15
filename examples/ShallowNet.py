@@ -13,8 +13,7 @@ import torch.nn.functional as F
 from sklearn.model_selection import train_test_split
 
 from sklearn.linear_model import LinearRegression
-from skwdro.linear_models import ShallowNet as RobustShallowNet
-
+from skwdro.neural_network import ShallowNet as RobustShallowNet
 
 
 class AuxNet(nn.Module):
@@ -75,7 +74,7 @@ if __name__ == '__main__':
     fit_train, fit_test = Loss(mdl.predict(X_train), y_train), Loss(mdl.predict(X_test), y_test)
     print(f"relu Shallownet Pytorch: TRAIN {fit_train:.4f} - TEST {fit_test:.4f}")
 
-    for solver in ["entropic", "entropic_torch", "dedicated"]:
+    for solver in ["entropic_torch"]:
         mdl = RobustShallowNet(rho=0.1,solver="entropic_torch",fit_intercept=True, nbneurone=nbneurone)
         mdl.fit(X_train, y_train)
         fit_train, fit_test = Loss(mdl.predict(X_train), y_train), Loss(mdl.predict(X_test), y_test)
