@@ -6,14 +6,12 @@ import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
 
-from skwdro.base.problems import WDROProblem, EmpiricalDistribution
-#USELESS FOR NOW: from skwdro.base.losses import PortfolioLoss 
+from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
+from skwdro.base.losses import PortfolioLoss_torch
 from skwdro.base.losses_torch import *
-from skwdro.base.losses_torch_portfolio import *
-from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
-
-import skwdro.base.costs as npcost
-import skwdro.base.costs_torch as ptcost
+from skwdro.base.costs_torch import NormCost as NormCostTorch
+from skwdro.base.costs import NormCost
+from skwdro.solvers.oracle_torch import DualLoss
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
@@ -41,8 +39,6 @@ class Portfolio(BaseEstimator):
         Solver to be used: 'entropic' or 'dedicated'
     solver_reg: float, default=1.0
         regularization value for the entropic solver
-    reparam: str, default="softmax"
-        Reparametrization method of theta for the entropic torch loss
     random_state: int, default=None
         Seed used by the random number generator when using non-deterministic methods
         on the estimator
@@ -73,8 +69,7 @@ class Portfolio(BaseEstimator):
                  fit_intercept=None,
                  cost=None,
                  solver="dedicated",
-                 solver_reg=1e-3,
-                 reparam="softmax",
+                 solver_reg: float=1e-2,
                  n_zeta_samples: int=10,
                  random_state=None
                  ):
@@ -86,17 +81,16 @@ class Portfolio(BaseEstimator):
             raise ValueError("Risk-aversion error eta cannot be negative")
         elif(alpha <= 0 or alpha > 1):
             raise ValueError("Confidence level alpha needs to be in the (0,1] interval")
-        
-        self.rho = float(rho) #Conversion to float to prevent torch.nn conversion errors
-        self.eta = float(eta)
-        self.alpha = float(alpha)
+
+        self.rho = rho
+        self.eta = eta
+        self.alpha = alpha
         self.fit_intercept = fit_intercept
         self.cost = cost
         self.solver = solver
-        self.solver_reg = float(solver_reg)
-        self.reparam = reparam
+        self.solver_reg = solver_reg
         self.random_state = random_state
-        self.n_samples = n_zeta_samples
+        self.n_zeta_samples = n_zeta_samples
 
     def fit(self, X, y=None, C=None, d=None):
         """Fits the WDRO regressor.
@@ -121,10 +115,11 @@ class Portfolio(BaseEstimator):
         N = np.shape(X)[0] #N samples for the empirical distribution
         m = np.shape(X)[1] #m assets
         self.n_features_in_ = m
-        emp = EmpiricalDistribution(m=N, samples=X)
+        emp = EmpiricalDistributionWithoutLabels(m=N, samples=X)
 
-        self.cost_ = npcost.NormCost(1, 1., "L1 cost")
+        self.cost_ = NormCost(1, 1., "L1 cost")
         self.problem_ = WDROProblem(
+                # TODO: PUT PortfolioLoss INSTEAD, ONLY USE TORCH VERSION IF SOLVER IS ENTROPIC. DOESN'T PASS TYPECHECK BECAUSE loss IS NEITHER A DUAL LOSS NOR A NUMPY LOSS, AND PortfolioLoss DOESN'T WORK (for some error with a multiplication, I'll let u investigate)
                 loss=PortfolioLoss_torch(eta=self.eta, alpha=self.alpha),
                 cost=self.cost_,
                 Xi_bounds=[-np.inf,np.inf],
@@ -134,7 +129,7 @@ class Portfolio(BaseEstimator):
                 d=m,
                 n=m
             )
-        
+
         # Setup values C and d that define the polyhedron of xi_maj
 
         if (C is None or d is None):
@@ -152,21 +147,6 @@ class Portfolio(BaseEstimator):
         elif self.solver == "dedicated":
             self.coef_, _, self.dual_var_, self.result_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
                                                                     self.d_, self.eta, self.alpha)
-        elif self.solver == "entropic_torch":
-            self.problem_.loss = DualPreSampledLoss(
-                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta), \
-                                        alpha=pt.as_tensor(self.alpha)),
-                    cost = ptcost.NormCost(),
-                    n_samples=self.n_samples,
-                    epsilon_0 = pt.tensor(self.solver_reg),
-                    rho_0 = pt.as_tensor(self.rho)
-                )
-            
-            self.coef_, _, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma = pt.tensor(self.solver_reg),
-                    fit_intercept=self.fit_intercept
-            )
         else:
             raise NotImplementedError("Designation for solver not recognized")
 
@@ -187,16 +167,6 @@ class Portfolio(BaseEstimator):
 
         assert self.is_fitted_ == True #We have to fit before evaluating
 
-        match self.solver:
-            case "dedicated":
-                return self.problem_.loss.value(theta=self.coef_, X=X)
-            case "entropic":
-                return NotImplementedError("Entropic solver for Portfolio not implemented yet")
-            case "entropic_torch":
-                if isinstance(X, (np.ndarray,np.generic)):
-                    X = pt.from_numpy(X)
-                return self.problem_.loss.forward(xi=X, xi_labels=None)
-            case _:
-                return ValueError("Solver not recognized")
+        return self.problem_.loss.value(theta=self.coef_, xi=X)
 
 
