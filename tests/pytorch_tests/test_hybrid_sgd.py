@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import pytest
 
-import skwdro.solvers.hybrid_sgd as hybrid_sgd
+import hybrid_sgd
 
 class DummyModule(nn.Module):
 	def __init__(self, a, b):
