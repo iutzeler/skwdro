@@ -134,18 +134,3 @@ class NormLabelCost(NormCost):
                     )
             else: raise NotImplementedError()
         else: raise NotImplementedError()
-
-    def _sampler_labels(self, xi_labels, epsilon):
-        if self.power == 1:
-            if self.p == 1:
-                return dst.Laplace(
-                            loc=xi_labels,
-                            scale=epsilon/self.kappa
-                        )
-            elif self.p == 2:
-                return dst.MultivariateNormal(
-                        loc=xi_labels,
-                        scale_tril=epsilon*pt.eye(xi_labels.size(-1))/self.kappa
-                    )
-            else: raise NotImplementedError()
-        else: raise NotImplementedError()
