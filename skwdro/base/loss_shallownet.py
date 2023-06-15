@@ -24,19 +24,19 @@ class ShallowNetLoss(Loss):
         assert d > 0, "Please provide a valid data dimension d>0"
         self.L = nn.MSELoss(reduction='none')
 
-        #self.linear1 = nn.Linear(d, nbneurone, bias=fit_intercept) # nbneurone -> 1
-        #self.linear2 = nn.Linear(nbneurone, 1, bias=fit_intercept) # nbneurone -> 1
+        self.linear1 = nn.Linear(d, nbneurone, bias=fit_intercept) # d -> nbneurone
+        self.linear2 = nn.Linear(nbneurone, 1, bias=fit_intercept) # nbneurone -> 1
 
-        self.linear1 = nn.Linear(d, 1, bias=fit_intercept) # debug=linearreg
+        #self.linear1 = nn.Linear(d, 1, bias=fit_intercept) # debug=linearreg
 
     def pred(self, X):
         li = pt.relu(self.linear1(X))
         return self.linear2(li)
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
-        #xi_labels_pred = self.pred(xi)
+        xi_labels_pred = self.pred(xi)
 
-        xi_labels_pred = self.linear1(xi) # debug=linearreg
+        #xi_labels_pred = self.linear1(xi) # debug=linearreg
 
         return self.L(
                 xi_labels_pred,
@@ -48,9 +48,12 @@ class ShallowNetLoss(Loss):
 
     @property
     def theta(self) -> pt.Tensor:
-        #return [self.linear1.weight, self.linear2.weight]
-        return self.linear1.weight
+        return pt.concatenate((self.linear1.weight.flatten(), self.linear2.weight.flatten()))
 
     @property
     def intercept(self) -> pt.Tensor:
-        return self.linear1.bias
+        return pt.concatenate((self.linear1.bias, self.linear2.bias))
+
+    @property
+    def parameters_iter(self):
+        return self.state_dict()

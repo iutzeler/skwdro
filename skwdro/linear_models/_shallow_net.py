@@ -163,11 +163,12 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
-
+    
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
                 )
+            self.parameters_ = self.problem_.loss.loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
                     ShallowNetLossTorch(None, nbneurone=self.nbneurone, d=self.problem_.d, fit_intercept=self.fit_intercept),
@@ -214,7 +215,13 @@ class ShallowNet(BaseEstimator, RegressorMixin):
 
         # Input validation
         X = check_array(X)
+        X = pt.tensor(X, dtype=pt.float32, device="cpu")
+        #print(self.parameters_)
+        model = ShallowNetLossTorch(None, nbneurone=self.nbneurone, d=self.problem_.d, fit_intercept=self.fit_intercept)
+        model.load_state_dict(self.parameters_)
 
+        return model.pred(X).cpu().detach().numpy()
 
-        return self.intercept_ + X@self.coef_
+        
+        #return self.intercept_ + X@self.coef_
 
