@@ -43,7 +43,8 @@ examples = [
     "matplotlib",
     "tqdm",
     "seaborn",
-    "multiprocess"
+    "joblib",
+    "mv-laplace"
 ]
 docs = [
     "numpydoc",
