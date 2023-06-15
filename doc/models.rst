@@ -64,16 +64,16 @@ Portfolio Selection
 
 
 
-Weber problem
--------------
+.. Weber problem
+.. -------------
 
-.. currentmodule:: skwdro.operations_research
+.. .. currentmodule:: skwdro.operations_research
 
-.. autosummary::
-   :toctree: generated/
-   :template: class.rst
+.. .. autosummary::
+..    :toctree: generated/
+..    :template: class.rst
 
-   Weber
+..    Weber
 
 
 

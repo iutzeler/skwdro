@@ -4,17 +4,13 @@ Weber problem
 import numpy as np
 import torch as pt
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils.multiclass import unique_labels
-from sklearn.metrics import euclidean_distances
-
+from sklearn.utils.validation import check_X_y
 
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses_torch import WeberLoss_torch
-from skwdro.base.costs import NormLabelCost
+from skwdro.base.costs_torch import NormLabelCost
 
-import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss
 
@@ -44,7 +40,9 @@ class Weber(BaseEstimator):
     --------
     >>> from skwdro.operations_research import Weber
     >>> import numpy as np
-    >>> X = np.random.exponential(scale=2.0,size=(20,1))
+    >>> m = 20
+    >>> X = np.random.exponential(scale=2.0,size=(m,2))
+    >>> w = np.ones(m)
     >>> estimator = Weber()
     >>> estimator.fit(X,w)
     Weber()

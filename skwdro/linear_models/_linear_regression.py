@@ -61,6 +61,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
     --------
     >>> import numpy as np
     >>> from skwdro.linear_models import LinearRegression as RobustLinearRegression
+    >>> from sklearn.model_selection import train_test_split
     >>> d = 10; m = 100
     >>> x0 = np.random.randn(d)
     >>> X = np.random.randn(m,d)
@@ -68,6 +69,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
     >>> X_train, X_test, y_train, y_test = train_test_split(X,y)
     >>> rob_lin = RobustLinearRegression(rho=0.1,solver="entropic",fit_intercept=True)
     >>> rob_lin.fit(X_train, y_train)
+    LinearRegression(rho=0.1)
     >>> y_pred_rob = rob_lin.predict(X_test)
     """
 
