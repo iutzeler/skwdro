@@ -11,7 +11,7 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    quick_start
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :hidden:
    :caption: Documentation
 

@@ -6,7 +6,7 @@
 User guide
 ==================================================
 
-Using SKWDRO estimators
+Using WDRO estimators
 -----------------------
 
 The estimators can be used as those in sklearn.
