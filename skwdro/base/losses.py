@@ -285,6 +285,7 @@ class PortfolioLoss_torch(Loss):
         if isinstance(xi, (np.ndarray,np.generic)):
             xi = pt.from_numpy(xi)
 
+        print("xi value: ", xi)
         N = xi.size()[0]
 
         #We add a double cast in the dot product to solve torch type issues for torch.dot
