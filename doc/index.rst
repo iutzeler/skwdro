@@ -78,6 +78,14 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 .. toctree::
    :maxdepth: 2
    :hidden:
+   :caption: API
+
+   api
+   losses
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
    :caption: Tutorial - Examples
 
    auto_examples/index
