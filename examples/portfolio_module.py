@@ -40,10 +40,14 @@ def main():
     indexes = np.array([i for i in range(len(losses))])
 
     print("Optimal value for the primal problem: ", estimator.problem_.loss.loss.value(X=X).mean())
+<<<<<<< HEAD
     if estimator.solver == "entropic_torch_pre":
         print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, zeta=X.unsqueeze(0), zeta_labels=None, xi_labels=None))
     elif estimator.solver == "entropic_torch_post":
         print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, xi_labels=None))
+=======
+    print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, xi_labels=None))
+>>>>>>> 2538b30 (Documentation (#41))
 
     plt.xlabel("Iterations")
     plt.ylabel("Dual loss value")
