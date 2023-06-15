@@ -68,7 +68,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
     >>> estimator.fit(X_train,y_train)
     LogisticRegression()
     >>> estimator.predict(X_test)
+    array([-1., -1., -1.,  1., -1.,  1.,  1., -1., -1.,  1.,  1.,  1., -1.,
+            1.,  1.,  1.,  1.,  1., -1., -1., -1.,  1.,  1., -1., -1.,  1.,
+           -1.,  1.,  1.,  1.,  1.,  1., -1.])
     >>> estimator.score(X_test,y_test)
+    0.9393939393939394
     """
 
 
