@@ -7,11 +7,9 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
-from skwdro.base.losses import PortfolioLoss
-from skwdro.base.losses_torch import *
-from skwdro.base.costs_torch import NormCost as NormCostTorch
-from skwdro.base.costs import NormCost
-from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.base.losses import PortfolioLoss_torch
+#from skwdro.base.losses_torch import *
+from skwdro.base.costs import *
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
@@ -57,7 +55,6 @@ class Portfolio(BaseEstimator):
     >>> estimator = Portfolio()
     >>> estimator.fit(X)
     Portfolio()
-
     --------
 
     """
@@ -130,16 +127,6 @@ class Portfolio(BaseEstimator):
                 n=m
             )
 
-        # Joyeux noel
-        torch_loss = DualLoss(
-            PortfolioLoss_torch(eta=self.eta, alpha=self.alpha),
-            NormCostTorch(1, 1., "L1 cost"),
-            n_samples=self.n_zeta_samples,
-            epsilon_0=pt.tensor(self.solver_reg),
-            rho_0=pt.tensor(self.rho))
-
-
-
         # Setup values C and d that define the polyhedron of xi_maj
 
         if (C is None or d is None):
@@ -177,6 +164,6 @@ class Portfolio(BaseEstimator):
 
         assert self.is_fitted_ == True #We have to fit before evaluating
 
-        return self.problem_.loss.value(xi=X)
+        return self.problem_.loss.value(theta=self.coef_, xi=X)
 
 
