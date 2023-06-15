@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import pytest
 
-import hybrid_sgd
+import skwdro.solvers.hybrid_sgd as hybrid_sgd
 
 class DummyModule(nn.Module):
 	def __init__(self, a, b):
@@ -46,7 +46,7 @@ def test_hybrid_sgd(model, optimizer, lr_a, lr_b):
 	assert exp_a == pytest.approx(model.a.item())
 	assert exp_b == pytest.approx(model.b.item())
 	
-	optimizer.zero_grad()
+	optimizer.zero_grad(set_to_none=False)
 
 	assert model.a.grad.item() == 0.
 	assert model.b.grad.item() == 0.
