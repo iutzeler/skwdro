@@ -72,9 +72,9 @@ def generate_train_test_data(N,m,estimator):
     X, y, class_name = generate_data(N,m,estimator)
     if class_name in {"Portfolio", "Newsvendor", "Weber"}:
         X_train, X_test = train_test_split(X, train_size=0.5, test_size=0.5, random_state=42)
-        return X_train, X_test, None, None
+        return X_train, X_test, None, None, class_name
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.5, test_size=0.5, random_state=42)
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test, class_name
 
 def stochastic_problem_approx(estimator,size=10000):
     '''
@@ -90,11 +90,11 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     '''
     #Define the training and testing data
 
-    X_train, X_test, y_train, y_test = generate_train_test_data(N=N, m=M, estimator=estimator)
+    X_train, X_test, y_train, y_test, class_name = generate_train_test_data(N=N, m=M, estimator=estimator)
 
     if rho_tuning is True:
         rho_tuner = BlanchetRhoTunedEstimator(estimator) if blanchet is True else RhoTunedEstimator(estimator)
-        rho_tuner.fit(X=X_train, y=None)
+        rho_tuner.fit(X=X_train, y=y_train)
 
         best_estimator = rho_tuner.best_estimator_
 
@@ -109,9 +109,21 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     X_adv_test = X_test - adv*best_estimator.coef_
 
     #Evaluate the loss value for the training and testing datasets
-    eval_train = best_estimator.eval(X_train)
-    eval_test = best_estimator.eval(X_test)
-    eval_adv_test = best_estimator.eval(X_adv_test)
+    #TODO: Adapt structure when entropic case will be okay
+    if class_name == "Portfolio":
+        eval_train = best_estimator.eval(X_train)
+        eval_test = best_estimator.eval(X_test)
+        eval_adv_test = best_estimator.eval(X_adv_test)
+    else:
+        if estimator.solver == "dedicated":
+            eval_train = best_estimator.problem_.loss.value_split(theta=best_estimator.coef_, X=X_train, y=y_train)
+            eval_test = best_estimator.problem_.loss.value_split(theta=best_estimator.coef_, X=X_test, y=y_test)
+            eval_adv_test = best_estimator.problem_.loss.value_split(theta=best_estimator.coef_, X=X_adv_test, y=y_test)
+        else:
+            eval_train = best_estimator.problem_.loss.loss.value(xi=X_train, xi_labels=y_train)
+            eval_test = best_estimator.problem_.loss.loss.value(xi=X_test, xi_labels=y_test)
+            eval_adv_test = best_estimator.problem_.loss.loss.value(xi=X_test, xi_labels=y_test)
+
     print("Eval train: ", eval_train)
     print("Eval test: ", eval_test)
     print("Eval adv test: ", eval_adv_test)

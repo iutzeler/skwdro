@@ -35,8 +35,8 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, *, estimator,
         #TODO: Adapt rho_possible_values and nb_bins to rho tuning method
         rho_possible_values = [10**(-i) for i in range(4,-4,-1)]
 
-        #nb_bins = len(rho_possible_values)
-        nb_bins = 20
+        nb_bins = len(rho_possible_values)
+        #nb_bins = 20
 
         discrete = False if blanchet is True else True
 
@@ -140,7 +140,7 @@ def main():
     #estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(nb_simulations=20, compute=True, estimator=estimator, rho_tuning=True)
+    plot_histograms(nb_simulations=2, compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
     #plot_curves(compute=True)
 
 

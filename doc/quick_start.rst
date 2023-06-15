@@ -33,6 +33,10 @@ You can clone the ``skwdro`` repository::
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2538b30 (Documentation (#41))
 =======
 
 >>>>>>> 2538b30 (Documentation (#41))

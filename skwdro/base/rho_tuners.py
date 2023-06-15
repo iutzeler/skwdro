@@ -33,16 +33,19 @@ class RhoTunedEstimator(BaseEstimator):
         #Verify that estimator has a score method
         assert hasattr(self.estimator, "score")
 
+        #Fitting on the estimator
+        self.estimator.fit(X,y)
+
         #Tuning rho using grid search
         param_grid_ = {"rho": [10**(-i) for i in range(self.max_power,self.min_power,-1)]}
         grid_cv_ = KFold(n_splits=5, shuffle=False)
 
         client_ = Client(processes=False) 
 
-        #grid_estimator_= GridSearchCV(estimator=self.estimator, param_grid=param_grid_, cv=grid_cv_, 
-        #                               refit=True, n_jobs=-1, verbose=3, scoring=self.estimator.score)
-        grid_estimator_= HalvingGridSearchCV(estimator=self.estimator, param_grid=param_grid_, cv=grid_cv_,
-                                    refit=True, n_jobs=-1, verbose=3, min_resources="smallest")
+        grid_estimator_= GridSearchCV(estimator=self.estimator, param_grid=param_grid_, cv=grid_cv_, 
+                                       refit=True, n_jobs=-1, verbose=3, scoring=self.estimator.score)
+        #grid_estimator_= HalvingGridSearchCV(estimator=self.estimator, param_grid=param_grid_, cv=grid_cv_,
+        #                            refit=True, n_jobs=-1, verbose=3, min_resources="smallest")
  
         with jb.parallel_backend("dask", scatter=[X, y]):  
             grid_estimator_.fit(X, y) #Fit on the new estimator
