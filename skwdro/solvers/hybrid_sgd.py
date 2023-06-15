@@ -34,7 +34,7 @@ def prerule_mwu_simplex(p):
 @postrule('mwu_simplex')
 def postrule_mwu_simplex(p):
 	p.exp_()
-    p /= torch.sum(p)
+    # p /= torch.sum(p)
 
 @postrule('non_neg')
 def postrule_non_neg(p):
