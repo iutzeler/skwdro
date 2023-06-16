@@ -1,6 +1,7 @@
 from typing import Optional, Union
 import torch as pt
 import torch.distributions as dst
+from mv_laplace import MvLaplaceSampler
 
 from skwdro.base.samplers.torch.base_samplers import IsOptionalCovarianceSampler, NoLabelsSampler
 

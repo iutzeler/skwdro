@@ -52,12 +52,8 @@ def stochastic_problem_approx(estimator,size=10000):
     #We stock temporarily the real_value of n_samples if we solve the entropic problem 
 
     if estimator.solver in {"entropic", "entropic_torch"}:
-        #initial_n_samples = estimator.n_samples
-        #estimator.problem_.loss.n_samples = size
-        #print(estimator.problem_.loss.n_samples)
         approx_obj_value = estimator.problem_.loss.loss(X, None).mean(dim=0)
         print(approx_obj_value)
-        #estimator.problem_.loss.n_samples = initial_n_samples
     else:
         approx_obj_value = estimator.eval(X)
     return approx_obj_value
@@ -114,7 +110,9 @@ def parallel_compute_histograms(N, nb_simulations, rho, estimator_solver, adv, c
 
         #We store the computed data
         with open (filename, 'wb') as f:
-            #The datatypes in the three lists are the same so we only test on one of them
+            '''
+            The datatypes in the three lists are the same so we only test on one of them
+            '''
             if isinstance(eval_data_train[0], pt.torch.Tensor):
                 eval_data_train = [x.detach().numpy() for x in eval_data_train]
                 eval_data_test = [x.detach().numpy() for x in eval_data_test]
@@ -180,17 +178,19 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
                         delayed(parallel_for_loop_curves)(N=size, estimator_solver=estimator_solver, rho=rho_value)
                         for _ in range(nb_simulations)
                     )
-                    eval_data_test = [x for x, _ in eval_reliability_data_test]
+
+                    #The datatypes in the two lists are the same so we only test on one of them
+                    if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
+                        eval_data_test = [x.detach().numpy() for x, _ in eval_reliability_data_test]
+                    else:
+                        eval_data_test = [x for x, _ in eval_reliability_data_test]
+                    
                     reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
+                    
 
                     #At the end of each set of 200 simulations, we compute the mean value for the out-of-sample performance
                     mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
                     reliability_test = np.append(reliability_test, reliability)
-
-                #The datatypes in the two lists are the same so we only test on one of them
-                if isinstance(mean_eval_data_test[0], pt.torch.Tensor):
-                    mean_eval_data_test = [x.detach().numpy() for x in mean_eval_data_test]
-                    reliability_test = [x.detach().numpy() for x in mean_eval_data_test]
                 
                 np.save(f, mean_eval_data_test)
                 np.save(f, reliability_test)

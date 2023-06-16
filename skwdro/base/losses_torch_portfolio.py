@@ -3,18 +3,20 @@ import torch.nn as nn
 import numpy as np
 
 from skwdro.base.losses_torch import Loss
-from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler
+from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler, PortfolioLaplaceSampler
 
 class RiskPortfolioLoss_torch(Loss):
 
     def __init__(self, m, reparam="softmax", name="Portfolio Torch Module Risk loss"):
         super(RiskPortfolioLoss_torch, self).__init__()
         self._theta_tilde = nn.Parameter(pt.tensor([[0.2 for _ in range(m)]]))
-        self._theta = pt.tensor(0.0) #Default value for the initialization
+        self._theta = pt.tensor(0.0)
         self.reparam = reparam
         self.name = name
 
     def value(self, X):
+        if isinstance(X, (np.ndarray,np.generic)):
+            X = pt.from_numpy(X)
         if self.reparam == "softmax":
             softmax = nn.Softmax(dim=1)
             self._theta = softmax(self._theta_tilde)
@@ -35,6 +37,11 @@ class RiskPortfolioLoss_torch(Loss):
     @property
     def intercept(self):
         return None
+
+    @classmethod
+    def default_sampler(cls, xi, xi_labels, epsilon):
+        #return PortfolioLaplaceSampler(xi, sigma=epsilon)
+        return PortfolioNormalSampler(xi, sigma=epsilon)
     
 class MeanRisk_torch(Loss):
     def __init__(self, loss: Loss, eta:pt.Tensor, alpha:pt.Tensor, \
@@ -47,6 +54,8 @@ class MeanRisk_torch(Loss):
         self.name = name
 
     def value(self, X, X_labels=None):
+        if isinstance(X, (np.ndarray,np.generic)):
+            X = pt.from_numpy(X)
         f_theta = self.loss.value(X)
         relu = nn.ReLU()
         positive_part = relu(f_theta - self._tau)
@@ -54,6 +63,7 @@ class MeanRisk_torch(Loss):
     
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
+        #return PortfolioLaplaceSampler(xi, sigma=epsilon)
         return PortfolioNormalSampler(xi, sigma=epsilon)
     
     @property
