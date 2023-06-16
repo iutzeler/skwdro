@@ -75,6 +75,7 @@ class MeanRisk_torch(Loss):
     
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
+        #return PortfolioLaplaceSampler(xi, sigma=epsilon)
         return PortfolioNormalSampler(xi, sigma=epsilon)
     
     @property
