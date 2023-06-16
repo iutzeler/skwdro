@@ -75,8 +75,8 @@ def main():
     N = 30 #Size of samples for Kuhn's histograms
 
     #plot_histograms(rho=0, adv=1/np.sqrt(N), estimator_solver="entropic_torch", compute=True)
-    #plot_histograms(rho=1/np.sqrt(N), adv=1/np.sqrt(N), estimator_solver="entropic_torch", compute=True)
-    plot_curves(nb_simulations=1, estimator_solver="entropic_torch", compute=True)
+    plot_histograms(rho=1/np.sqrt(N), adv=1/np.sqrt(N), estimator_solver="entropic_torch", compute=True)
+    #plot_curves(nb_simulations=100, estimator_solver="entropic_torch", compute=True)
 
 if __name__ == "__main__":
     main()

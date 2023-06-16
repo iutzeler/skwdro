@@ -167,6 +167,8 @@ class Portfolio(BaseEstimator):
                     self.problem_,
                     sigma = pt.tensor(self.solver_reg)
             )
+
+            self.result_ = self.problem_.loss.loss(X, None).mean(dim=0)
         else:
             raise NotImplementedError("Designation for solver not recognized")
 
@@ -195,7 +197,7 @@ class Portfolio(BaseEstimator):
             case "entropic_torch":
                 if isinstance(X, (np.ndarray,np.generic)):
                     X = pt.from_numpy(X)
-                return self.problem_.loss.forward(xi=X, xi_labels=None)
+                return self.problem_.loss.loss.value(X=X).mean()
             case _:
                 return ValueError("Solver not recognized")
 
