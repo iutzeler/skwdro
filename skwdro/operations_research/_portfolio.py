@@ -154,12 +154,18 @@ class Portfolio(BaseEstimator):
             self.coef_, _, self.dual_var_, self.result_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
                                                                     self.d_, self.eta, self.alpha)
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
+            epsilon = pt.tensor(self.solver_reg)
+
             self.problem_.loss = DualPreSampledLoss(
-                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta), \
-                                        alpha=pt.as_tensor(self.alpha)),
-                    cost = ptcost.NormCost(),
+                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.tensor(X),
+                                                                epsilon=epsilon, 
+                                                                m=m, 
+                                                                reparam=self.reparam),
+                    eta=pt.as_tensor(self.eta), 
+                    alpha=pt.as_tensor(self.alpha)),
+                    cost = self.cost_,
                     n_samples=self.n_zeta_samples,
-                    epsilon_0 = pt.tensor(self.solver_reg),
+                    epsilon_0 = epsilon,
                     rho_0 = pt.as_tensor(self.rho)
                 )
 
@@ -170,9 +176,10 @@ class Portfolio(BaseEstimator):
 
         elif self.solver == "entropic_torch_post":
             self.problem_.loss = DualPostSampledLoss(
-                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta), \
-                                        alpha=pt.as_tensor(self.alpha)),
-                    cost = ptcost.NormCost(),
+                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.as_tensor(X), epsilon=pt.tensor(self.solver_reg),
+                                                                m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta),
+                                                                alpha=pt.as_tensor(self.alpha)),
+                    cost = self.cost_,
                     n_samples=self.n_zeta_samples,
                     epsilon_0 = pt.tensor(self.solver_reg),
                     rho_0 = pt.as_tensor(self.rho)
