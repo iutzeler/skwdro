@@ -153,7 +153,22 @@ class Portfolio(BaseEstimator):
         elif self.solver == "dedicated":
             self.coef_, _, self.dual_var_, self.result_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
                                                                     self.d_, self.eta, self.alpha)
-        elif self.solver == "entropic_torch":
+        elif self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
+            self.problem_.loss = DualPreSampledLoss(
+                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta), \
+                                        alpha=pt.as_tensor(self.alpha)),
+                    cost = ptcost.NormCost(),
+                    n_samples=self.n_zeta_samples,
+                    epsilon_0 = pt.tensor(self.solver_reg),
+                    rho_0 = pt.as_tensor(self.rho)
+                )
+
+            self.coef_, _, self.dual_var_ = entTorch.solve_dual(
+                    self.problem_,
+                    sigma = pt.tensor(self.solver_reg)
+            ) 
+
+        elif self.solver == "entropic_torch_post":
             self.problem_.loss = DualPostSampledLoss(
                     MeanRisk_torch(loss=RiskPortfolioLoss_torch(m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta), \
                                         alpha=pt.as_tensor(self.alpha)),
