@@ -1,14 +1,17 @@
 import torch as pt
 import torch.nn as nn 
 import numpy as np
+from typing import Optional
 
 from skwdro.base.losses_torch import Loss
+from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler
 from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler, PortfolioLaplaceSampler
 
 class RiskPortfolioLoss_torch(Loss):
 
-    def __init__(self, m, reparam="softmax", name="Portfolio Torch Module Risk loss"):
-        super(RiskPortfolioLoss_torch, self).__init__()
+    def __init__(self, sampler: Optional[NoLabelsSampler]=None, *, m, \
+                reparam="softmax", name="Portfolio Torch Module Risk loss"):
+        super(RiskPortfolioLoss_torch, self).__init__(sampler)
         self._theta_tilde = nn.Parameter(pt.tensor([[0.2 for _ in range(m)]]))
         self._theta = pt.tensor(0.0)
         self.reparam = reparam
@@ -40,13 +43,12 @@ class RiskPortfolioLoss_torch(Loss):
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
-        #return PortfolioLaplaceSampler(xi, sigma=epsilon)
         return PortfolioNormalSampler(xi, sigma=epsilon)
     
 class MeanRisk_torch(Loss):
-    def __init__(self, loss: Loss, eta:pt.Tensor, alpha:pt.Tensor, \
+    def __init__(self, sampler: Optional[NoLabelsSampler]=None, *, loss: Loss, eta:pt.Tensor, alpha:pt.Tensor, \
                 name = "Mean-Risk Portfolio Torch Module General loss"):
-        super(MeanRisk_torch, self).__init__()
+        super(MeanRisk_torch, self).__init__(sampler)
         self.loss = loss
         self.eta = nn.Parameter(eta, requires_grad=False)
         self.alpha = nn.Parameter(alpha, requires_grad=False)
