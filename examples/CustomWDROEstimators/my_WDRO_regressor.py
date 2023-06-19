@@ -1,5 +1,5 @@
 """
-Linear Regression
+Custom Regression
 """
 import numpy as np
 import torch as pt
