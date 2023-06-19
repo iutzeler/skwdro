@@ -1,21 +1,24 @@
 import torch as pt
 import torch.nn as nn 
+import torch.distributions as dst
 import numpy as np
 from typing import Optional
 
 from skwdro.base.losses_torch import Loss
+from skwdro.base.costs_torch import NormCost
 from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler
 from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler, PortfolioLaplaceSampler
 
 class RiskPortfolioLoss_torch(Loss):
 
-    def __init__(self, sampler: Optional[NoLabelsSampler]=None, *, m, \
+    def __init__(self, cost: Optional[NormCost]=None, *, xi, epsilon, sampler: Optional[NoLabelsSampler]=None, m, \
                 reparam="softmax", name="Portfolio Torch Module Risk loss"):
         super(RiskPortfolioLoss_torch, self).__init__(sampler)
         self._theta_tilde = nn.Parameter(pt.tensor([[0.2 for _ in range(m)]]))
         self._theta = pt.tensor(0.0)
         self.reparam = reparam
         self.name = name
+        self.sampler = cost._sampler_data(xi, epsilon)
 
     def value(self, X):
         if isinstance(X, (np.ndarray,np.generic)):
@@ -46,7 +49,8 @@ class RiskPortfolioLoss_torch(Loss):
         return PortfolioNormalSampler(xi, sigma=epsilon)
     
 class MeanRisk_torch(Loss):
-    def __init__(self, sampler: Optional[NoLabelsSampler]=None, *, loss: Loss, eta:pt.Tensor, alpha:pt.Tensor, \
+    def __init__(self, sampler: Optional[NoLabelsSampler]=None, \
+                *, loss: Loss, eta:pt.Tensor, alpha:pt.Tensor, \
                 name = "Mean-Risk Portfolio Torch Module General loss"):
         super(MeanRisk_torch, self).__init__(sampler)
         self.loss = loss
@@ -54,6 +58,7 @@ class MeanRisk_torch(Loss):
         self.alpha = nn.Parameter(alpha, requires_grad=False)
         self._tau = nn.Parameter(pt.tensor(0.0))
         self.name = name
+        self.sampler = loss.sampler
 
     def value(self, X, X_labels=None):
         if isinstance(X, (np.ndarray,np.generic)):
@@ -65,7 +70,6 @@ class MeanRisk_torch(Loss):
     
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
-        #return PortfolioLaplaceSampler(xi, sigma=epsilon)
         return PortfolioNormalSampler(xi, sigma=epsilon)
     
     @property

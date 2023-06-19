@@ -16,7 +16,7 @@ def main():
     N = 100 #Number of samples
 
     #Create input: 2 assets with only one that gives us good returns
-    X = pt.tensor([1,0]) 
+    X = pt.tensor([1.,0.]) 
     X = pt.tile(X,(N,1)) #Duplicate the above line N times
 
     #Creating the estimator and solving the problem
@@ -39,7 +39,10 @@ def main():
     indexes = np.array([i for i in range(len(losses))])
 
     print("Optimal value for the primal problem: ", estimator.problem_.loss.loss.value(X=X).mean())
-    print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, xi_labels=None))
+    if estimator.solver == "entropic_torch_pre":
+        print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, zeta=X.unsqueeze(0), zeta_labels=None, xi_labels=None))
+    elif estimator.solver == "entropic_torch_post":
+        print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, xi_labels=None))
 
     plt.xlabel("Iterations")
     plt.ylabel("Loss value")
