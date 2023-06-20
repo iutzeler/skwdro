@@ -86,6 +86,35 @@ class NewsVendorLoss_torch(Loss):
     def default_sampler(cls, xi, xi_labels, epsilon):
         return NewsVendorNormalSampler(xi, sigma=epsilon)
 
+class WeberLoss_torch(Loss):
+
+    def __init__(
+            self,
+            sampler: Optional[LabeledSampler]=None,
+            *,
+            name="Weber loss"):
+        super(WeberLoss_torch, self).__init__(sampler)
+        self.pos = nn.Parameter(pt.tensor([0.0,0.0]))
+        self.name = name
+
+
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+        distances = pt.linalg.norm(xi - self.pos, dim=-1)[:,:,None]
+        val = xi_labels * distances
+        return val
+
+    @classmethod
+    def default_sampler(cls, xi, xi_labels, epsilon):
+        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
+
+    @property
+    def theta(self) -> pt.Tensor:
+        return self.pos
+
+    @property
+    def intercept(self) -> NoneType:
+        return None
+
 class LogisticLoss(Loss):
     def __init__(
             self,
