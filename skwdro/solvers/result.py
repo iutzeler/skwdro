@@ -1,7 +1,7 @@
 from collections.abc import Iterable
 
 class SolverResult(Iterable):
-    def __init__(self, coef=None, intercept=None, dual_var=None, robust_loss=None, _iter_attrs=[], **kwargs):
+    def __init__(self, coef=None, intercept=None, dual_var=None, robust_loss=None, _iter_attrs=['coef', 'intercept', 'dual_var'], **kwargs):
         self.coef = coef
         self.intercept = intercept
         self.dual_var = dual_var
