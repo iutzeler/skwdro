@@ -13,6 +13,7 @@ from sklearn.metrics import euclidean_distances
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses_torch import WeberLoss_torch
 from skwdro.base.costs import NormLabelCost
+from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
 
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
@@ -89,14 +90,12 @@ class Weber(BaseEstimator):
             Returns self.
         """
 
-        # TODO: assert X has the right shape
-
         X, y = check_X_y(X, y, y_numeric=True)
 
         m,d = np.shape(X)
 
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y.reshape(-1,1))
-        cost = NormLabelCost(kappa=self.kappa)
+        cost = NormLabelCostTorch(kappa=self.kappa)
 
         self.problem_ = WDROProblem(
                 loss=DualLoss(
