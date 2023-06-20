@@ -211,15 +211,22 @@ class Portfolio(BaseEstimator):
 
         assert self.is_fitted_ == True #We have to fit before evaluating
 
+        def entropic_case(X):
+            if isinstance(X, (np.ndarray,np.generic)):
+                X = pt.from_numpy(X)
+            return self.problem_.loss.loss.value(X=X).mean()
+
         match self.solver:
             case "dedicated":
                 return self.problem_.loss.value(theta=self.coef_, X=X)
             case "entropic":
                 return NotImplementedError("Entropic solver for Portfolio not implemented yet")
             case "entropic_torch":
-                if isinstance(X, (np.ndarray,np.generic)):
-                    X = pt.from_numpy(X)
-                return self.problem_.loss.loss.value(X=X).mean()
+                return entropic_case(X)
+            case "entropic_torch_pre":
+                return entropic_case(X)
+            case "entropic_torch_post":
+                return entropic_case(X)            
             case _:
                 return ValueError("Solver not recognized")
 
