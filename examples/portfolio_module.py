@@ -20,7 +20,7 @@ def main():
     X = pt.tile(X,(N,1)) #Duplicate the above line N times
 
     #Creating the estimator and solving the problem
-    estimator = Portfolio(solver="entropic_torch_pre", reparam="softmax", n_zeta_samples=10*N, rho=1e3, solver_reg=1e-3)
+    estimator = Portfolio(solver="entropic_torch_pre", reparam="softmax", n_zeta_samples=10*N, rho=1e-3, solver_reg=1e-3)
     estimator.fit(X)
 
     theta = estimator.coef_
@@ -31,7 +31,7 @@ def main():
     print("Value of tau:", tau)
     print("Value of lambda: ", lam)
 
-    filename = "test_post.npy"
+    filename = "test_post.npy" if estimator.solver == "entropic_torch_post" else "test_pre.npy"
     with open (filename, 'rb') as f:
         losses = np.load(f)
     f.close()

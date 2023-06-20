@@ -53,7 +53,7 @@ def stochastic_problem_approx(estimator,size=10000):
 
     if estimator.solver in {"entropic", "entropic_torch"}:
         approx_obj_value = estimator.problem_.loss.loss(X, None).mean(dim=0)
-        print(approx_obj_value)
+        print("Approx obj value: ", approx_obj_value)
     else:
         approx_obj_value = estimator.eval(X)
     return approx_obj_value
@@ -63,11 +63,14 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     Parallelization of the for loop on the number of simulations.
     '''
     #Define the training and testing data
+
     X_train, X_test = generate_train_test_data(N=N, m=M, estimator_solver=estimator_solver)
 
     #Define sigma for adversarial distribution pi_{0} and number of its samples
-    sigma = 0 if estimator_solver not in {"entropic", "entropic_torch"} else (rho if rho != 0 else 0.1)
-    n_zeta_samples = 0 if estimator_solver not in {"entropic", "entropic_torch"} else 10*N
+    sigma = 0 if estimator_solver not in \
+        {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
+    n_zeta_samples = 0 if estimator_solver not in \
+        {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
 
     #Create the estimator and solve the problem
     estimator = Portfolio(solver=estimator_solver, solver_reg=sigma, alpha=ALPHA, eta=ETA, rho=rho, n_zeta_samples=n_zeta_samples)
@@ -80,9 +83,9 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     eval_train = estimator.eval(X_train)
     eval_test = estimator.eval(X_test)
     eval_adv_test = estimator.eval(X_adv_test)
-    print(eval_train)
-    print(eval_test)
-    print(eval_adv_test)
+    print("Eval train: ", eval_train)
+    print("Eval test: ", eval_test)
+    print("Eval adv test: ", eval_adv_test)
 
     return eval_train, eval_test, eval_adv_test
 
@@ -136,8 +139,10 @@ def parallel_for_loop_curves(N, estimator_solver, rho):
     X_train, X_test = generate_train_test_data(N=N, m=M, estimator_solver=estimator_solver)
 
     #Define sigma for adversarial distribution pi_{0}
-    sigma = 0 if estimator_solver not in {"entropic", "entropic_torch"} else (rho if rho != 0 else 0.1)
-    n_zeta_samples = 0 if estimator_solver not in {"entropic", "entropic_torch"} else 10*N
+    sigma = 0 if estimator_solver \
+        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
+    n_zeta_samples = 0 if estimator_solver \
+        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
     
     #Create the estimator and solve the problem
     estimator = Portfolio(solver=estimator_solver, rho=rho, solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
@@ -188,7 +193,7 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
                     reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
                     
 
-                    #At the end of each set of 200 simulations, we compute the mean value for the out-of-sample performance
+                    #At the end of each set of simulations, we compute the mean value for the out-of-sample performance
                     mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
                     reliability_test = np.append(reliability_test, reliability)
                 

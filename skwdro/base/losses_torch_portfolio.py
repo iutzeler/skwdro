@@ -7,6 +7,7 @@ from typing import Optional
 from skwdro.base.losses_torch import Loss
 from skwdro.base.costs_torch import NormCost
 from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler
+from skwdro.base.samplers.torch.cost_samplers import NoLabelsCostSampler
 from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler, PortfolioLaplaceSampler
 
 class RiskPortfolioLoss_torch(Loss):
@@ -18,7 +19,7 @@ class RiskPortfolioLoss_torch(Loss):
         self._theta = pt.tensor(0.0)
         self.reparam = reparam
         self.name = name
-        self.sampler = cost._sampler_data(xi, epsilon)
+        #self.sampler = NoLabelsCostSampler(cost,xi,epsilon)
 
     def value(self, X):
         if isinstance(X, (np.ndarray,np.generic)):
@@ -32,6 +33,7 @@ class RiskPortfolioLoss_torch(Loss):
             self._theta = (softplus(self._theta_tilde)/pt.sum(softplus_theta_tilde))
         elif self.reparam == "none":
             print("No reparametrization")
+            self._theta = self._theta_tilde
         else:
             raise ValueError("Reparametrization function not recognized")
         return -nn.functional.linear(input=X.type(pt.FloatTensor), weight=self._theta, bias=None)
@@ -58,7 +60,7 @@ class MeanRisk_torch(Loss):
         self.alpha = nn.Parameter(alpha, requires_grad=False)
         self._tau = nn.Parameter(pt.tensor(0.0))
         self.name = name
-        self.sampler = loss.sampler
+        #self.sampler = loss.sampler
 
     def value(self, X, X_labels=None):
         if isinstance(X, (np.ndarray,np.generic)):
