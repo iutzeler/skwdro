@@ -71,7 +71,7 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # Generate the plots for the gallery
-plot_gallery = True
+plot_gallery = 'True'
 
 # The master toctree document.
 master_doc = 'index'
@@ -235,7 +235,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'project-template.tex', u'project-template Documentation',
-   u'Vighnesh Birodkar', 'manual'),
+   u'The authors', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -264,8 +264,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'project-template', u'project-template Documentation',
-     [u'Vighnesh Birodkar'], 1)
+    ('index', 'skwdro', u'skwdro Documentation',
+     [u'The authors'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -278,9 +278,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'project-template', u'project-template Documentation',
-   u'Vighnesh Birodkar', 'project-template', 'One line description of project.',
-   'Miscellaneous'),
+  ('index', 'skwdro', u'skwdro Documentation',
+   u'The authors', 'skwdro', 'Wasserstein Distributionally Robust (WDRO) estimators.',
+   'Machine Learning'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -290,7 +290,7 @@ texinfo_documents = [
 #texinfo_domain_indices = True
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
-#texinfo_show_urls = 'footnote'
+texinfo_show_urls = 'footnote'
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
@@ -312,6 +312,8 @@ sphinx_gallery_conf = {
     'doc_module': 'skwdro',
     'backreferences_dir': os.path.join('generated'),
     'reference_url': {
-        'skwdro': None}
+        'skwdro': None},
+    'filename_pattern': '/examples/doc/plot_',
+    'ignore_pattern' : '/examples/plot_'
 }
 

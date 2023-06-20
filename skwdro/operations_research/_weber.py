@@ -11,8 +11,6 @@ from types import NoneType
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
-
-
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 
 from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
@@ -49,7 +47,9 @@ class Weber(BaseEstimator):
     --------
     >>> from skwdro.operations_research import Weber
     >>> import numpy as np
-    >>> X = np.random.exponential(scale=2.0,size=(20,1))
+    >>> m = 20
+    >>> X = np.random.exponential(scale=2.0,size=(m,2))
+    >>> w = np.ones(m)
     >>> estimator = Weber()
     >>> estimator.fit(X,w)
     Weber()
