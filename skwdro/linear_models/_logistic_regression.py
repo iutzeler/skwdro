@@ -183,7 +183,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     opt_cond=self.opt_cond_
             )
         elif self.solver=="dedicated":
-            self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLogisticSpecificSolver(
+            self.coef_ , self.intercept_, self.dual_var_, self.robust_loss_ = spS.WDROLogisticSpecificSolver(
                     rho=self.problem_.rho,
                     kappa=1000,
                     X=X,
@@ -324,7 +324,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         y[y==0] = -1
 
         if self.intercept_ is not None:
-            coeffs = X.dot(self.coef_)+self.intercept_)
+            coeffs = X.dot(self.coef_)+self.intercept_
         else:
             coeffs = X.dot(self.coef_)
 
