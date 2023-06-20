@@ -3,7 +3,7 @@ WDRO Estimators
 """
 
 import numpy as np
-from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
 
 import skwdro.solvers.specific_solvers as spS
@@ -168,7 +168,16 @@ class Portfolio(BaseEstimator):
                     epsilon_0 = epsilon,
                     rho_0 = pt.as_tensor(self.rho)
                 )
+            
+            #Define the optimizer (TODO: learning rate to define properly)
+            '''
+            self.problem_.loss.optimizer = hybrid_sgd.HybridSGD([
+		    {'params': [self.problem_.loss.theta], 'lr':2, 'mwu_simplex':True},
+		    {'params': [self.problem_.loss.tau], 'lr':1}
+		    ], lr=2)
+            '''
 
+            
             self.coef_, _, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma = pt.tensor(self.solver_reg)
@@ -184,6 +193,14 @@ class Portfolio(BaseEstimator):
                     epsilon_0 = pt.tensor(self.solver_reg),
                     rho_0 = pt.as_tensor(self.rho)
                 )
+            
+            #Define the optimizer (TODO: learning rate to define properly)
+            '''
+            self.problem_.loss.optimizer = hybrid_sgd.HybridSGD([
+		    {'params': [self.problem_.loss.theta], 'lr':2, 'mwu_simplex':True},
+		    {'params': [self.problem_.loss.tau], 'lr':1}
+		    ], lr=2)
+            '''
             
             self.coef_, _, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,

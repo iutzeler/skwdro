@@ -19,7 +19,7 @@ class RiskPortfolioLoss_torch(Loss):
         self._theta = pt.tensor(0.0)
         self.reparam = reparam
         self.name = name
-        #self.sampler = NoLabelsCostSampler(cost,xi,epsilon)
+        self.sampler = NoLabelsCostSampler(cost,xi,epsilon)
 
     def value(self, X):
         if isinstance(X, (np.ndarray,np.generic)):
@@ -60,7 +60,7 @@ class MeanRisk_torch(Loss):
         self.alpha = nn.Parameter(alpha, requires_grad=False)
         self._tau = nn.Parameter(pt.tensor(0.0))
         self.name = name
-        #self.sampler = loss.sampler
+        self.sampler = loss.sampler
 
     def value(self, X, X_labels=None):
         if isinstance(X, (np.ndarray,np.generic)):
