@@ -296,6 +296,47 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         out =  self.le_.inverse_transform((proba>=0.5).astype('uint8'))
         return out
 
+    def logistic_loss(self,X, y):
+        """ Logistic loss
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples, n_features)
+            The input samples.
+        y : ndarray, shape (n_samples,)
+            The label for each sample.
+
+        Returns
+        -------
+        loss : float
+        """
+        # Check is fit had been called
+        check_is_fitted(self, ['X_', 'y_'])
+
+        X, y = check_X_y(X, y)
+        X = np.array(X)
+        y = np.array(y)
+
+        y = self.le_.transform(y)
+
+        if y is None: raise ValueError("Problem with labels, none out of label encoder")
+        else: y = np.array(y)
+        y[y==0] = -1
+
+        if self.intercept_ is not None:
+            coeffs = X.dot(self.coef_)+self.intercept_)
+        else:
+            coeffs = X.dot(self.coef_)
+
+        assert coeffs.shape == y.shape
+
+        assert self.l2_reg == 0
+
+        loss = np.logaddexp(0, y*coeffs)
+        assert loss.shape == y.shape
+
+        return np.mean(loss)
+
 
     def _more_tags(self):
         return {'poor_score': True, # In order to pass with any rho...
