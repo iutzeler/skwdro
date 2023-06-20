@@ -3,16 +3,23 @@ Weber problem
 """
 import numpy as np
 import torch as pt
-from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y
+import torch.nn as nn
 
+from typing import Optional
+from types import NoneType
+
+from sklearn.base import BaseEstimator
+from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
-from skwdro.base.losses_torch import WeberLoss_torch
-from skwdro.base.costs_torch import NormLabelCost
+
+from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
 
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.base.losses_torch import Loss
+from skwdro.base.samplers.torch.base_samplers import LabeledSampler
+from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 
 
 
@@ -87,18 +94,16 @@ class Weber(BaseEstimator):
             Returns self.
         """
 
-        # TODO: assert X has the right shape
-
         X, y = check_X_y(X, y, y_numeric=True)
 
         m,d = np.shape(X)
 
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y.reshape(-1,1))
-        cost = NormLabelCost(kappa=self.kappa)
+        cost = NormLabelCostTorch(kappa=self.kappa)
 
         self.problem_ = WDROProblem(
                 loss=DualLoss(
-                    WeberLoss_torch(),
+                    WeberLoss(),
                     cost,
                     n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
@@ -131,3 +136,36 @@ class Weber(BaseEstimator):
         # `fit` should always return `self`
         return self
 
+
+
+
+
+
+class WeberLoss(Loss):
+
+    def __init__(
+            self,
+            sampler: Optional[LabeledSampler]=None,
+            *,
+            name="Weber loss"):
+        super(WeberLoss, self).__init__(sampler)
+        self.pos = nn.Parameter(pt.tensor([0.0,0.0]))
+        self.name = name
+
+
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+        distances = pt.linalg.norm(xi - self.pos, dim=-1)[:,:,None]
+        val = xi_labels * distances
+        return val
+
+    @classmethod
+    def default_sampler(cls, xi, xi_labels, epsilon):
+        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
+
+    @property
+    def theta(self) -> pt.Tensor:
+        return self.pos
+
+    @property
+    def intercept(self) -> NoneType:
+        return None

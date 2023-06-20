@@ -16,13 +16,13 @@ import matplotlib.pyplot as plt
 m = 3
 
 X = np.random.randn(m,2)*10
-w = np.random.exponential(size=(m,1),scale=10)
+w = np.random.exponential(size=(m,),scale=10)
 
 
 print(X,w)
 
 print("Torch")
-estimator = Weber()
+estimator = Weber(rho=10.0)
 estimator.fit(X,w)
 
 print(estimator.position_)
