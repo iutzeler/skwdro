@@ -22,7 +22,7 @@ w = np.random.exponential(size=(m,),scale=10)
 print(X,w)
 
 print("Torch")
-estimator = Weber()
+estimator = Weber(rho=10.0)
 estimator.fit(X,w)
 
 print(estimator.position_)

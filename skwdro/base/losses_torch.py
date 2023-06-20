@@ -94,14 +94,14 @@ class WeberLoss_torch(Loss):
             *,
             name="Weber loss"):
         super(WeberLoss_torch, self).__init__(sampler)
-        self.w = nn.Parameter(pt.rand(1))
+        self.pos = nn.Parameter(pt.tensor([0.0,0.0]))
         self.name = name
 
-    def value_old(self,y,x,w):
-        return w*pt.linalg.norm(x-y)
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
-        return self.w * pt.linalg.norm(xi - xi_labels, dim=-1)
+        distances = pt.linalg.norm(xi - self.pos, dim=-1)[:,:,None]
+        val = xi_labels * distances
+        return val
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon):
@@ -109,7 +109,7 @@ class WeberLoss_torch(Loss):
 
     @property
     def theta(self) -> pt.Tensor:
-        return self.w
+        return self.pos
 
     @property
     def intercept(self) -> NoneType:
