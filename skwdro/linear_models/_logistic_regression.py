@@ -82,6 +82,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  l2_reg: int=0,
                  fit_intercept: bool=True,
                  cost="quad",
+                 kappa=1e8,
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
@@ -100,6 +101,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.rho    = rho
         self.l2_reg = l2_reg
         self.cost   = cost
+        self.kappa = kappa
         self.fit_intercept = fit_intercept
         self.solver = solver
         self.solver_reg = solver_reg
@@ -185,7 +187,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver=="dedicated":
             self.coef_ , self.intercept_, self.dual_var_, self.robust_loss_ = spS.WDROLogisticSpecificSolver(
                     rho=self.problem_.rho,
-                    kappa=1000,
+                    kappa=self.kappa,
                     X=X,
                     y=y,
                     fit_intercept=self.fit_intercept
@@ -193,7 +195,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
                     LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e8),
+                    NormLabelCost(2., 1., self.kappa),
                     n_samples=10,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
@@ -206,7 +208,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
                     LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e8),
+                    NormLabelCost(2., 1., self.kappa),
                     n_samples=10,
                     epsilon_0=pt.tensor(self.rho),
                     rho_0=pt.tensor(self.rho)
@@ -332,8 +334,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         assert self.l2_reg == 0
 
-        loss = np.logaddexp(0, y*coeffs)
+        loss = np.logaddexp(0, -y*coeffs)
         assert loss.shape == y.shape
+
 
         return np.mean(loss)
 
