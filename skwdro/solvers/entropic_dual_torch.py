@@ -4,10 +4,11 @@ import torch as pt
 
 from skwdro.solvers.oracle_torch import _DualLoss
 
+from skwdro.solvers.result import wrap_solver_result
 from skwdro.solvers.utils import *
 from skwdro.base.problems import EmpiricalDistributionWithoutLabels, WDROProblem
 
-
+@wrap_solver_result
 def solve_dual(wdro_problem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tensor(.1)):
 
     rho = wdro_problem.rho

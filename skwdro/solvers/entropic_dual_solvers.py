@@ -2,6 +2,7 @@ import numpy as np
 from numpy.random import sample
 from skwdro.base.losses import Loss
 
+from skwdro.solvers.result import wrap_solver_result
 from skwdro.base.problems import WDROProblem
 from skwdro.solvers.utils import *
 from skwdro.solvers.optim_cond import OptCond
@@ -15,7 +16,7 @@ from skwdro.solvers.gradient_estimates import step_wgx_wol, step_wgx_wl
 #            progressbar.ETA(), ') ',
 #           ]
 
-
+@wrap_solver_result
 def WDROEntropicSolver(WDROProblem: WDROProblem, epsilon=1e-2, Nsamples = 20,fit_intercept=False, opt_cond=OptCond(2)):
     #return WangGaoXie_v1(WDROProblem=WDROProblem, epsilon=epsilon, Nsamples = Nsamples,fit_intercept=fit_intercept)
     return WangGaoXie_v2(wdro_problem=WDROProblem, epsilon=epsilon, n_samples = Nsamples,fit_intercept=fit_intercept, opt_cond=opt_cond)
