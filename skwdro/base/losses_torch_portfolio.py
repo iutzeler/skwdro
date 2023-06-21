@@ -32,7 +32,6 @@ class RiskPortfolioLoss_torch(Loss):
             softplus_theta_tilde = nn.functional.softplus(self._theta_tilde)
             self._theta = (softplus(self._theta_tilde)/pt.sum(softplus_theta_tilde))
         elif self.reparam == "none":
-            print("No reparametrization")
             self._theta = self._theta_tilde
         else:
             raise ValueError("Reparametrization function not recognized")
