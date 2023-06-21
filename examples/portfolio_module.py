@@ -20,7 +20,7 @@ def main():
     X = pt.tile(X,(N,1)) #Duplicate the above line N times
 
     #Creating the estimator and solving the problem
-    estimator = Portfolio(solver="entropic_torch_pre", reparam="softmax", n_zeta_samples=10*N, rho=1e-3, solver_reg=1e-3)
+    estimator = Portfolio(solver="entropic_torch_post", reparam="none", n_zeta_samples=10*N, rho=1e-3, solver_reg=1e-3)
     estimator.fit(X)
 
     theta = estimator.coef_
@@ -32,6 +32,7 @@ def main():
     print("Value of lambda: ", lam)
 
     filename = "test_post.npy" if estimator.solver == "entropic_torch_post" else "test_pre.npy"
+    #TODO: Maybe try to get the evolution of the primal loss value throughout the iterations
     with open (filename, 'rb') as f:
         losses = np.load(f)
     f.close()
@@ -45,8 +46,8 @@ def main():
         print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, xi_labels=None))
 
     plt.xlabel("Iterations")
-    plt.ylabel("Loss value")
-    plt.title("Evolution of loss value throughout the iterations")
+    plt.ylabel("Dual loss value")
+    plt.title("Evolution of dual loss value throughout the iterations")
     plt.plot(indexes, losses)
     plt.show()
 
