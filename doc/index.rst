@@ -20,6 +20,21 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    solvers
 
 .. toctree::
+   :maxdepth: 3
+   :hidden:
+   :caption: Custom Estimators
+
+   custom
+
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: API
+
+   api
+   losses
+
+.. toctree::
    :maxdepth: 2
    :hidden:
    :caption: API
