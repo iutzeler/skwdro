@@ -15,7 +15,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from skwdro.neural_network import ShallowNet as RobustShallowNet
 
-
 class AuxNet(nn.Module):
     def __init__(self, d, nbneurone, fit_intercept):
         super(AuxNet, self).__init__()
@@ -48,7 +47,7 @@ class ShallowNet:
 if __name__ == '__main__':
     pt.use_deterministic_algorithms(True)
     seed = 5
-    rng = np.random.default_rng(seed) # do not use np.random, see https://numpy.org/doc/stable/reference/random/generator.html#distributions
+    rng = np.random.default_rng(seed)
 
     d = 10
     m = 100
@@ -74,11 +73,10 @@ if __name__ == '__main__':
     fit_train, fit_test = Loss(mdl.predict(X_train), y_train), Loss(mdl.predict(X_test), y_test)
     print(f"relu Shallownet Pytorch: TRAIN {fit_train:.4f} - TEST {fit_test:.4f}")
 
-    for solver in ["entropic_torch"]:
-        mdl = RobustShallowNet(rho=0.1,solver="entropic_torch",fit_intercept=True, nbneurone=nbneurone)
-        mdl.fit(X_train, y_train)
-        fit_train, fit_test = Loss(mdl.predict(X_train), y_train), Loss(mdl.predict(X_test), y_test)
-        print(f"Skwdro[{solver}] TRAIN {fit_train:.4f} - TEST {fit_test:.4f}")
+    mdl = RobustShallowNet(rho=0.1,solver="entropic_torch",fit_intercept=True, nbneurone=nbneurone)
+    mdl.fit(X_train, y_train)
+    fit_train, fit_test = Loss(mdl.predict(X_train), y_train), Loss(mdl.predict(X_test), y_test)
+    print(f"Skwdro TRAIN {fit_train:.4f} - TEST {fit_test:.4f}")
 
     mdl = LinearRegression()
     mdl.fit(X_train, y_train)
