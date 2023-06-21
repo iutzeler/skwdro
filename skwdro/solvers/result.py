@@ -37,9 +37,9 @@ def wrap_solver_result(solver_func):
                 d['dual_var'] = legacy_res[2]
             if len(legacy_res) == 4:
                 d['robust_loss'] = legacy_res[3]
-            return SolverResult(**d, _iter_attrs=d.keys())
+            return SolverResult(**d, _iter_attrs=list(d.keys()))
         elif isinstance(legacy_res, dict):
-            return SolverResult(**legacy_res, _iter_attrs=legacy_res.keys())
+            return SolverResult(**legacy_res, _iter_attrs=list(legacy_res.keys()))
         raise RuntimeError("Invalid return from solver")
     return wrapper
 

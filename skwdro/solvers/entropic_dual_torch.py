@@ -4,7 +4,7 @@ import torch as pt
 
 from skwdro.solvers.oracle_torch import _DualLoss
 
-from skwdro.solvers.result import wrap_solver_result
+from skwdro.solvers.result import wrap_solver_result, SolverResult
 from skwdro.solvers.utils import *
 from skwdro.base.problems import EmpiricalDistributionWithoutLabels, WDROProblem
 
@@ -31,14 +31,16 @@ def solve_dual(wdro_problem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tens
     optimizer = loss.optimizer
 
     if loss.presample:
+        losses = optim_presample(30, optimizer, xi, xi_labels, loss)
         np.save(
                 "test_pre.npy",
-                optim_presample(30, optimizer, xi, xi_labels, loss)
+                losses
             )
     else:
+        losses = optim_postsample(1000, optimizer, xi, xi_labels, loss)
         np.save(
                 "test_post.npy",
-                optim_postsample(1000, optimizer, xi, xi_labels, loss)
+                losses
             )
 
     theta = detach_tensor(loss.theta)
@@ -46,7 +48,7 @@ def solve_dual(wdro_problem: WDROProblem, sigma: Union[float, pt.Tensor]=pt.tens
     if intercept is not None:
         intercept = detach_tensor(intercept)
     lambd = detach_tensor(loss.lam)
-    return theta, intercept, lambd
+    return SolverResult(theta, intercept, lambd, losses[-1])
 
 def optim_presample(
         n_iter: int,

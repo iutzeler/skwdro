@@ -82,7 +82,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  l2_reg: int=0,
                  fit_intercept: bool=True,
                  cost="quad",
-                 kappa=1e8,
+                 kappa=1000,
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
@@ -179,13 +179,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # #########################################
 
         if self.solver=="entropic":
-            self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
+            self.solver_result_ = entS.WDROEntropicSolver(
                     self.problem_,
                     fit_intercept=self.fit_intercept,
                     opt_cond=self.opt_cond_
             )
         elif self.solver=="dedicated":
-            self.coef_ , self.intercept_, self.dual_var_, self.robust_loss_ = spS.WDROLogisticSpecificSolver(
+            self.solver_result_ = spS.WDROLogisticSpecificSolver(
                     rho=self.problem_.rho,
                     kappa=self.kappa,
                     X=X,
@@ -201,7 +201,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
+            self.solver_result_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
                 )
@@ -213,12 +213,17 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     epsilon_0=pt.tensor(self.rho),
                     rho_0=pt.tensor(self.rho)
                 )
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
+            self.solver_result_ = entTorch.solve_dual(
                     self.problem_,
                     sigma=self.solver_reg,
                 )
         else:
             raise NotImplementedError
+
+        self.coef_ = self.solver_result_.coef
+        self.intercept_ = self.solver_result_.intercept
+        self.dual_var_ = self.solver_result_.dual_var
+        self.robust_loss_ = self.solver_result_.robust_loss
 
         self.is_fitted_ = True
 
