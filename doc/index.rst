@@ -9,6 +9,7 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    :caption: Getting Started
 
    quick_start
+   wdro
 
 .. toctree::
    :maxdepth: 3
@@ -52,19 +53,24 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 `Getting started <quick_start.html>`_
 -------------------------------------
 
-Information regarding this template and how to modify it for your own project.
+Information regarding this package and its installation as well as Wasserstein Distributionally Robust optimization.
 
 `User Guide <user_guide.html>`_
 -------------------------------
 
-An example of narrative documentation.
+Documentation of the package, available models, and their numerical resolution.
+
+`Custom Estimators <custom.html>`_
+----------------------------------
+
+Description of how to implement new estimators fitting the package.
 
 `API Documentation <api.html>`_
 -------------------------------
 
-An example of API documentation.
+Structure of the models and losses.
 
 `Examples <auto_examples/index.html>`_
 --------------------------------------
 
-A set of examples. It complements the `User Guide <user_guide.html>`_.
+A set of examples complementing the `User Guide <user_guide.html>`_.
