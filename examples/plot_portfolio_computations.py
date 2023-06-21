@@ -159,7 +159,7 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
     '''
     samples_size = np.array([30])
     #samples_size = np.array([30,300,3000])
-    rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
+    rho_values = np.array([10**(-i) for i in range(4,-4,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
 
