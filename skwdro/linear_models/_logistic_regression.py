@@ -97,13 +97,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho    = rho
-        self.l2_reg = l2_reg
-        self.cost   = cost
-        self.fit_intercept = fit_intercept
-        self.solver = solver
-        self.solver_reg = solver_reg
-        self.opt_cond = opt_cond
+        self.rho            = rho
+        self.l2_reg         = l2_reg
+        self.cost           = cost
+        self.fit_intercept  = fit_intercept
+        self.solver         = solver
+        self.solver_reg     = solver_reg
+        self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
 
 
@@ -121,7 +121,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         Returns
         -------
-        self : object
+        self : LogisticRegression
             Returns self.
         """
         # Check that X and y have correct shape
@@ -161,6 +161,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         self.cost_ = NormCost(p=2)
+
+        # Define cleanly the hyperparameters of the problem.
         self.problem_ = WDROProblem(
                 cost=self.cost_,
                 Xi_bounds=[-1e8,1e8],
@@ -177,12 +179,15 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # #########################################
 
         if self.solver=="entropic":
+            # In the entropic case, we use the numpy gradient descent solver
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
                     self.problem_,
                     fit_intercept=self.fit_intercept,
                     opt_cond=self.opt_cond_
             )
         elif self.solver=="dedicated":
+            # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
+            # One may use it by specifying this option
             self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLogisticSpecificSolver(
                     rho=self.problem_.rho,
                     kappa=1000,
@@ -190,33 +195,37 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     y=y,
                     fit_intercept=self.fit_intercept
             )
-        elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            self.problem_.loss = DualLoss(
-                    LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e8),
-                    n_samples=10,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho)
-                )
+        elif "torch" in self.solver:
+            # The problem loss is changed to a more suitable "dual loss"
+            if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
+                # Default torch implementation resamples from pi_0 at each SGD step
+                self.problem_.loss = DualLoss(
+                        LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        NormLabelCost(2., 1., 1e8),
+                        n_samples=10,
+                        epsilon_0=pt.tensor(self.solver_reg),
+                        rho_0=pt.tensor(self.rho)
+                    )
 
+            elif self.solver == "entropic_torch_pre":
+                # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
+                self.problem_.loss = DualPreSampledLoss(
+                        LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        NormLabelCost(2., 1., 1e8),
+                        n_samples=10,
+                        epsilon_0=pt.tensor(self.rho),
+                        rho_0=pt.tensor(self.rho)
+                    )
+            else:
+                raise NotImplementedError()
+
+            # The problem is solved with the new "dual loss"
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg,
-                )
-        elif self.solver == "entropic_torch_pre":
-            self.problem_.loss = DualPreSampledLoss(
-                    LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e8),
-                    n_samples=10,
-                    epsilon_0=pt.tensor(self.rho),
-                    rho_0=pt.tensor(self.rho)
-                )
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma=self.solver_reg,
+                    sigma_=self.solver_reg,
                 )
         else:
-            raise NotImplementedError
+            raise NotImplementedError()
 
         self.is_fitted_ = True
 
@@ -268,7 +277,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Input validation
         X = check_array(X)
         p = expit(X.dot(self.coef_)+self.intercept_)
-        #p =  1 / (1 + np.exp(-(X.dot(self.coef_)+self.intercept_)))
         return np.vstack((1-p,p)).T
 
     def predict(self, X):

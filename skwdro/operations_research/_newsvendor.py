@@ -152,7 +152,7 @@ class NewsVendor(BaseEstimator):
         elif self.solver in {"entropic_torch", "entropic_torch_post", "entropic_torch_pre"}:
             self.coef_ , self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg)
+                    sigma_=self.solver_reg)
         else:
             raise(NotImplementedError)
 

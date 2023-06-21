@@ -16,9 +16,15 @@ class Loss(nn.Module):
         self._sampler = sampler
 
     def value_old(self,theta,xi):
+        """
+        DEPRECATED, DO NOT USE
+        """
         raise NotImplementedError("Please Implement this method")
 
-    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+    def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]):
+        """
+        Perform forward pass.
+        """
         raise NotImplementedError("Please Implement this method")
 
     def sample_pi0(self, n_samples: int):
@@ -45,6 +51,9 @@ class Loss(nn.Module):
         raise NotImplementedError("Please Implement this method")
 
     def forward(self, *args):
+        """
+        Alias for :method:`~Loss.value`, for consistency with usual torch api.
+        """
         return self.value(*args)
 
     @abstractproperty
@@ -56,12 +65,37 @@ class Loss(nn.Module):
         raise NotImplementedError("Please Implement this property")
 
 class NewsVendorLoss_torch(Loss):
+    r""" Loss associated with the newsvendor problem:
+    .. math::
+        k\theta - \mathbb{E}[u\min(\theta, \xi)]
+
+    Parameters
+    ----------
+    sampler : Optional[NoLabelsSampler]
+        optional sampler to use for the demand
+    k : int
+        journal price
+    u : int
+        benefit per journal sold
+    name :
+        name of the loss, optional
+
+    Attributes
+    ----------
+    sampler : NoLabelsSampler
+    k : nn.Parameter
+    u : nn.Parameter
+    theta : nn.Parameter
+        number of journal stocked
+    name : Optional[str]
+    """
     def __init__(
             self,
             sampler: Optional[NoLabelsSampler]=None,
             *,
-            k=5, u=7,
-            name="NewsVendor loss"):
+            k: int=5,
+            u: int=7,
+            name: Optional[str]="NewsVendor loss"):
         super(NewsVendorLoss_torch, self).__init__(sampler)
         self.k = nn.Parameter(pt.tensor(float(k)), requires_grad=False)
         self.u = nn.Parameter(pt.tensor(float(u)), requires_grad=False)
@@ -72,6 +106,15 @@ class NewsVendorLoss_torch(Loss):
         return self.k*theta-self.u*pt.minimum(theta,xi)
 
     def value(self, xi: pt.Tensor, xi_labels: NoneType=None):
+        """ Forward pass of the loss on the data
+
+        Parameters
+        ----------
+        xi : pt.Tensor
+            empirical observations of demand
+        xi_labels : NoneType
+            placeholder, do not touch
+        """
         return self.k*self.theta - self.u*pt.minimum(self.theta, xi)
 
     @property
@@ -87,6 +130,26 @@ class NewsVendorLoss_torch(Loss):
         return NewsVendorNormalSampler(xi, sigma=epsilon)
 
 class LogisticLoss(Loss):
+    r""" Logisic regression with classes :math:`\{-1, 1\}`
+
+    Parameters
+    ----------
+    sampler : Optional[LabeledSampler]
+        sampler for the adversarial samples
+    d : int
+        dimension of the data (``xi.size(-1)``)
+    fit_intercept : bool
+        model has an affine dimension
+
+    Attributes
+    ----------
+    L : nn.SoftMarginLoss
+        torch solution to implement the soft margin in ``]-1, 1[``
+    classif : nn.Tanh
+        activation function to project tensor in ``]-1, 1[``
+    linear : nn.Linear
+        linear combination containing the relevant parameters
+    """
     def __init__(
             self,
             sampler: Optional[LabeledSampler]=None,
@@ -97,14 +160,36 @@ class LogisticLoss(Loss):
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         self.classif = nn.Tanh()
-        # self.L = nn.BCEWithLogitsLoss(reduction='none')
         self.L = nn.SoftMarginLoss(reduction='none')
 
-    def logprobs(self, X: pt.Tensor) -> pt.Tensor:
+    def predict(self, X: pt.Tensor) -> pt.Tensor:
+        """ Predict the label of the argument tensor
+
+        Parameters
+        ----------
+        self :
+            self
+        X : pt.Tensor
+            X
+
+        Returns
+        -------
+        pt.Tensor
+
+        """
         coefs = self.linear(X)
         return self.classif(coefs)
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+        """ Forward pass of the loss
+
+        Parameters
+        ----------
+        xi : pt.Tensor
+            data
+        xi_labels : pt.Tensor
+            labels
+        """
         coefs = self.linear(xi)
         return self.L(coefs, xi_labels)
 
