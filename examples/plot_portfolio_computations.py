@@ -73,7 +73,7 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
         {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
 
     #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, solver_reg=sigma, alpha=ALPHA, eta=ETA, rho=rho, n_zeta_samples=n_zeta_samples)
+    estimator = Portfolio(solver=estimator_solver, solver_reg=sigma, reparam="none", alpha=ALPHA, eta=ETA, rho=rho, n_zeta_samples=n_zeta_samples)
     estimator.fit(X_train)
 
     #Define adversarial data
@@ -145,7 +145,7 @@ def parallel_for_loop_curves(N, estimator_solver, rho):
         not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
     
     #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, rho=rho, solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    estimator = Portfolio(solver=estimator_solver, rho=rho, reparaa="none", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
     estimator.fit(X_train)
 
     #Evaluate the loss value for the testing dataset

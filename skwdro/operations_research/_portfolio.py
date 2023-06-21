@@ -184,8 +184,10 @@ class Portfolio(BaseEstimator):
         
         #Define the optimizer (TODO: learning rate to define properly)
         self.problem_.loss.optimizer = hybrid_sgd.HybridSGD([
-        {'params': [self.problem_.loss.theta], 'lr':1, 'mwu_simplex':True}
-        ], lr=1)
+        {'params': [self.problem_.loss.loss.loss._theta_tilde], 'mwu_simplex':True},
+        {'params': [self.problem_.loss.loss.tau]},
+        {'params': [self.problem_.loss._lam], 'non_neg':True}
+        ], lr=1e-5)
                          
         self.coef_, _, self.dual_var_ = entTorch.solve_dual(
                 self.problem_,
