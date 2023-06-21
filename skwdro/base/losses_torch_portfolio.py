@@ -16,7 +16,7 @@ class RiskPortfolioLoss_torch(Loss):
                 reparam="softmax", name="Portfolio Torch Module Risk loss"):
         super(RiskPortfolioLoss_torch, self).__init__(sampler)
         self._theta_tilde = nn.Parameter(pt.tensor([[0.2 for _ in range(m)]]))
-        self._theta = pt.tensor(0.0)
+        self._theta = pt.tensor(0.1)
         self.reparam = reparam
         self.name = name
         self.sampler = NoLabelsCostSampler(cost,xi,epsilon)

@@ -30,7 +30,7 @@ def generate_data(N,m):
 
     return X
 
-def generate_train_test_data(N,m,estimator_solver):
+def generate_train_test_data(N,m):
     '''
     Generates data as described above and splits data into a training and a testing sample.
     '''
@@ -64,7 +64,7 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     '''
     #Define the training and testing data
 
-    X_train, X_test = generate_train_test_data(N=N, m=M, estimator_solver=estimator_solver)
+    X_train, X_test = generate_train_test_data(N=N, m=M)
 
     #Define sigma for adversarial distribution pi_{0} and number of its samples
     sigma = 0 if estimator_solver not in \
@@ -136,7 +136,7 @@ def parallel_for_loop_curves(N, estimator_solver, rho):
     reliability_cpt = 0
 
     #Define the training and testing data
-    X_train, X_test = generate_train_test_data(N=N, m=M, estimator_solver=estimator_solver)
+    X_train, X_test = generate_train_test_data(N=N, m=M)
 
     #Define sigma for adversarial distribution pi_{0}
     sigma = 0 if estimator_solver \
