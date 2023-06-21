@@ -1,6 +1,8 @@
 """
 Linear Regression
 """
+import warnings
+
 import numpy as np
 import torch as pt
 
@@ -26,11 +28,11 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
     The cost function is
 
-    .. math:: 
+    .. math::
         \ell(\theta,\xi=(x,y)) = \frac{1}{2}(\langle \theta,x \rangle - y)^2
 
 
-    The WDRO problem solved at fitting is 
+    The WDRO problem solved at fitting is
 
     .. math::
         \min_{\theta} \max_{\mathbb{Q} : W(\mathbb{P}_n,\mathbb{Q})} \mathbb{E}_{\xi\sim\mathbb{Q}} \ell(\theta,\xi=(x,y))
@@ -127,7 +129,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
         if len(y.shape) != 1:
             y.flatten()
-            raise DataConversionWarning(f"y expects a shape (n_samples,) but receiced shape {y.shape}")
+            warnings.warn(f"y expects a shape (n_samples,) but receiced shape {y.shape}", DataConversionWarning)
 
         # Store data
         self.X_ = X
@@ -150,7 +152,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 d=d,
                 n=d
             )
-
         # #########################################
 
         if self.solver=="entropic":
@@ -162,31 +163,30 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
-        elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            self.problem_.loss = DualLoss(
-                    QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e8),
-                    n_samples=10,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho)
-                )
+        elif "torch" in self.solver:
+            if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
+                self.problem_.loss = DualLoss(
+                        QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        NormLabelCost(2., 1., 1e8),
+                        n_samples=10,
+                        epsilon_0=pt.tensor(self.solver_reg),
+                        rho_0=pt.tensor(self.rho)
+                    )
+
+            elif self.solver == "entropic_torch_pre":
+                self.problem_.loss = DualPreSampledLoss(
+                        QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        NormLabelCost(2., 1., 1e8),
+                        n_samples=10,
+                        epsilon_0=pt.tensor(self.solver_reg),
+                        rho_0=pt.tensor(self.rho)
+                    )
+            else:
+                raise NotImplementedError
 
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg,
-                )
-        elif self.solver == "entropic_torch_pre":
-            self.problem_.loss = DualPreSampledLoss(
-                    QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e8),
-                    n_samples=10,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho)
-                )
-
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma=self.solver_reg,
+                    sigma_=self.solver_reg,
                 )
         elif self.solver=="dedicated":
             self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(

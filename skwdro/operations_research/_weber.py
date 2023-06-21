@@ -122,7 +122,7 @@ class Weber(BaseEstimator):
 
 
         if self.solver=="entropic_torch":
-            self.coef_ , _, self.dual_var_ = entTorch.solve_dual(self.problem_, sigma=0.1)
+            self.coef_ , _, self.dual_var_ = entTorch.solve_dual(self.problem_, sigma_=0.1)
         else:
             raise(NotImplementedError)
 
