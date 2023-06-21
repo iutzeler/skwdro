@@ -2,11 +2,14 @@ import numpy as np
 from cvxopt import matrix, solvers
 import cvxpy as cp 
 
+from skwdro.solvers.result import wrap_solver_result
 from skwdro.base.costs import Cost, NormCost
 
+@wrap_solver_result
 def WDRONewsvendorSolver(WDROProblem):
     return WDRONewsvendorSpecificSolver(k=WDROProblem.loss.k,u=WDROProblem.loss.u,rho=WDROProblem.rho,samples=WDROProblem.P.samples)
 
+@wrap_solver_result
 def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
     z = np.sort(samples, axis=0) 
     n = z.shape[0]
@@ -38,9 +41,11 @@ def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
 
 
 
+@wrap_solver_result
 def SAANewsvendorSolver(WDROProblem):
     return SAANewsvendorSpecificSolver2(k=WDROProblem.loss.k,u=WDROProblem.loss.u,samples=WDROProblem.P.samples)
 
+@wrap_solver_result
 def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
 
     z = np.sort(samples, axis=0) 
@@ -87,6 +92,7 @@ def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
     
     return theta
 
+@wrap_solver_result
 def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
 
     z = np.sort(samples, axis=0) 
@@ -114,6 +120,7 @@ def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
 
 
 
+@wrap_solver_result
 def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=False):
     n,d = X.shape 
 
@@ -152,6 +159,7 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
     
 
 
+@wrap_solver_result
 def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.ndarray=np.array(None),fit_intercept: bool=False):
     n,d = X.shape 
 
@@ -181,11 +189,13 @@ def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.n
 
 
 
+@wrap_solver_result
 def WDROPortfolioSolver(WDROProblem, cost, C, d, eta, alpha, fit_intercept=None):
     return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=cost, eta=eta, \
                                        alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.P.samples)
 
 
+@wrap_solver_result
 def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, samples=None, fit_intercept=None):
     '''
     Solver for the dual program linked to Mean-Risk portfolio problem (Kuhn 2017).
