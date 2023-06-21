@@ -45,18 +45,7 @@ def stochastic_problem_approx(estimator,size=10000):
     of the original Mean-Value Portfolio Stochastic problem.
     '''
     X = generate_data(N=size, m=estimator.problem_.d)
-
-    if isinstance(X, (np.ndarray,np.generic)):
-        X = pt.from_numpy(X)
-    
-    #We stock temporarily the real_value of n_samples if we solve the entropic problem 
-
-    if estimator.solver in {"entropic", "entropic_torch"}:
-        approx_obj_value = estimator.problem_.loss.loss(X, None).mean(dim=0)
-        print("Approx obj value: ", approx_obj_value)
-    else:
-        approx_obj_value = estimator.eval(X)
-    return approx_obj_value
+    return estimator.eval(X)
 
 def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     '''
@@ -145,7 +134,7 @@ def parallel_for_loop_curves(N, estimator_solver, rho):
         not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
     
     #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, rho=rho, reparaa="none", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    estimator = Portfolio(solver=estimator_solver, rho=rho, reparam="none", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
     estimator.fit(X_train)
 
     #Evaluate the loss value for the testing dataset
@@ -164,7 +153,7 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
     '''
     samples_size = np.array([30])
     #samples_size = np.array([30,300,3000])
-    rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
+    rho_values = np.array([10**(-i) for i in range(4,-4,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
 

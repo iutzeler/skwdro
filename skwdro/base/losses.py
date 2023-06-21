@@ -288,7 +288,7 @@ class PortfolioLoss_torch(Loss):
         N = xi.size()[0]
 
         #We add a double cast in the dot product to solve torch type issues for torch.dot
-        in_sample_products = -pt.matmul(pt.t(theta), pt.t(xi.double()))
+        in_sample_products = -pt.matmul(pt.t(theta.double()), pt.t(xi.double()))
         expected_value = (1/N) * pt.sum(in_sample_products)
         reduce_loss = self.reducer(in_sample_products)
 

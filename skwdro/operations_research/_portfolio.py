@@ -182,19 +182,21 @@ class Portfolio(BaseEstimator):
         else:
             raise NotImplementedError("Designation for solver not recognized")
         
-        #Define the optimizer (TODO: learning rate to define properly)
-        self.problem_.loss.optimizer = hybrid_sgd.HybridSGD([
-        {'params': [self.problem_.loss.loss.loss._theta_tilde], 'mwu_simplex':True},
-        {'params': [self.problem_.loss.loss.tau]},
-        {'params': [self.problem_.loss._lam], 'non_neg':True}
-        ], lr=1e-5)
-                         
-        self.coef_, _, self.dual_var_ = entTorch.solve_dual(
-                self.problem_,
-                sigma = pt.tensor(self.solver_reg)
-        ) 
+        if self.solver in {"entropic_torch_pre", "entropic_torch_post"}:
+        
+            #Define the optimizer (TODO: learning rate to define properly)
+            self.problem_.loss.optimizer = hybrid_opt.HybridAdam([
+            {'params': [self.problem_.loss.loss.loss._theta_tilde], 'mwu_simplex':True},
+            {'params': [self.problem_.loss.loss.tau]},
+            {'params': [self.problem_.loss._lam], 'non_neg':True}
+            ], lr=1e-5, betas=(.99, .999), weight_decay=0., amsgrad=True, foreach=True)
+                            
+            self.coef_, _, self.dual_var_ = entTorch.solve_dual(
+                    self.problem_,
+                    sigma = pt.tensor(self.solver_reg)
+            ) 
 
-        self.result_ = self.problem_.loss.loss(X, None).mean(dim=0)
+            self.result_ = self.problem_.loss.loss(X, None).mean(dim=0)
 
         self.is_fitted_ = True
 
@@ -216,7 +218,11 @@ class Portfolio(BaseEstimator):
         def entropic_case(X):
             if isinstance(X, (np.ndarray,np.generic)):
                 X = pt.from_numpy(X)
-            return self.problem_.loss.loss.value(X=X).mean()
+
+            #We optimize on tau once again
+            reducer_loss = PortfolioLoss_torch(eta=self.eta, alpha=self.alpha)
+
+            return reducer_loss.value(theta=self.coef_, xi=X).mean()
 
         match self.solver:
             case "dedicated":
