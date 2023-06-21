@@ -14,6 +14,7 @@ from sklearn.model_selection import train_test_split
 
 from sklearn.linear_model import LinearRegression
 from skwdro.neural_network import ShallowNet as RobustShallowNet
+
 class AuxNet(nn.Module):
     def __init__(self, d, n_neurons, fit_intercept):
         super(AuxNet, self).__init__()
