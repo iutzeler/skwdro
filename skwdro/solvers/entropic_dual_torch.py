@@ -85,6 +85,11 @@ def optim_postsample(
         objective = loss(xi, xi_labels)
         objective.backward()
         optimizer.step()
+        # print(f"{loss._lam.grad=}")
+        with torch.no_grad():
+            if loss._lam < 0:
+                loss._lam *= 0.
+                loss._lam += 1e-10
         losses.append(objective.item())
 
     return losses

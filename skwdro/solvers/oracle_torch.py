@@ -93,7 +93,7 @@ class _DualLoss(nn.Module, ABC):
 
     @property
     def lam(self):
-        return F.softplus(self._lam)
+        return (self._lam)
 
     @property
     def optimizer(self) -> pt.optim.Optimizer:

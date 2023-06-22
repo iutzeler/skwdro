@@ -17,6 +17,7 @@ from skwdro.base.losses import LogisticLoss
 from skwdro.base.losses_torch import LogisticLoss as LogisticLossTorch
 from skwdro.base.costs import Cost, NormCost
 from skwdro.base.costs_torch import NormLabelCost
+from skwdro.base.costs_torch import NormCost as torchNormCost
 from skwdro.solvers.optim_cond import OptCond
 
 import skwdro.solvers.specific_solvers as spS
@@ -81,7 +82,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  rho=1e-2,
                  l2_reg: int=0,
                  fit_intercept: bool=True,
-                 cost="quad",
+                 cost_power=2,
                  kappa=1000,
                  solver="entropic_torch",
                  solver_reg=0.01,
@@ -98,9 +99,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho    = rho
+        self.rho = rho
         self.l2_reg = l2_reg
-        self.cost   = cost
+        self.cost_power = cost_power
         self.kappa = kappa
         self.fit_intercept = fit_intercept
         self.solver = solver
@@ -162,7 +163,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.n_features_in_ = d
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
-        self.cost_ = NormCost(p=2)
+        self.cost_ = NormCost(p=2, power=self.cost_power)
         self.problem_ = WDROProblem(
                 cost=self.cost_,
                 Xi_bounds=[-1e8,1e8],
@@ -195,8 +196,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
                     LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., self.kappa),
-                    n_samples=10,
+                    torchNormCost(2., self.cost_power),
+                    n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
@@ -208,8 +209,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
                     LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., self.kappa),
-                    n_samples=10,
+                    NormLabelCost(2., self.cost_power, self.kappa),
+                    n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.rho),
                     rho_0=pt.tensor(self.rho)
                 )
@@ -221,8 +222,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             raise NotImplementedError
 
         self.coef_ = self.solver_result_.coef
-        self.intercept_ = self.solver_result_.intercept
-        self.dual_var_ = self.solver_result_.dual_var
+        self.intercept_ = np.asarray(self.solver_result_.intercept).reshape(1)
+        self.dual_var_ = np.asarray(self.solver_result_.dual_var).reshape(1)
         self.robust_loss_ = self.solver_result_.robust_loss
 
         self.is_fitted_ = True
