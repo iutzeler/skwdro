@@ -4,6 +4,7 @@ import numpy as np
 from skwdro.operations_research import Portfolio
 from sklearn.model_selection import train_test_split
 import torch as pt
+from skwdro.solvers.hybrid_opt import HybridOpt
 
 from joblib import Parallel, delayed
 from os import makedirs
@@ -42,7 +43,7 @@ def generate_train_test_data(N,m):
 def stochastic_problem_approx(estimator,size=10000):
     '''
     Evaluates the real objective value with lots of samples as an approximation of the objective value
-    of the original Mean-Value Portfolio Stochastic problem.
+    of the original Mean-Value Portfolio stochastic problem.
     '''
     X = generate_data(N=size, m=estimator.problem_.d)
     return estimator.eval(X)
@@ -139,9 +140,12 @@ def parallel_for_loop_curves(N, estimator_solver, rho):
 
     #Evaluate the loss value for the testing dataset
     eval_test = estimator.eval(X_test)
+    print("eval_test: ", eval_test)
 
     #Approximate the real loss value and compate it to the WDRO loss value
     eval_approx_loss = stochastic_problem_approx(estimator)
+    print("eval_approx_loss: ", eval_approx_loss)
+    print("estimator.result_:", estimator.result_)
     if eval_approx_loss <= estimator.result_:
         reliability_cpt += 1
 
