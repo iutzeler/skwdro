@@ -143,7 +143,7 @@ def optim_presample(
 
     zeta, zeta_labels = loss.generate_zetas()
 
-    def closure() -> float:
+    def closure(back=True) -> float:
         """ Loss evaluation function, performing the forward pass for the autograd engine.
         """
         optimizer.zero_grad()
@@ -153,14 +153,14 @@ def optim_presample(
         assert isinstance(objective, pt.Tensor)
 
         # Backward pass
-        objective.backward()
+        if back: objective.backward()
         return objective.item()
 
     losses = []
     for _ in range(n_iter):
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
-        with pt.no_grad(): losses.append(closure())
+        with pt.no_grad(): losses.append(closure(False))
 
     return losses
 
