@@ -23,6 +23,8 @@ def main():
     estimator = Portfolio(solver="entropic_torch_post", reparam="none", n_zeta_samples=10*N, rho=1e-10, solver_reg=1e-10)
     estimator.fit(X)
 
+    print(estimator.get_params)
+
     theta = estimator.coef_
     lam = estimator.dual_var_
     tau = estimator.problem_.loss.loss.tau.item()
