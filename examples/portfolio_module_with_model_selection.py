@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 
 from skwdro.operations_research import Portfolio
 from sklearn.model_selection import GridSearchCV, KFold
+
+from sklearn.experimental import enable_halving_search_cv 
+from sklearn.model_selection import HalvingGridSearchCV
     
 def main():
 
@@ -26,15 +29,26 @@ def main():
 
     print("Estimator params: ", estimator.get_params)
 
+    ###TUNING ON RHO### 
+
     #Tuning rho using grid search
     param_grid = {"rho": [10**(-i) for i in range(4,-4,-1)]}
-    #TODO: KFold(n_splits=N) is equiavelnt to LeaveOneOut (needs to be clearer for me). Do I need to shuffle in my case?
+    #TODO: KFold(n_splits=N) is equivalent to LeaveOneOut. Do I need to shuffle in my case?
     # Shuffle can cause overfitting in some situations 
     grid_cv = KFold(n_splits=N, shuffle=True)
 
-    grid_estimator= GridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv)
-    print("Grid estimator params: ", grid_estimator.get_params) #Compare parameters with estimator
-    grid_estimator.fit(X) #Fit on the new estimator with tuned parameters?
+    grid_estimator= GridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv, n_jobs=-1, verbose=3)
+    #grid_estimator= HalvingGridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv,n_jobs=-1, verbose=3, min_resources="smallest")
+
+    grid_estimator.fit(X) #Fit on the new estimator
+
+    best_params = grid_estimator.best_params_
+    best_score = grid_estimator.best_score_
+
+    print("Best params: ", best_params)
+    print("Best score: ", best_score)
+
+    #################
 
     theta = grid_estimator.coef_
     lam = grid_estimator.dual_var_
