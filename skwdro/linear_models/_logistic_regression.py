@@ -204,7 +204,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
             self.solver_result_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg,
+                    sigma=1e-1,
                 )
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(

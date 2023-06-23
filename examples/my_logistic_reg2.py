@@ -28,9 +28,9 @@ mp.set_sharing_strategy("file_system")
 at = lambda x : torch.as_tensor(x, dtype=torch.float32)
     
 def adv_grad(coef, intercept, x, y):
-    coef, intercept = at(coef).unsqueeze(0), at(intercept)
+    coef, intercept = at(coef).unsqueeze(0), at(intercept).unsqueeze(0)
     assert coef.shape == (1, d)
-    assert intercept.shape == (1,), intercept.shape
+    assert intercept.shape == (1,)
 
     x, y = at(x), at(y)
     b, = y.shape
@@ -73,7 +73,7 @@ def generate_data(d, n_train, n_test, cluster_std):
     return X_train, X_test, y_train, y_test
 
 def computeloss(coef, intercept, x, y):
-    coef, intercept = at(coef).unsqueeze(0), at(intercept)
+    coef, intercept = at(coef).unsqueeze(0), at(intercept).unsqueeze(0)
     assert coef.shape == (1, d)
     assert intercept.shape == (1,)
 
@@ -128,19 +128,18 @@ def plot_metrics(robust, metrics, solver):
 d = 10
 n_train = 100
 n_test = 100
-rho = 1e-2
+rho = 0.01
 pert_step = 3*rho
 pert_sigma = 0.
 cluster_std = 0.7
-n_xp = 0
-eps = 1e-5
+n_xp = 100
+eps = 1e-4
 
 def make_xp(robust, solver):
-    new_rho = rho if robust else 0.
-    model = skwdro.linear_models.LogisticRegression(rho=new_rho, solver_reg=eps, solver=solver, kappa=1, cost_power=1, n_zeta_samples=100)
+    rho = rho if robust else 0
+    model = skwdro.linear_models.LogisticRegression(rho=rho, solver_reg=eps, solver=solver, kappa=1e8)
     X_train, X_test, y_train, y_test = generate_data(d, n_train, n_test, cluster_std)
     model.fit(X_train, y_train)
-    print(f"{model.dual_var_=}")
     eval_train = model.robust_loss_
     metrics = eval_perf(model, eval_train, X_test, y_test, pert_sigma, pert_step)
     print(metrics, flush=True)

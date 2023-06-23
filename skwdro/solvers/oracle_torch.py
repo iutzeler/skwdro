@@ -40,7 +40,7 @@ class _DualLoss(nn.Module, ABC):
         raise NotImplementedError()
 
     def compute_dual(self, xi, xi_labels, zeta, zeta_labels):
-        first_term = self.lam * self.rho
+        first_term = self.lam**2 * self.rho
 
         l = self.loss.value(zeta, zeta_labels)
         c = self.cost(
@@ -49,13 +49,13 @@ class _DualLoss(nn.Module, ABC):
                 xi_labels.unsqueeze(0) if xi_labels is not None else None,
                 zeta_labels
                 )
-        integrand = l - self.lam * c
+        integrand = l - self.lam**2 * c
         integrand /= self.epsilon
 
         # Expectation on the zeta samples
         second_term = pt.logsumexp(integrand, 0).mean(dim=0)
         second_term -= pt.log(pt.tensor(zeta.size(0)))
-        return first_term + self.epsilon*second_term.mean()
+        return first_term + self.epsilon*second_term.squeeze()
 
     def generate_zetas(self, n_samples: Optional[int]=None):
         if n_samples is None or n_samples <= 0:
