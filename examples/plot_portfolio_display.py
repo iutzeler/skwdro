@@ -3,6 +3,7 @@ from examples.plot_portfolio_computations import *
 import seaborn as sns
 import time
 import matplotlib.pyplot as plt
+import os
 
 def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, adv=1e-2, estimator_solver="dedicated", compute=True):
     '''
@@ -32,6 +33,13 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, adv=1e-2, estimator_so
     sns.histplot(data=eval_data_adv_test, bins=20, stat="probability", color="blue", multiple="dodge", label="Adversarial Out-of-sample")
     print("Simulations with histograms took ", end-start, " seconds")
     plt.legend()
+
+    #Saving the histograms
+    home_dir = os.path.expanduser("~")
+    image_path = os.path.join(home_dir, "plot_histograms.png")
+    plt.savefig(image_path)
+
+    #Visualization
     plt.show()  
 
 def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
@@ -69,14 +77,21 @@ def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
     f.close()
     end = time.time()
     print("Simulations with curves took ", end-start, " seconds")
+
+    #Saving the histograms
+    home_dir = os.path.expanduser("~")
+    image_path = os.path.join(home_dir, "plot_curves.png")
+    plt.savefig(image_path)
+
+    #Visualization 
     plt.show() #Show all three figures at once 
 
 def main():
     N = 30 #Size of samples for Kuhn's histograms
 
     #plot_histograms(rho=0, adv=1/np.sqrt(N), estimator_solver="entropic_torch_pre", compute=True)
-    #plot_histograms(rho=1/np.sqrt(N), adv=1/np.sqrt(N), estimator_solver="entropic_torch_post", compute=True)
-    plot_curves(nb_simulations=200, estimator_solver="entropic_torch_post", compute=True)
+    plot_histograms(rho=1/np.sqrt(N), adv=1/np.sqrt(N), estimator_solver="entropic_torch_post", compute=True)
+    #plot_curves(nb_simulations=200, estimator_solver="entropic_torch_post", compute=True)
 
 if __name__ == "__main__":
     main()

@@ -10,11 +10,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from skwdro.operations_research import Portfolio
-from sklearn.model_selection import GridSearchCV, KFold
 
 from sklearn.experimental import enable_halving_search_cv 
-from sklearn.model_selection import HalvingGridSearchCV
-    
+from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
+from sklearn.metrics import make_scorer
+
 def main():
 
     N = 100 #Number of samples
@@ -24,21 +24,16 @@ def main():
     X = pt.tile(X,(N,1)) #Duplicate the above line N times
 
     #Creating the estimator and solving the problem
-    estimator = Portfolio(solver="entropic_torch_post", reparam="none", n_zeta_samples=10*N)
-    #estimator.fit(X)
+    estimator = Portfolio(solver="entropic_torch_post", reparam="softmax", n_zeta_samples=10*N)
 
     print("Estimator params: ", estimator.get_params)
 
-    ###TUNING ON RHO### 
-
     #Tuning rho using grid search
     param_grid = {"rho": [10**(-i) for i in range(4,-4,-1)]}
-    #TODO: KFold(n_splits=N) is equivalent to LeaveOneOut. Do I need to shuffle in my case?
-    # Shuffle can cause overfitting in some situations 
-    grid_cv = KFold(n_splits=N, shuffle=True)
+    grid_cv = KFold(n_splits=5, shuffle=True)
 
-    grid_estimator= GridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv, n_jobs=-1, verbose=3)
-    #grid_estimator= HalvingGridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv,n_jobs=-1, verbose=3, min_resources="smallest")
+    grid_estimator= GridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv, refit=True, n_jobs=-1, verbose=3)
+    #grid_estimator= HalvingGridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv,n_jobs=-1, refit=True, verbose=3, min_resources="smallest")
 
     grid_estimator.fit(X) #Fit on the new estimator
 
@@ -48,34 +43,29 @@ def main():
     print("Best params: ", best_params)
     print("Best score: ", best_score)
 
-    estimator.rho = best_params['rho'] #Replacing with the optimal rho
-    estimator.solver_reg = best_params['rho']
+    best_estimator = grid_estimator.best_estimator_
+    best_estimator.solver_reg = best_params['rho']
 
-    estimator.fit(X)
-
-    ##########################
-
-    theta = estimator.coef_
-    lam = estimator.dual_var_
-    tau = estimator.problem_.loss.loss.tau.item()
+    theta = best_estimator.coef_
+    lam = best_estimator.dual_var_
+    tau = best_estimator.problem_.loss.loss.tau.item()
 
     print("Value of theta: ", theta)
     print("Value of tau:", tau)
     print("Value of lambda: ", lam)
 
-    filename = "test_post.npy" if estimator.solver == "entropic_torch_post" else "test_pre.npy"
-    #TODO: Maybe try to get the evolution of the primal loss value throughout the iterations
+    filename = "test_post.npy" if best_estimator.solver == "entropic_torch_post" else "test_pre.npy"
     with open (filename, 'rb') as f:
         losses = np.load(f)
     f.close()
 
     indexes = np.array([i for i in range(len(losses))])
 
-    print("Optimal value for the primal problem: ", estimator.problem_.loss.loss.value(X=X).mean())
-    if estimator.solver == "entropic_torch_pre":
-        print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, zeta=X.unsqueeze(0), zeta_labels=None, xi_labels=None))
-    elif estimator.solver == "entropic_torch_post":
-        print("Optimal value for the dual problem: ", estimator.problem_.loss.forward(xi=X, xi_labels=None))
+    print("Optimal value for the primal problem: ", best_estimator.problem_.loss.loss.value(X=X).mean())
+    if best_estimator.solver == "entropic_torch_pre":
+        print("Optimal value for the dual problem: ", best_estimator.problem_.loss.forward(xi=X, zeta=X.unsqueeze(0), zeta_labels=None, xi_labels=None))
+    elif best_estimator.solver == "entropic_torch_post":
+        print("Optimal value for the dual problem: ", best_estimator.problem_.loss.forward(xi=X, xi_labels=None))
 
     plt.xlabel("Iterations")
     plt.ylabel("Dual loss value")
