@@ -205,6 +205,23 @@ class Portfolio(BaseEstimator):
 
         #Return the estimator
         return self
+    
+    def score(self, X, y=None, multiple_simulations=False):
+        '''
+        Score method to estimate the quality of the model.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples_test,m)
+            The testing input samples.
+        '''
+        if multiple_simulations is False:
+            print("One simulation-scoring method")
+            return -self.eval(X)
+        else:
+            print("Multiple simulations-scoring method")
+            #Use reliability here
+            raise NotImplementedError()
 
     def eval(self, X):
         '''
