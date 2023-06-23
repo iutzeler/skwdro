@@ -185,11 +185,14 @@ class Portfolio(BaseEstimator):
         if self.solver in {"entropic_torch_pre", "entropic_torch_post"}:
         
             #Define the optimizer
+
+            '''
             self.problem_.loss.optimizer = hybrid_opt.HybridAdam([
             {'params': [self.problem_.loss.loss.loss._theta_tilde], 'lr':1e-10, 'mwu_simplex':True},
             {'params': [self.problem_.loss.loss.tau]},
             {'params': [self.problem_.loss._lam], 'non_neg':True}
             ], lr=1e-5, betas=(.99, .999), weight_decay=0., amsgrad=True, foreach=True)
+            '''
                       
             self.coef_, _, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
@@ -206,7 +209,7 @@ class Portfolio(BaseEstimator):
         #Return the estimator
         return self
     
-    def score(self, X, y=None, multiple_simulations=False):
+    def score(self, X, y=None):
         '''
         Score method to estimate the quality of the model.
 
@@ -215,13 +218,7 @@ class Portfolio(BaseEstimator):
         X : array-like, shape (n_samples_test,m)
             The testing input samples.
         '''
-        if multiple_simulations is False:
-            print("One simulation-scoring method")
-            return -self.eval(X)
-        else:
-            print("Multiple simulations-scoring method")
-            #Use reliability here
-            raise NotImplementedError()
+        return -self.eval(X)
 
     def eval(self, X):
         '''
