@@ -109,21 +109,9 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     X_adv_test = X_test - adv*best_estimator.coef_
 
     #Evaluate the loss value for the training and testing datasets
-    #TODO: Adapt structure when entropic case will be okay
-    if class_name == "Portfolio":
-        eval_train = best_estimator.eval(X_train)
-        eval_test = best_estimator.eval(X_test)
-        eval_adv_test = best_estimator.eval(X_adv_test)
-    else:
-        if estimator.solver == "dedicated":
-            eval_train = best_estimator.problem_.loss.value_split(theta=best_estimator.coef_, X=X_train, y=y_train)
-            eval_test = best_estimator.problem_.loss.value_split(theta=best_estimator.coef_, X=X_test, y=y_test)
-            eval_adv_test = best_estimator.problem_.loss.value_split(theta=best_estimator.coef_, X=X_adv_test, y=y_test)
-        else:
-            eval_train = best_estimator.problem_.loss.loss.value(xi=X_train, xi_labels=y_train)
-            eval_test = best_estimator.problem_.loss.loss.value(xi=X_test, xi_labels=y_test)
-            eval_adv_test = best_estimator.problem_.loss.loss.value(xi=X_test, xi_labels=y_test)
-
+    eval_train = estimator.eval(X_train)
+    eval_test = estimator.eval(X_test)
+    eval_adv_test = estimator.eval(X_adv_test)
     print("Eval train: ", eval_train)
     print("Eval test: ", eval_test)
     print("Eval adv test: ", eval_adv_test)
