@@ -5,7 +5,7 @@ import time
 import matplotlib.pyplot as plt
 import os
 
-def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, adv=1e-2, estimator_solver="dedicated", compute=True):
+def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, estimator_solver="dedicated", compute=True):
     '''
     Plots Kuhn's histograms that were presented at the DTU CEE Summer School 2018.
     Setting rho=0 stands for the SAA method of resolution of the stochastic problem.
@@ -13,7 +13,7 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, adv=1e-2, estimator_so
 
     start = time.time()
 
-    filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, estimator_solver=estimator_solver, adv=adv, compute=compute)
+    filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, estimator_solver=estimator_solver, compute=compute)
 
     with open (filename, 'rb') as f:
         eval_data_train = np.load(f)
@@ -92,9 +92,9 @@ def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
 def main():
     N = 30 #Size of samples for Kuhn's histograms
 
-    #plot_histograms(rho=0, adv=1/np.sqrt(N), estimator_solver="entropic_torch_post", compute=True)
-    plot_histograms(nb_simulations=5, adv=1/np.sqrt(N), estimator_solver="entropic_torch_post", compute=True)
-    #plot_curves(estimator_solver="entropic_torch_post", compute=True)
+    #plot_histograms(rho=0, adv=1/np.sqrt(N), compute=True)
+    plot_histograms(nb_simulations=5, compute=True)
+    #plot_curves(compute=True)
 
 if __name__ == "__main__":
     main()
