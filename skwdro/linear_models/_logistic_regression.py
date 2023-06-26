@@ -1,6 +1,7 @@
 """
 Logistic Regression
 """
+from typing import Optional
 import numpy as np
 import torch as pt
 from sklearn.base import BaseEstimator, ClassifierMixin, ClassifierMixin
@@ -24,6 +25,13 @@ import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
+def _cost_from_str(code: str) -> Cost:
+    id_, power_, type_ = code.split('-')
+    if id_ == "NC":
+        return NormCost(p=float(type_), power=float(power_), name=code)
+    elif id_ == "NLC":
+        return NormLabelCost(p=float(type_), power=float(power_), kappa=1e8, name=code)
+    else: raise ValueError("Cost code invalid: "+code)
 
 class LogisticRegression(BaseEstimator, ClassifierMixin):
     """ A Wasserstein Distributionally Robust logistic regression classifier.
@@ -43,10 +51,14 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         Determines if an intercept is fit or not
     cost: Loss, default=NormCost(p=2)
         Transport cost
-    solver: str, default='entropic'
-        Solver to be used: 'entropic' or 'dedicated'
-    solver_reg: float, default=1.0
+    solver: str, default='entropic_torch'
+        Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
+    solver_reg: float, default=1e-2
         regularization value for the entropic solver
+    n_zeta_samples: int, default=10
+        number of adversarial samples to draw
+    opt_cond: Optional[OptCond]
+        optimality condition, see :py:class:`OptCond`
 
     Attributes
     ----------
@@ -78,14 +90,14 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
 
     def __init__(self,
-                 rho=1e-2,
-                 l2_reg: int=0,
+                 rho: float=1e-2,
+                 l2_reg: float=0.,
                  fit_intercept: bool=True,
-                 cost="quad",
+                 cost: str="NC-1-2",
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
-                 opt_cond=None
+                 opt_cond: Optional[OptCond]=OptCond(2)
                  ):
 
         if rho is not float:
@@ -160,11 +172,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.n_features_in_ = d
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
-        self.cost_ = NormCost(p=2)
-
         # Define cleanly the hyperparameters of the problem.
         self.problem_ = WDROProblem(
-                cost=self.cost_,
+                cost=_cost_from_str(self.cost),
                 Xi_bounds=[-1e8,1e8],
                 Theta_bounds=[-1e8,1e8],
                 rho=self.rho,
@@ -174,16 +184,16 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 dLabel=1,
                 P=emp
             )
-
-        self.opt_cond_ = OptCond(2)
         # #########################################
 
         if self.solver=="entropic":
+            if self.opt_cond is None:
+                self.opt_cond = OptCond(2)
             # In the entropic case, we use the numpy gradient descent solver
             self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
                     self.problem_,
                     fit_intercept=self.fit_intercept,
-                    opt_cond=self.opt_cond_
+                    opt_cond=self.opt_cond
             )
         elif self.solver=="dedicated":
             # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
@@ -202,7 +212,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.problem_.loss = DualLoss(
                         LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         NormLabelCost(2., 1., 1e8),
-                        n_samples=10,
+                        n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
                     )
@@ -212,7 +222,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.problem_.loss = DualPreSampledLoss(
                         LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         NormLabelCost(2., 1., 1e8),
-                        n_samples=10,
+                        n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.rho),
                         rho_0=pt.tensor(self.rho)
                     )

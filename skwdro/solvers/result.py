@@ -42,9 +42,3 @@ def wrap_solver_result(solver_func):
             return SolverResult(**legacy_res, _iter_attrs=legacy_res.keys())
         raise RuntimeError("Invalid return from solver")
     return wrapper
-
-
-
-
-
-
