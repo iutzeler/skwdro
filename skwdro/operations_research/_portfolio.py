@@ -18,6 +18,9 @@ from skwdro.base.costs import NormCost
 from skwdro.solvers.oracle_torch import DualLoss
 from skwdro.base.cost_decoder import cost_from_str
 
+from sklearn.experimental import enable_halving_search_cv 
+from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
+
 class Portfolio(BaseEstimator):
     r""" A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
 
@@ -84,8 +87,12 @@ class Portfolio(BaseEstimator):
             raise ValueError("The Wasserstein radius cannot be negative")
         elif eta < 0:
             raise ValueError("Risk-aversion error eta cannot be negative")
-        elif(alpha <= 0 or alpha > 1):
+        elif alpha <= 0 or alpha > 1:
             raise ValueError("Confidence level alpha needs to be in the (0,1] interval")
+        elif solver_reg < 0:
+            raise ValueError("The regularization parameter cannot be negative")
+        elif n_zeta_samples < 0:
+            raise ValueError("Cannot sample a negative number of zetas")
         
         self.rho = float(rho) #Conversion to float to prevent torch.nn conversion errors
         self.eta = float(eta)
@@ -106,6 +113,8 @@ class Portfolio(BaseEstimator):
         ----------
         X : array-like, shape (n_samples_train,m)
             The training input samples.
+        y : None
+            The prediction. Always none for a portfolio estimator.
 
         """
 
@@ -200,14 +209,36 @@ class Portfolio(BaseEstimator):
             ) 
 
             #We optimize on tau once again
-            reducer_loss = PortfolioLoss_torch(eta=self.eta, alpha=self.alpha)
+            self.reducer_loss_ = PortfolioLoss_torch(eta=self.eta, alpha=self.alpha)
 
-            self.result_ = reducer_loss.value(theta=self.coef_, xi=X).mean()
+            self.result_ = self.reducer_loss_.value(theta=self.coef_, xi=X).mean()
 
         self.is_fitted_ = True
 
         #Return the estimator
         return self
+    
+    def optimize_parameters(self, X, y=None):
+
+        #Tuning rho using grid search
+        param_grid = {"rho": [10**(-i) for i in range(4,-4,-1)]}
+        grid_cv = KFold(n_splits=5, shuffle=True)
+
+        grid_estimator= GridSearchCV(estimator=self, param_grid=param_grid, cv=grid_cv, refit=True, n_jobs=-1, verbose=3)
+        #grid_estimator= HalvingGridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv,n_jobs=-1, refit=True, verbose=3, min_resources="smallest")
+
+        grid_estimator.fit(X) #Fit on the new estimator
+
+        best_params = grid_estimator.best_params_
+        best_score = grid_estimator.best_score_
+
+        print("Best params: ", best_params)
+        print("Best score: ", best_score)
+
+        best_estimator = grid_estimator.best_estimator_
+        print("Solver reg value: ",best_estimator.solver_reg)  
+
+        return best_estimator
     
     def score(self, X, y=None):
         '''
@@ -217,6 +248,8 @@ class Portfolio(BaseEstimator):
         ----------
         X : array-like, shape (n_samples_test,m)
             The testing input samples.
+        y : None
+            The prediction. Always none for a portfolio estimator.
         '''
         return -self.eval(X)
 

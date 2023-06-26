@@ -13,7 +13,7 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, adv=1e-2, estimator_so
 
     start = time.time()
 
-    filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, rho=rho, estimator_solver=estimator_solver, adv=adv, compute=compute)
+    filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, estimator_solver=estimator_solver, adv=adv, compute=compute)
 
     with open (filename, 'rb') as f:
         eval_data_train = np.load(f)
@@ -73,25 +73,28 @@ def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
             ax2.set_ylabel("Reliability")
             ax2.plot(rho_values, reliability_test, linestyle='dashed', color='red', label="Reliability")
             ax2.legend()
+
+            #Saving the histograms
+            home_dir = os.path.expanduser("~")
+            png_name = "plot_curves_" + str(size) + ".png"
+            image_path = os.path.join(home_dir, png_name)
+            plt.savefig(image_path)
+
+            if size == samples_size[-1]:
+                end = time.time()
+                print("Simulations with curves took ", end-start, " seconds")
+
+        #Visualization 
+        plt.show() #Show all three figures at once 
     
     f.close()
-    end = time.time()
-    print("Simulations with curves took ", end-start, " seconds")
-
-    #Saving the histograms
-    home_dir = os.path.expanduser("~")
-    image_path = os.path.join(home_dir, "plot_curves.png")
-    plt.savefig(image_path)
-
-    #Visualization 
-    plt.show() #Show all three figures at once 
 
 def main():
     N = 30 #Size of samples for Kuhn's histograms
 
-    #plot_histograms(rho=0, adv=1/np.sqrt(N), estimator_solver="entropic_torch_pre", compute=True)
-    plot_histograms(rho=1/np.sqrt(N), adv=1/np.sqrt(N), estimator_solver="entropic_torch_post", compute=True)
-    #plot_curves(nb_simulations=200, estimator_solver="entropic_torch_post", compute=True)
+    #plot_histograms(rho=0, adv=1/np.sqrt(N), estimator_solver="entropic_torch_post", compute=True)
+    plot_histograms(nb_simulations=5, adv=1/np.sqrt(N), estimator_solver="entropic_torch_post", compute=True)
+    #plot_curves(estimator_solver="entropic_torch_post", compute=True)
 
 if __name__ == "__main__":
     main()

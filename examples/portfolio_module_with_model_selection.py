@@ -13,11 +13,10 @@ from skwdro.operations_research import Portfolio
 
 from sklearn.experimental import enable_halving_search_cv 
 from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
-from sklearn.metrics import make_scorer
 
 def main():
 
-    N = 100 #Number of samples
+    N = 10 #Number of samples
 
     #Create input: 2 assets with only one that gives us good returns
     X = pt.tensor([1.,0.]) 
@@ -26,25 +25,7 @@ def main():
     #Creating the estimator and solving the problem
     estimator = Portfolio(solver="entropic_torch_post", reparam="softmax", n_zeta_samples=10*N)
 
-    print("Estimator params: ", estimator.get_params)
-
-    #Tuning rho using grid search
-    param_grid = {"rho": [10**(-i) for i in range(4,-4,-1)]}
-    grid_cv = KFold(n_splits=5, shuffle=True)
-
-    grid_estimator= GridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv, refit=True, n_jobs=-1, verbose=3)
-    #grid_estimator= HalvingGridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv,n_jobs=-1, refit=True, verbose=3, min_resources="smallest")
-
-    grid_estimator.fit(X) #Fit on the new estimator
-
-    best_params = grid_estimator.best_params_
-    best_score = grid_estimator.best_score_
-
-    print("Best params: ", best_params)
-    print("Best score: ", best_score)
-
-    best_estimator = grid_estimator.best_estimator_
-    best_estimator.solver_reg = best_params['rho']
+    best_estimator = estimator.optimize_parameters(X)
 
     theta = best_estimator.coef_
     lam = best_estimator.dual_var_
