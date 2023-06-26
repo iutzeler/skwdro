@@ -12,7 +12,7 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, adv=1e-2, estimator_so
 
     start = time.time()
 
-    filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, rho=rho, estimator_solver=estimator_solver, adv=adv, compute=compute)
+    filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, estimator_solver=estimator_solver, adv=adv, compute=compute)
 
     with open (filename, 'rb') as f:
         eval_data_train = np.load(f)
