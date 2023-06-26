@@ -14,9 +14,9 @@ def WDRONewsvendorSolver(pbm: WDROProblem):
     return WDRONewsvendorSpecificSolver(k=float(l.k.item()), u=float(l.u.item()), rho=pbm.rho, samples=pbm.p_hat.samples)
 
 @wrap_solver_result
-def WDRONewsvendorSpecificSolver(k: float=5, u: float=7, rho: float=1.0,samples=None):
+def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
     assert samples is not None
-    z = np.sort(samples, axis=0)
+    z = np.sort(samples, axis=0) 
     n = z.shape[0]
     a = np.array([sum(z[:i, 0]) for i in range(n-1)])
     b = np.array([n * rho - z[i+1, 0] for i in range(n-1)])

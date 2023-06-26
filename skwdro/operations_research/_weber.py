@@ -152,7 +152,7 @@ class Weber(BaseEstimator):
                                     d_labels=1,
                                     n=d
                                     )
-
+                
             else:
                 raise NotImplementedError
 
