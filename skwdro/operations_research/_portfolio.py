@@ -29,6 +29,9 @@ import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 import skwdro.solvers.hybrid_opt as hybrid_opt
 
+from sklearn.experimental import enable_halving_search_cv 
+from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
+
 class Portfolio(BaseEstimator):
     r""" A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
 
@@ -233,6 +236,28 @@ class Portfolio(BaseEstimator):
 
         #Return the estimator
         return self
+    
+    def optimize_parameters(self, X, y=None):
+
+        #Tuning rho using grid search
+        param_grid = {"rho": [10**(-i) for i in range(4,-4,-1)]}
+        grid_cv = KFold(n_splits=5, shuffle=True)
+
+        grid_estimator= GridSearchCV(estimator=self, param_grid=param_grid, cv=grid_cv, refit=True, n_jobs=-1, verbose=3)
+        #grid_estimator= HalvingGridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv,n_jobs=-1, refit=True, verbose=3, min_resources="smallest")
+
+        grid_estimator.fit(X) #Fit on the new estimator
+
+        best_params = grid_estimator.best_params_
+        best_score = grid_estimator.best_score_
+
+        print("Best params: ", best_params)
+        print("Best score: ", best_score)
+
+        best_estimator = grid_estimator.best_estimator_
+        print("Solver reg value: ",best_estimator.solver_reg)  
+
+        return best_estimator
     
     def score(self, X, y=None):
         '''
