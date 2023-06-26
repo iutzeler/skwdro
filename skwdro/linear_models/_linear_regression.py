@@ -48,9 +48,13 @@ class LinearRegression(BaseEstimator, RegressorMixin):
     cost: Loss, default=NormCost(p=2)
         Transport cost
     solver: str, default='entropic'
-        Solver to be used: 'entropic' or 'dedicated'
+        Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
     solver_reg: float, default=1.0
         regularization value for the entropic solver
+    n_zeta_samples: int, default=10
+        number of adversarial samples to draw
+    opt_cond: Optional[OptCond]
+        optimality condition, see :py:class:`OptCond`
 
     Attributes
     ----------
@@ -95,13 +99,13 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho    = rho
-        self.l2_reg = l2_reg
-        self.cost   = cost
-        self.fit_intercept = fit_intercept
-        self.solver = solver
-        self.solver_reg = solver_reg
-        self.opt_cond = opt_cond
+        self.rho            = rho
+        self.l2_reg         = l2_reg
+        self.cost           = cost
+        self.fit_intercept  = fit_intercept
+        self.solver         = solver
+        self.solver_reg     = solver_reg
+        self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
 
 
@@ -164,10 +168,11 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
         elif "torch" in self.solver:
+            cost = NormLabelCost(2., 1., 1e8)
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 self.problem_.loss = DualLoss(
                         QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        NormLabelCost(2., 1., 1e8),
+                        cost,
                         n_samples=10,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
@@ -176,7 +181,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             elif self.solver == "entropic_torch_pre":
                 self.problem_.loss = DualPreSampledLoss(
                         QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        NormLabelCost(2., 1., 1e8),
+                        cost,
                         n_samples=10,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)

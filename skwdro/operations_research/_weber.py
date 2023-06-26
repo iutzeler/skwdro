@@ -3,23 +3,15 @@ Weber problem
 """
 import numpy as np
 import torch as pt
-import torch.nn as nn
-
-from typing import Optional
-from types import NoneType
 
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-
-from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
-
-from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
+from sklearn.utils.validation import check_X_y
 
 import skwdro.solvers.entropic_dual_torch as entTorch
+from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
+from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
 from skwdro.solvers.oracle_torch import DualLoss
-from skwdro.base.losses_torch import Loss
-from skwdro.base.samplers.torch.base_samplers import LabeledSampler
-from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+from skwdro.base.losses_torch.weber import WeberLoss
 
 
 
@@ -35,6 +27,10 @@ class Weber(BaseEstimator):
         Robustness radius
     kappa: float, default=10.
         For the cost
+    solver_reg: float, default=1e-2
+        regularization value for the entropic solver
+    n_zeta_samples: int, default=10
+        number of adversarial samples to draw
     solver: str, default='entropic_torch'
         Solver to be used: 'entropic_torch' (only this is implemented for now)
 
@@ -118,10 +114,8 @@ class Weber(BaseEstimator):
                 n=d
                 )
 
-
-
-
         if self.solver=="entropic_torch":
+            # The only option available at the moment
             self.coef_ , _, self.dual_var_ = entTorch.solve_dual(self.problem_, sigma_=0.1)
         else:
             raise(NotImplementedError)
@@ -135,37 +129,3 @@ class Weber(BaseEstimator):
 
         # `fit` should always return `self`
         return self
-
-
-
-
-
-
-class WeberLoss(Loss):
-
-    def __init__(
-            self,
-            sampler: Optional[LabeledSampler]=None,
-            *,
-            name="Weber loss"):
-        super(WeberLoss, self).__init__(sampler)
-        self.pos = nn.Parameter(pt.tensor([0.0,0.0]))
-        self.name = name
-
-
-    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
-        distances = pt.linalg.norm(xi - self.pos, dim=-1)[:,:,None]
-        val = xi_labels * distances
-        return val
-
-    @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon):
-        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
-
-    @property
-    def theta(self) -> pt.Tensor:
-        return self.pos
-
-    @property
-    def intercept(self) -> NoneType:
-        return None

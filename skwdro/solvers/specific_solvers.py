@@ -1,6 +1,6 @@
 import numpy as np
 from cvxopt import matrix, solvers
-import cvxpy as cp 
+import cvxpy as cp
 
 from skwdro.solvers.result import wrap_solver_result
 from skwdro.base.costs import Cost, NormCost
@@ -11,7 +11,7 @@ def WDRONewsvendorSolver(WDROProblem):
 
 @wrap_solver_result
 def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
-    z = np.sort(samples, axis=0) 
+    z = np.sort(samples, axis=0)
     n = z.shape[0]
     a = np.array([sum(z[:i, 0]) for i in range(n-1)])
     b = np.array([n * rho - z[i+1, 0] for i in range(n-1)])
@@ -21,7 +21,7 @@ def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
     upper_bound = a <= c
 
     if not lower_bound.any():
-        lambda_star = u 
+        lambda_star = u
         return SAANewsvendorSpecificSolver(k=k,u=u,samples=samples)
     elif not upper_bound.any():
         lambda_star = 0
@@ -29,11 +29,11 @@ def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
     else:
         condition = [upper_bound[i] and lower_bound[i] for i in range(n-1)]
         i_star = condition.index(True)+1
-        
-    s  = np.minimum( z/z[i_star, 0] , np.ones((n, 1)))    
+
+    s  = np.minimum( z/z[i_star, 0] , np.ones((n, 1)))
 
     T = u * rho / z[i_star, 0] + k - u * np.mean(s)
-        
+
     if T>=0:
         return 0.0
     else:
@@ -48,7 +48,7 @@ def SAANewsvendorSolver(WDROProblem):
 @wrap_solver_result
 def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
 
-    z = np.sort(samples, axis=0) 
+    z = np.sort(samples, axis=0)
 
     # Values useful for the following computations
     n     = z.shape[0]
@@ -57,47 +57,47 @@ def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
     oT    = [0]*n
     I     = np.eye(n)
     O     = np.zeros((n, n))
-    
-    
+
+
     #####################################################
     #           COMPUTE AND SOLVE LP PROBLEM
     #####################################################
-    
+
     # ___________________ computing c ___________________
-    
-    c = np.vstack([0, 
+
+    c = np.vstack([0,
                    i/n])
     c = matrix(c)
-    
+
     # ___________________ computing h ___________________
-                    
+
     h = np.vstack([ o,
                     u*z])
     h = matrix(h)
-    
+
     # ___________________ computing G ___________________
 
-    G = np.vstack([np.hstack([ (k-u)*i, -I]), 
+    G = np.vstack([np.hstack([ (k-u)*i, -I]),
                    np.hstack([ k*i, -I])])
-    
+
     G = matrix(G)
-    
+
     # _____________ solving the LP problem ______________
-    
+
     solvers.options['show_progress'] = False
     solution = solvers.lp(c, G, h)
     theta    = np.array(solution['x'])[0]
     s        = np.array(solution['x'])[1:n]
     dual_fun = np.array(solution['primal objective'])
-    
+
     return theta
 
 @wrap_solver_result
 def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
 
-    z = np.sort(samples, axis=0) 
+    z = np.sort(samples, axis=0)
 
-    n = z.size 
+    n = z.size
 
     beta = cp.Variable(n+1)
 
@@ -122,7 +122,7 @@ def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
 
 @wrap_solver_result
 def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=False):
-    n,d = X.shape 
+    n,d = X.shape
 
     if fit_intercept:
         beta = cp.Variable(d+1+n+1)
@@ -156,12 +156,12 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
         problem.solve(verbose=False)
 
         return beta.value[:d], 0.0 , beta.value[d]
-    
+
 
 
 @wrap_solver_result
 def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.ndarray=np.array(None),fit_intercept: bool=False):
-    n,d = X.shape 
+    n,d = X.shape
 
     assert rho>0
 
@@ -178,7 +178,7 @@ def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.n
 
     if not fit_intercept:
         constraints.append(intercept == 0.0)
-  
+
 
 
     problem = cp.Problem(cp.Minimize(loss),constraints=constraints)

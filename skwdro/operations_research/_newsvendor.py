@@ -40,7 +40,11 @@ class NewsVendor(BaseEstimator):
     cost: Loss, default=NormCost()
         Transport cost
     solver: str, default='entropic'
-        Solver to be used: 'entropic' or 'dedicated'
+        Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
+    n_zeta_samples: int, default=10
+        number of adversarial samples to draw
+    opt_cond: Optional[OptCond]
+        optimality condition, see :py:class:`OptCond`
 
     Attributes
     ----------
@@ -111,6 +115,7 @@ class NewsVendor(BaseEstimator):
         if d>1:
             raise ValueError(f"The input X should be one-dimensional, got {d}")
 
+        # Define problem w/ hyperparameters
         self.problem_ = WDROProblem(
                 loss=NewsVendorLoss(k=self.k, u=self.u),
                 cost=self.cost,
@@ -120,41 +125,51 @@ class NewsVendor(BaseEstimator):
                 Theta_bounds=[0, np.inf],
                 rho=self.rho,
                 P=EmpiricalDistributionWithoutLabels(m=m,samples=X))
+        # #################################
 
-        if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
+        if "torch" in self.solver:
+            # Use torch backend to solve the entropy-regularized version
             self.cost = NormCostTorch(1, 1)
-            self.problem_.loss = DualPreSampledLoss(
-                    NewsVendorLoss_torch(k=self.k,u=self.u),
-                    self.cost,
-                    self.n_zeta_samples,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho),
-                    )
-        elif self.solver == "entropic_torch_post":
-            self.cost = NormCostTorch(1, 1)
-            self.problem_.loss = DualLoss(
-                    NewsVendorLoss_torch(k=self.k,u=self.u),
-                    self.cost,
-                    self.n_zeta_samples,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho),
-                    )
-
-
-        if self.solver=="dedicated":
-            self.coef_ = spS.WDRONewsvendorSolver(self.problem_)
-            if self.coef_ == 0.0:
-                self.dual_var_ = 0.0
+            if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
+                # Default is to sample once the zetas
+                self.problem_.loss = DualPreSampledLoss(
+                        NewsVendorLoss_torch(k=self.k,u=self.u),
+                        self.cost,
+                        self.n_zeta_samples,
+                        epsilon_0=pt.tensor(self.solver_reg),
+                        rho_0=pt.tensor(self.rho),
+                        )
+            elif self.solver == "entropic_torch_post":
+                # Use this option to resample the zetas at each gradient step
+                self.problem_.loss = DualLoss(
+                        NewsVendorLoss_torch(k=self.k,u=self.u),
+                        self.cost,
+                        self.n_zeta_samples,
+                        epsilon_0=pt.tensor(self.solver_reg),
+                        rho_0=pt.tensor(self.rho),
+                        )
             else:
-                self.dual_var_ = self.u
-        elif self.solver=="entropic":
-            self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(self.problem_,epsilon=0.1)
-        elif self.solver in {"entropic_torch", "entropic_torch_post", "entropic_torch_pre"}:
+                raise NotImplementedError()
+            # Solve dual problem
             self.coef_ , self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma_=self.solver_reg)
+
+        elif self.solver=="dedicated":
+            # Use cvx solver to solve Kuhn MP formulation
+            self.coef_ = spS.WDRONewsvendorSolver(self.problem_)
+            if self.coef_ == 0.0:
+                # If theta is 0, so is lambda (constraint non-active)
+                self.dual_var_ = 0.0
+            else:
+                self.dual_var_ = self.u
+
+        elif self.solver=="entropic":
+            # Numpy entropic solver, soon deprecated
+            self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(self.problem_,epsilon=0.1)
+
         else:
-            raise(NotImplementedError)
+            raise NotImplementedError()
 
 
         self.is_fitted_ = True
