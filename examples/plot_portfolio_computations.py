@@ -50,7 +50,7 @@ def stochastic_problem_approx(estimator,size=10000):
     X = generate_data(N=size, m=estimator.problem_.d)
     return estimator.eval(X)
 
-def parallel_for_loop_histograms(N, estimator_solver, adv):
+def parallel_for_loop_histograms(N, estimator_solver):
     '''
     Parallelization of the for loop on the number of simulations.
     '''
@@ -72,6 +72,7 @@ def parallel_for_loop_histograms(N, estimator_solver, adv):
     best_estimator = estimator.optimize_parameters(X_train)
 
     #Define adversarial data
+    adv = best_estimator.rho_
     X_adv_test = X_test - adv*best_estimator.coef_
 
     #Evaluate the loss value for the training and testing datasets
@@ -84,7 +85,7 @@ def parallel_for_loop_histograms(N, estimator_solver, adv):
 
     return eval_train, eval_test, eval_adv_test
 
-def parallel_compute_histograms(N, nb_simulations, estimator_solver, adv, compute):
+def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute):
     '''
     Computes Kuhn's histograms that were presented at the DTU CEE Summer School 2018.
     '''
@@ -103,7 +104,7 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, adv, comput
 
         print("Before joblib parallel computations")
         eval_data = Parallel(n_jobs=-1)(
-            delayed(parallel_for_loop_histograms)(N, estimator_solver, adv)
+            delayed(parallel_for_loop_histograms)(N=N, estimator_solver=estimator_solver)
             for _ in range(nb_simulations)
         )
         eval_data_train = [x for x, _, _ in eval_data]

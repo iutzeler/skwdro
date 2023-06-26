@@ -12,14 +12,20 @@ import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
 #USELESS FOR NOW: from skwdro.base.losses import PortfolioLoss 
 from skwdro.base.losses import PortfolioLoss_torch
-from skwdro.base.losses_torch import *
-from skwdro.base.costs_torch import NormCost as NormCostTorch
-from skwdro.base.costs import NormCost
-from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.base.losses_torch_portfolio import *
+from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
+
 from skwdro.base.cost_decoder import cost_from_str
+from skwdro.base.losses_torch_portfolio import *
+
+import skwdro.solvers.specific_solvers as spS
+import skwdro.solvers.entropic_dual_solvers as entS
+import skwdro.solvers.entropic_dual_torch as entTorch
+import skwdro.solvers.hybrid_opt as hybrid_opt
 
 from sklearn.experimental import enable_halving_search_cv 
 from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
+from dask.distributed import Client 
 
 class Portfolio(BaseEstimator):
     r""" A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
@@ -94,15 +100,14 @@ class Portfolio(BaseEstimator):
         elif n_zeta_samples < 0:
             raise ValueError("Cannot sample a negative number of zetas")
         
-        self.rho = float(rho) #Conversion to float to prevent torch.nn conversion errors
-        self.eta = float(eta)
-        self.alpha = float(alpha)
+        self.rho = rho
+        self.eta = eta
+        self.alpha = alpha
         self.fit_intercept = fit_intercept
         self.cost = cost
         self.solver = solver
-        self.solver_reg = float(solver_reg)
+        self.solver_reg = solver_reg
         self.reparam = reparam
-        self.random_state = random_state
         self.n_zeta_samples = n_zeta_samples
         self.seed = seed
 
@@ -117,6 +122,12 @@ class Portfolio(BaseEstimator):
             The prediction. Always none for a portfolio estimator.
 
         """
+
+        #Conversion to float to prevent torch.nn conversion errors
+        self.rho_ = float(self.rho)
+        self.eta_ = float(self.eta)
+        self.alpha_ = float(self.alpha)
+        self.solver_reg_ = float(self.solver_reg)
 
         # Check that X has correct shape
         X = check_array(X)
@@ -135,7 +146,7 @@ class Portfolio(BaseEstimator):
 
         self.cost_ = cost_from_str(self.cost)# NormCost(1, 1., "L1 cost")
         self.problem_ = WDROProblem(
-                loss=PortfolioLoss_torch(eta=self.eta, alpha=self.alpha),
+                loss=PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_),
                 cost=self.cost_,
                 xi_bounds=[-np.inf,np.inf],
                 theta_bounds=[-np.inf,np.inf],
@@ -161,32 +172,32 @@ class Portfolio(BaseEstimator):
             raise NotImplementedError("Entropic solver for Portfolio not implemented yet")
         elif self.solver == "dedicated":
             self.coef_, _, self.dual_var_, self.result_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
-                                                                    self.d_, self.eta, self.alpha)
+                                                                    self.d_, self.eta_, self.alpha_)
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
-            epsilon = pt.tensor(self.solver_reg)
+            epsilon = pt.tensor(self.solver_reg_)
 
             self.problem_.loss = DualPreSampledLoss(
                     MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.tensor(X),
                                                                 epsilon=epsilon, 
                                                                 m=m, 
                                                                 reparam=self.reparam),
-                    eta=pt.as_tensor(self.eta), 
-                    alpha=pt.as_tensor(self.alpha)),
+                    eta=pt.as_tensor(self.eta_), 
+                    alpha=pt.as_tensor(self.alpha_)),
                     cost = self.cost_,
                     n_samples=self.n_zeta_samples,
                     epsilon_0 = epsilon,
-                    rho_0 = pt.as_tensor(self.rho)
+                    rho_0 = pt.as_tensor(self.rho_)
                 )
 
         elif self.solver == "entropic_torch_post":
             self.problem_.loss = DualPostSampledLoss(
-                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.as_tensor(X), epsilon=pt.tensor(self.solver_reg),
-                                                                m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta),
-                                                                alpha=pt.as_tensor(self.alpha)),
+                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.as_tensor(X), epsilon=pt.tensor(self.solver_reg_),
+                                                                m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta_),
+                                                                alpha=pt.as_tensor(self.alpha_)),
                     cost = self.cost_,
                     n_samples=self.n_zeta_samples,
-                    epsilon_0 = pt.tensor(self.solver_reg),
-                    rho_0 = pt.as_tensor(self.rho)
+                    epsilon_0 = pt.tensor(self.solver_reg_),
+                    rho_0 = pt.as_tensor(self.rho_)
                 )
         else:
             raise NotImplementedError("Designation for solver not recognized")
@@ -205,11 +216,11 @@ class Portfolio(BaseEstimator):
                       
             self.coef_, _, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma = pt.tensor(self.solver_reg)
+                    sigma = pt.tensor(self.solver_reg_)
             ) 
 
             #We optimize on tau once again
-            self.reducer_loss_ = PortfolioLoss_torch(eta=self.eta, alpha=self.alpha)
+            self.reducer_loss_ = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
 
             self.result_ = self.reducer_loss_.value(theta=self.coef_, xi=X).mean()
 
@@ -224,10 +235,13 @@ class Portfolio(BaseEstimator):
         param_grid = {"rho": [10**(-i) for i in range(4,-4,-1)]}
         grid_cv = KFold(n_splits=5, shuffle=True)
 
-        grid_estimator= GridSearchCV(estimator=self, param_grid=param_grid, cv=grid_cv, refit=True, n_jobs=-1, verbose=3)
-        #grid_estimator= HalvingGridSearchCV(estimator=estimator, param_grid=param_grid, cv=grid_cv,n_jobs=-1, refit=True, verbose=3, min_resources="smallest")
+        client = Client(processes=False) 
 
-        grid_estimator.fit(X) #Fit on the new estimator
+        grid_estimator= GridSearchCV(estimator=self, param_grid=param_grid, cv=grid_cv, refit=True, n_jobs=-1, verbose=3)
+        #grid_estimator= HalvingGridSearchCV(estimator=self, param_grid=param_grid, cv=grid_cv, refit=True, n_jobs=-1, verbose=3, min_resources="smallest")
+ 
+        with jb.parallel_backend("dask", scatter=[X, y]):  
+            grid_estimator.fit(X) #Fit on the new estimator
 
         best_params = grid_estimator.best_params_
         best_score = grid_estimator.best_score_
@@ -270,13 +284,13 @@ class Portfolio(BaseEstimator):
                 X = pt.from_numpy(X)
 
             #We optimize on tau once again
-            reducer_loss = PortfolioLoss_torch(eta=self.eta, alpha=self.alpha)
+            reducer_loss = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
 
             return reducer_loss.value(theta=self.coef_, xi=X).mean()
 
         match self.solver:
             case "dedicated":
-                return self.problem_.loss.value(theta=self.coef_, X=X)
+                return self.problem_.loss.value(theta=self.coef_, xi=X)
             case "entropic":
                 return NotImplementedError("Entropic solver for Portfolio not implemented yet")
             case "entropic_torch":
