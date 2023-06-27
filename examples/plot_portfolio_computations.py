@@ -8,6 +8,8 @@ import torch as pt
 from joblib import Parallel, delayed
 from os import makedirs
 
+from skwdro.base.rho_tuner import RhoTunedEstimator
+
 M = 10 #Number of assets
 ALPHA = 0.2 #Confidence level
 ETA = 10 #Risk-aversion quantificator of the investor
@@ -63,7 +65,7 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     estimator.fit(X_train)
 
     #Define adversarial data
-    adv = best_estimator.rho_
+    adv = 1/np.sqrt(N)
     X_adv_test = X_test - adv*best_estimator.coef_
 
     #Evaluate the loss value for the training and testing datasets
@@ -74,9 +76,9 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     print(eval_test)
     print(eval_adv_test)
 
-    return eval_train, eval_test, eval_adv_test
+    return eval_train, eval_test, eval_adv_test, tuned_rho
 
-def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute):
+def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rho_tuning):
     '''
     Computes Kuhn's histograms that were presented at the DTU CEE Summer School 2018.
     '''
@@ -91,16 +93,28 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute):
 
     filename = './examples/stored_data/parallel_portfolio_histogram_WDRO_data.npy'
 
-    if compute is True:
+    if compute is True: 
+
+        #Define sigma for adversarial distribution pi_{0} and number of its samples
+        '''
+        sigma = 0 if estimator_solver not in \
+            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
+        '''
+        n_zeta_samples = 0 if estimator_solver not in \
+            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
+
+        #Create the estimator and solve the problem
+        estimator = Portfolio(solver=estimator_solver, reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
 
         print("Before joblib parallel computations")
         eval_data = Parallel(n_jobs=-1)(
-            delayed(parallel_for_loop_histograms)(N=N, estimator_solver=estimator_solver)
+            delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning)
             for _ in range(nb_simulations)
         )
-        eval_data_train = [x for x, _, _ in eval_data]
-        eval_data_test = [y for _, y, _ in eval_data]
-        eval_data_adv_test = [z for _, _, z in eval_data]
+        eval_data_train = [x for x, _, _, _ in eval_data]
+        eval_data_test = [y for _, y, _, _ in eval_data]
+        eval_data_adv_test = [z for _, _, z, _ in eval_data]
+        tuned_rho_data = [t for _, _, _, t in eval_data]
         print("After joblib parallel computations")
 
         #We store the computed data
@@ -119,7 +133,13 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute):
         
         f.close()
 
-    return filename
+        #We store in a different file the chosen rho values for each simulation 
+        rho_filename = './examples/stored_data/rho_tuning_data.npy'
+        with open(rho_filename, 'wb') as f:
+            np.save(f, tuned_rho_data)
+        f.close()
+
+    return filename, rho_filename
 
 def parallel_for_loop_curves(N, estimator_solver, rho):
     '''
@@ -152,7 +172,7 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
     '''
     Computes Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
     '''
-    samples_size = np.array([30,300,3000])
+    samples_size = np.array([30])
     rho_values = np.array([10**(-i) for i in range(4,-4,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
