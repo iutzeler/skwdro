@@ -104,6 +104,8 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
         best_estimator.fit(X=X_train, y=y_train)
         tuned_rho = 0
 
+    best_estimator = estimator.optimize_parameters(X_train) #TODO: ?????
+
     #Define adversarial data
     adv = 1/np.sqrt(N)
     X_adv_test = X_test - adv*best_estimator.coef_
@@ -136,6 +138,17 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
 
     if compute is True: 
 
+        #Define sigma for adversarial distribution pi_{0} and number of its samples
+        '''
+        sigma = 0 if estimator_solver not in \
+            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
+        '''
+        n_zeta_samples = 0 if estimator_solver not in \
+            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
+
+        #Create the estimator and solve the problem
+        estimator = Portfolio(solver=estimator_solver, reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+
         print("Before joblib parallel computations")
         eval_data = Parallel(n_jobs=-1)(
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
@@ -164,10 +177,10 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
         f.close()
 
         if rho_tuning is True:
-            #We store in a different file the chosen rho values for each simulation 
-            with open(rho_filename, 'wb') as f:
-                np.save(f, tuned_rho_data)
-            f.close()
+                #We store in a different file the chosen rho values for each simulation 
+                with open(rho_filename, 'wb') as f:
+                    np.save(f, tuned_rho_data)
+                f.close()
 
     return filename, rho_filename
 
