@@ -1,6 +1,7 @@
 from sklearn.base import BaseEstimator
 
 import joblib as jb
+import numpy as np
 
 from sklearn.experimental import enable_halving_search_cv 
 from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
@@ -11,12 +12,20 @@ class RhoTunedEstimator(BaseEstimator):
     """A custom estimator that tunes Wasserstein radius rho."""
 
     def __init__(self,
-                 estimator):
+                 estimator,
+                 min_power=-4,
+                 max_power=4):
+        
+        if estimator is None:
+            raise ValueError("Estimator cannot be None for rho tuning")
+
         self.estimator = estimator
+        self.min_power = min_power
+        self.max_power = max_power
 
     def fit(self, X, y):
         #Tuning rho using grid search
-        param_grid_ = {"rho": [10**(-i) for i in range(4,-4,-1)]}
+        param_grid_ = {"rho": [10**(-i) for i in range(self.max_power,self.min_power,-1)]}
         grid_cv_ = KFold(n_splits=5, shuffle=True)
 
         client_ = Client(processes=False) 

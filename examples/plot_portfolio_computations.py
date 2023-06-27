@@ -144,7 +144,7 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
 
     return filename, rho_filename
 
-def parallel_for_loop_curves(N, estimator):
+def simulations_parallel_for_loop_curves(N, estimator):
     '''
     Parallelization of the loop on the number of simulations.
     '''
@@ -168,98 +168,52 @@ def parallel_for_loop_curves(N, estimator):
 
     return eval_test, reliability_cpt
 
-def parallel_compute_curves(nb_simulations, estimator_solver, compute):
-    '''
-    Computes Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
-    '''
-    samples_size = np.array([30])
-    rho_values = np.array([10**(-i) for i in range(4,-4,-1)])
-
-    filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
-
-    if compute is True:
-
-        with open (filename, 'wb') as f:
-
-            np.save(f, rho_values)
-
-            for size in samples_size:
-                mean_eval_data_test = np.array([]) #Mean value of the out-of-sample performance for each rho
-                reliability_test = np.array([]) #Probability array that the WDRO objective value is a supremum of the real value
-                for rho_value in rho_values:
-
-                    #Define sigma for adversarial distribution pi_{0}
-                    sigma = 0 if estimator_solver \
-                        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho_value if rho_value != 0 else 0.1)
-                    n_zeta_samples = 0 if estimator_solver \
-                        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*size
-                    
-                    #Create the estimator and solve the problem
-                    estimator = Portfolio(solver=estimator_solver, rho=rho_value, reparam="softmax", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-
-                    eval_reliability_data_test = Parallel(n_jobs=-1)(
-                        delayed(parallel_for_loop_curves)(N=size, estimator=estimator)
-                        for _ in range(nb_simulations)
-                    )
-
-                    #The datatypes in the two lists are the same so we only test on one of them
-                    if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
-                        eval_data_test = [x.detach().numpy() for x, _ in eval_reliability_data_test]
-                    else:
-                        eval_data_test = [x for x, _ in eval_reliability_data_test]
-                    
-                    reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
-                    
-                    #At the end of each set of simulations, we compute the mean value for the out-of-sample performance
-                    mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
-                    reliability_test = np.append(reliability_test, reliability)
-                
-                np.save(f, mean_eval_data_test)
-                np.save(f, reliability_test)
-
-        f.close()
-
-    return samples_size, filename
-
-#TODO: PARALLELIZE WITH JOBLIB ON RHO_VALUES AND SAMPLES_SIZE TOO
-
-def super_parallel_for_loop_curves(N, estimator_solver, rho):
+def rho_parallel_for_loop_curves(N, estimator_solver, rho_value, nb_simulations):
     '''
     Parallelization of the loop on the number of simulations.
     '''
-    reliability_cpt = 0
-
-    #Define the training and testing data
-    X_train, X_test = generate_train_test_data(N=N, m=M)
 
     #Define sigma for adversarial distribution pi_{0}
     sigma = 0 if estimator_solver \
-        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
+        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho_value if rho_value != 0 else 0.1)
     n_zeta_samples = 0 if estimator_solver \
         not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
     
     #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, rho=rho, reparam="softmax", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-    estimator.fit(X_train)
+    estimator = Portfolio(solver=estimator_solver, rho=rho_value, reparam="softmax", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
 
-    #Evaluate the loss value for the testing dataset
-    eval_test = estimator.eval(X_test)
-    print("eval_test: ", eval_test)
+    eval_reliability_data_test = Parallel(n_jobs=-1)(
+        delayed(simulations_parallel_for_loop_curves)(N=N, estimator=estimator)
+        for _ in range(nb_simulations)
+    )
 
-    #Approximate the real loss value and compate it to the WDRO loss value
-    eval_approx_loss = stochastic_problem_approx(estimator)
-    print("eval_approx_loss: ", eval_approx_loss)
-    print("estimator.result_:", estimator.result_)
-    if eval_approx_loss <= estimator.result_:
-        reliability_cpt += 1
+    #The datatypes in the two lists are the same so we only test on one of them
+    if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
+        eval_data_test = [x.detach().numpy() for x, _ in eval_reliability_data_test]
+    else:
+        eval_data_test = [x for x, _ in eval_reliability_data_test]
+    
+    reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
 
-    return eval_test, reliability_cpt
+    return np.mean(eval_data_test), reliability
 
-def super_parallel_compute_curves(nb_simulations, estimator_solver, compute):
+def parallel_for_loop_curves(N, estimator_solver, rho_values, nb_simulations):
     '''
-    Computes Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
+    Parallelization of the loop on the number of simulations.
     '''
-    samples_size = np.array([30,300,3000])
+
+    mean_eval_reliability = Parallel(n_jobs=-1)(
+    delayed(rho_parallel_for_loop_curves)(N=N, estimator_solver=estimator_solver, rho_value=rho_value, nb_simulations=nb_simulations)
+    for rho_value in rho_values)
+
+    mean_eval_data_test = [x for x, _ in mean_eval_reliability]
+    reliability_test = [y for _, y in mean_eval_reliability]
+
+    return mean_eval_data_test, reliability_test
+
+
+def parallel_compute_curves(nb_simulations, estimator_solver, compute):
+    samples_size = np.array([30,300])
     rho_values = np.array([10**(-i) for i in range(4,-4,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
@@ -270,32 +224,18 @@ def super_parallel_compute_curves(nb_simulations, estimator_solver, compute):
 
             np.save(f, rho_values)
 
-            for size in samples_size:
-                mean_eval_data_test = np.array([]) #Mean value of the out-of-sample performance for each rho
-                reliability_test = np.array([]) #Probability array that the WDRO objective value is a supremum of the real value
-                for rho_value in rho_values:
+            mean_eval_rel_sizes = Parallel(n_jobs=-1)(
+                delayed(parallel_for_loop_curves)(N=size, estimator_solver=estimator_solver, rho_values=rho_values, nb_simulations=nb_simulations)
+                for size in samples_size)
+            
+            mean_eval_data_test_sizes = [x for x, _ in mean_eval_rel_sizes]
+            reliability_test_sizes = [y for _, y in mean_eval_rel_sizes]
 
-                    eval_reliability_data_test = Parallel(n_jobs=-1)(
-                        delayed(parallel_for_loop_curves)(N=size, estimator_solver=estimator_solver, rho=rho_value)
-                        for _ in range(nb_simulations)
-                    )
-
-                    #The datatypes in the two lists are the same so we only test on one of them
-                    if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
-                        eval_data_test = [x.detach().numpy() for x, _ in eval_reliability_data_test]
-                    else:
-                        eval_data_test = [x for x, _ in eval_reliability_data_test]
-                    
-                    reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
-                    
-
-                    #At the end of each set of simulations, we compute the mean value for the out-of-sample performance
-                    mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
-                    reliability_test = np.append(reliability_test, reliability)
-                
-                np.save(f, mean_eval_data_test)
-                np.save(f, reliability_test)
+            for i in range(len(mean_eval_data_test_sizes)):
+                np.save(f, mean_eval_data_test_sizes[i])
+                np.save(f, reliability_test_sizes[i])
 
         f.close()
 
     return samples_size, filename
+
