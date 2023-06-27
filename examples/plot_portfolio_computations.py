@@ -144,7 +144,7 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
 
     return filename, rho_filename
 
-def parallel_for_loop_curves(N, estimator_solver, rho):
+def parallel_for_loop_curves(N, estimator):
     '''
     Parallelization of the loop on the number of simulations.
     '''
@@ -153,14 +153,6 @@ def parallel_for_loop_curves(N, estimator_solver, rho):
     #Define the training and testing data
     X_train, X_test = generate_train_test_data(N=N, m=M)
 
-    #Define sigma for adversarial distribution pi_{0}
-    sigma = 0 if estimator_solver \
-        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
-    n_zeta_samples = 0 if estimator_solver \
-        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
-    
-    #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, rho=rho, reparam="softmax", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
     estimator.fit(X_train)
 
     #Evaluate the loss value for the testing dataset
@@ -196,8 +188,17 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
                 reliability_test = np.array([]) #Probability array that the WDRO objective value is a supremum of the real value
                 for rho_value in rho_values:
 
+                    #Define sigma for adversarial distribution pi_{0}
+                    sigma = 0 if estimator_solver \
+                        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho_value if rho_value != 0 else 0.1)
+                    n_zeta_samples = 0 if estimator_solver \
+                        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*size
+                    
+                    #Create the estimator and solve the problem
+                    estimator = Portfolio(solver=estimator_solver, rho=rho_value, reparam="softmax", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+
                     eval_reliability_data_test = Parallel(n_jobs=-1)(
-                        delayed(parallel_for_loop_curves)(N=size, estimator_solver=estimator_solver, rho=rho_value)
+                        delayed(parallel_for_loop_curves)(N=size, estimator=estimator)
                         for _ in range(nb_simulations)
                     )
 

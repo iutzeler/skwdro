@@ -8,7 +8,7 @@ from skwdro.base.losses_torch import Loss
 from skwdro.base.costs_torch import NormCost
 from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler
 from skwdro.base.samplers.torch.cost_samplers import NoLabelsCostSampler
-from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler, PortfolioLaplaceSampler
+from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler
 
 class RiskPortfolioLoss_torch(Loss):
 
