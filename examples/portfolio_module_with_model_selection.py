@@ -10,9 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from skwdro.operations_research import Portfolio
-
-from sklearn.experimental import enable_halving_search_cv 
-from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
+from skwdro.base.rho_tuner import RhoTunedEstimator
 
 def main():
 
@@ -25,7 +23,10 @@ def main():
     #Creating the estimator and solving the problem
     estimator = Portfolio(solver="entropic_torch_post", reparam="softmax", n_zeta_samples=10*N)
 
-    best_estimator = estimator.optimize_parameters(X)
+    rho_tuner = RhoTunedEstimator(estimator)
+    rho_tuner.fit(X=X, y=None)
+
+    best_estimator = rho_tuner.best_estimator_
 
     theta = best_estimator.coef_
     lam = best_estimator.dual_var_

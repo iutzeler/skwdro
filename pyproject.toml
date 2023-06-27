@@ -45,7 +45,6 @@ examples = [
     "tqdm",
     "seaborn",
     "joblib",
-    "mv-laplace"
 ]
 docs = [
     "numpydoc",
