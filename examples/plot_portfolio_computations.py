@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from skwdro.operations_research import Portfolio
+from skwdro.operations_research import Portfolio, NewsVendor
 from sklearn.model_selection import train_test_split
 import torch as pt
 
