@@ -52,7 +52,6 @@ class LogisticRegLoss(nn.Module):
         return -self.logsigmoid(inner) + 1e-3 * torch.linalg.norm(self.linear.weight)**2
     
     def adv_grad(self, x, y):
-        assert False
         b, = y.size()
         assert x.size() == (b, self.d)
 
@@ -67,7 +66,6 @@ class LogisticRegLoss(nn.Module):
         return adv_gradient
 
     def perturbed_data(self, x, y, sigma, step):
-        assert False
         b, d = x.size()
         assert y.size() == (b,)
 
@@ -114,6 +112,7 @@ def train(model, x, y):
     model.train()
     grads = []
     times = []
+    crits = []
     start = time.time()
     opt = optim.Adam(model.model.parameters(), lr=1e-3)
     for _ in range(300):
@@ -124,8 +123,8 @@ def train(model, x, y):
 
 
     # opt = optim.LBFGS(model.parameters(), line_search_fn=None, max_iter=1)
-    opt = HybridAdam([{'params': model.model.parameters(), 'lr':1e-5}, {'params': [model.lbd], 'lr':1e0, 'non_neg':True}])
-    for _ in range(500):
+    opt = HybridAdam([{'params': model.model.parameters(), 'lr':1e-1}, {'params': [model.lbd], 'lr':1e0, 'non_neg':True}])
+    for t in range(1000):
         if False:
             def closure():
                 opt.zero_grad()
@@ -164,25 +163,42 @@ def train(model, x, y):
         opt.zero_grad()
         loss = model.forward(x, y).mean()
         loss.backward()
-        print("\nBefore Step")
-        print(f"{loss=}")
-        print(f"{model.lbd.grad=}")
+        #print(f"{loss=}")
+        #print(f"{model.lbd.grad=}")
         grads.append(model.lbd.grad.item())
         times.append(time.time() - start)
-        print(f"{model.lbd=}")
+        #print(f"{model.lbd=}")
+        #print(f"{torch.linalg.norm(model.model.linear.weight.grad)=}")
+        #print(f"{torch.linalg.norm(model.model.linear.bias.grad)=}\n")
+        crit = sum([torch.linalg.norm(param.grad).item() for param in model.parameters()])
+        crits.append(crit)
+        if t == 0:
+            crit_tol = tol * crit
+        if t % 100 == 0:
+            print(f"{crit=}")
+        if crit < crit_tol:
+            print(f"Break at {t=} with {crit=} / {crit_tol=}")
+            break
         opt.step()
-
-    plt.figure()
-    plt.plot(times, grads)
-    plt.show()
-    return loss.item().detach()
+    if False:
+        plt.figure()
+        plt.plot(times, grads)
+        plt.yscale('log')
+        plt.title("Grad lbd")
+        plt.show()
+        plt.figure()
+        plt.plot(times, crits)
+        plt.yscale('log')
+        plt.title("Grads")
+        plt.show()
+    return loss.item()
 
 def eval_perf(model, eval_train, X_test, y_test, pert_sigma, pert_step):
-    assert False
     model.eval()
-    X_pert, y_pert = model.perturbed_data(X_test, y_test, pert_sigma, pert_step)
-    eval_test  = model.forward(X_test,  y_test).item()
-    eval_pert  = model.forward(X_pert,  y_pert).item()
+    pert_model = model.model
+    X_pert, y_pert = pert_model.perturbed_data(X_test, y_test, pert_sigma, pert_step)
+    eval_test  = pert_model.forward(X_test,  y_test).mean().item()
+    eval_pert  = pert_model.forward(X_pert,  y_pert).mean().item()
     return eval_train, eval_test, eval_pert
 
 def plot_metric(metric, name, color, bins, alpha=1):
@@ -201,22 +217,25 @@ def tikzplotlib_fix_ncols(obj):
 
 
 def plot_metrics(robust, metrics, save_tex=False):
-    train = [m[0] for m in metrics]
-    test  = [m[1] for m in metrics]
-    pert  = [m[2] for m in metrics]
+    #train = [m[0] for m in metrics]
+    test  = [m[0] - m[1] for m in metrics]
+    pert  = [m[0] - m[2] for m in metrics]
     #bins = plot_metric(train, "Train", "blue", 100)
     #plot_metric(test, "Test", "orange", bins, alpha=0.3)
     #plot_metric(pert, "Pert", "red", bins)
     #data={'Train':train, 'Test':test, 'Pert':pert}
     #sns.histplot(data=[train, test, pert], bins=50, stat="probability", log_scale=False, kde="True")
     bandwidth=1e-2
-    ktrain = KernelDensity(bandwidth=bandwidth).fit(np.array(train).reshape(-1, 1))
+    #ktrain = KernelDensity(bandwidth=bandwidth).fit(np.array(train).reshape(-1, 1))
     ktest  = KernelDensity(bandwidth=bandwidth).fit(np.array(test).reshape(-1, 1))
     kpert  = KernelDensity(bandwidth=bandwidth).fit(np.array(pert).reshape(-1, 1))
-    x = np.linspace(0., 0.2, 100).reshape(-1,1)
-    plt.plot(x, np.exp(ktrain.score_samples(x)), label="Robust loss on train set" if robust else "Loss on train set", color="C1")
-    plt.plot(x, np.exp(ktest.score_samples(x)), label="Loss on test set", color="C2")
-    plt.plot(x, np.exp(kpert.score_samples(x)), label="Loss on perturbed test set", color="C0")
+    x = np.linspace(-0.2, 0.2, 100).reshape(-1,1)
+    #plt.plot(x, np.exp(ktrain.score_samples(x)), label="Robust loss on train set" if robust else "Loss on train set", color="C1")
+    plt.plot(x, np.exp(ktest.score_samples(x)), label="(Robust loss on train set) - (Loss on test set)", color="C2")
+    plt.plot(x, np.exp(kpert.score_samples(x)), label="(Robust loss on train set) - (Loss on perturbed test set)", color="C0")
+    ymax = max(max(np.exp(ktest.score_samples(x))), max(np.exp(kpert.score_samples(x))))
+    plt.vlines(0, 0, ymax+1, color="C1")
+    plt.ylim(ymax=ymax+0.5)
     if robust:
         plt.title("Smoothed histogram of losses with the WDRO predictor")
     else:
@@ -233,27 +252,28 @@ def plot_metrics(robust, metrics, save_tex=False):
 d = 10
 n_train = 100
 n_test = 100
-rho = 0.01
+rho = 0.02
 pert_step = 3*rho
 pert_sigma = 0.
 cluster_std = 0.7
-n_xp = 100
+n_xp = 30
 sigma=1e-3
-eps=1e-10
+eps=1e-8
 p = 1
+tol = 1/100
 
 def make_xp(robust):
     # model = RobustLogisticLogLoss(d, rho) if robust else LogisticRegLoss(d)
     logistic = LogisticRegLoss(d)
     if alt:
-        model = LangevinApproxDRO(logistic, rho, n_train, eps, sigma, sample_y=False, p=p, lr=1e-5, T=200, m_train=200, sigma_langevin=sigma)
+        model = LangevinApproxDRO(logistic, rho, n_train, eps, sigma, sample_y=False, p=p, lr=1e-4, T=100, m_train=100, sigma_langevin=sigma)
     else:
         model = LangevinApproxDRO(logistic, rho, n_train, eps, sigma, sample_y=False, p=p, lr=1e-5, T=1000, m_train=100, sigma_langevin=sigma)
     X_train, X_test, y_train, y_test = generate_data(d, n_train, n_test, cluster_std)
     eval_train = train(model, X_train, y_train)
-    # metrics = eval_perf(model, eval_train, X_test, y_test, pert_sigma, pert_step)
-    # print(metrics, flush=True)
-    return None
+    metrics = eval_perf(model, eval_train, X_test, y_test, pert_sigma, pert_step)
+    print(metrics, flush=True)
+    return metrics
 
 def main(robust, filename):
     start = time.time()
