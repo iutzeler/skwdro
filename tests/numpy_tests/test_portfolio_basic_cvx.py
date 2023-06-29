@@ -1,6 +1,6 @@
 '''
 Basic test for the specific solver linked to the Mean-Risk Portfolio Problem.
-We test with m = 2 assets, and only one of them gives money. The best 
+We test with m = 2 assets, and only one of them gives money. The best
 decision thus is to invest all of the portfolio on the one that generates
 benefit.
 '''
