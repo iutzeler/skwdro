@@ -10,7 +10,8 @@ from test_binary_separable_log_classif import generate_points
 def launch_solver(fi: bool=False):
     estimator = LogisticRegression(
             rho=1e-2,
-            l2_reg=None,
+            l2_reg=.0,
+            cost="t-NLC-2-2",
             fit_intercept=fi,
             solver="entropic_torch"
             )

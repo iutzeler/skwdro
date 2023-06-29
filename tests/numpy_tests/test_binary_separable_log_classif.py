@@ -19,7 +19,8 @@ def generate_points():
 def fit_estimator(fi=True):
     estimator = LogisticRegression(
             rho=1e-3,
-            l2_reg=None,
+            l2_reg=0.,
+            cost="t-NLC-2-2",
             fit_intercept=fi,
             solver="entropic_torch"
         )

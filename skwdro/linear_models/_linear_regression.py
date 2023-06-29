@@ -10,17 +10,17 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
+import skwdro.solvers.specific_solvers as spS
+import skwdro.solvers.entropic_dual_solvers as entS
+import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses import QuadraticLoss
 from skwdro.base.losses_torch import QuadraticLoss as QuadraticLossTorch
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
 from skwdro.solvers.optim_cond import OptCond
-
-import skwdro.solvers.specific_solvers as spS
-import skwdro.solvers.entropic_dual_solvers as entS
-import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
+from skwdro.base.cost_decoder import cost_from_str
 
 class LinearRegression(BaseEstimator, RegressorMixin):
     r""" A Wasserstein Distributionally Robust linear regression.
@@ -41,12 +41,12 @@ class LinearRegression(BaseEstimator, RegressorMixin):
     ----------
     rho : float, default=1e-2
         Robustness radius
-    l2_reg  : float, default=None
+    l2_reg : float, default=0.
         l2 regularization
     fit_intercept : boolean, default=True
         Determines if an intercept is fit or not
-    cost: Loss, default=NormCost(p=2)
-        Transport cost
+    cost: str, default="n-NC-1-2"
+        Tiret-separated code to define the transport cost: "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic'
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
     solver_reg: float, default=1.0
@@ -81,9 +81,9 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
     def __init__(self,
                  rho=1e-2,
-                 l2_reg=None,
+                 l2_reg=.0,
                  fit_intercept=True,
-                 cost=None,
+                 cost="n-NC-1-2",
                  solver="entropic",
                  solver_reg=1.0,
                  n_zeta_samples: int=10,
@@ -145,14 +145,15 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         # Setup problem parameters ################
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
+        cost = cost_from_str(self.cost)
         self.problem_ = WDROProblem(
                 loss=QuadraticLoss(l2_reg=self.l2_reg),
-                cost=NormCost(p=2),
-                Xi_bounds=[-1e8,1e8],
-                Theta_bounds=[-1e8,1e8],
+                cost=cost,
+                xi_bounds=[-1e8,1e8],
+                theta_bounds=[-1e8,1e8],
                 rho=self.rho,
-                P=emp,
-                dLabel=1,
+                p_hat=emp,
+                d_labels=1,
                 d=d,
                 n=d
             )
@@ -168,7 +169,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
         elif "torch" in self.solver:
-            cost = NormLabelCost(2., 1., 1e8)
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 self.problem_.loss = DualLoss(
                         QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),

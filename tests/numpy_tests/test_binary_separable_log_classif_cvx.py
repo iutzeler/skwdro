@@ -11,6 +11,7 @@ def fit_estimator(fi=True):
     estimator = LogisticRegression(
             rho=1e-2,
             l2_reg=None,
+            cost="n-NC-1-1",
             fit_intercept=fi,
             solver="dedicated"
         )

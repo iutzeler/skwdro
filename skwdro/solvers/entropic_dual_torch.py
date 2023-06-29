@@ -73,7 +73,7 @@ def solve_dual(wdro_problem: WDROProblem, sigma_: Union[float, pt.Tensor]=pt.ten
     else: raise ValueError("Please provide a valid type for sigma_ parameter in solve_dual.")
 
     # Cast our raw data into tensors
-    xi, xi_labels = extract_data(wdro_problem.P)
+    xi, xi_labels = extract_data(wdro_problem.p_hat)
 
     loss = wdro_problem.loss
 

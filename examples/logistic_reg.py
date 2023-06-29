@@ -41,7 +41,7 @@ estimator = LogisticRegression(
         rho=1e-2,
         l2_reg=0.,
         fit_intercept=True,
-        cost="NC-2-2",
+        cost="n-NC-2-2",
         solver="dedicated"
         )
 print(".", end='')
@@ -62,7 +62,7 @@ estimator_ent = LogisticRegression(
         rho=1e-2,
         l2_reg=0.,
         fit_intercept=True,
-        cost="NLC-2-2",
+        cost="t-NLC-2-2",
         n_zeta_samples=20,
         solver="entropic_torch"
         )
@@ -84,7 +84,7 @@ estimator_pre = LogisticRegression(
         rho=1e-2,
         l2_reg=0.,
         fit_intercept=True,
-        cost="NLC-2-2",
+        cost="t-NLC-2-2",
         n_zeta_samples=20,
         solver="entropic_torch_pre"
         )
