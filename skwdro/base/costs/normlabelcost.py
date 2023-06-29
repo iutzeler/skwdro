@@ -1,71 +1,8 @@
-import numpy as np
 from typing import Optional
 
-ENGINES_NAMES = {
-    "pt": "PyTorch tensors",
-    "np": "Numpy arrays",
-    "jx": "Jax arrays"
-}
+import numpy as np
 
-
-ENGINES_NAMES = {
-    "pt": "PyTorch tensors",
-    "np": "Numpy arrays",
-    "jx": "Jax arrays"
-}
-
-class Cost:
-    """ Base class for transport functions """
-
-    def __init__(self, name: str="", engine: str=""):
-        self.name = name
-        self.engine = engine
-
-    def value(self, x, y, *args):
-        raise NotImplementedError("Please Implement this method")
-
-    def __str__(self) -> str:
-        return "Cost named " + self.name + " using as data: " + ENGINES_NAMES[self.engine]
-
-    def sampler(self, xi, xi_labels, epsilon):
-        return self._sampler_data(xi, epsilon), self._sampler_labels(xi_labels, epsilon)
-
-    def _sampler_data(self, xi, epsilon):
-        raise NotImplementedError()
-
-    def _sampler_labels(self, xi_labels, epsilon):
-        raise NotImplementedError()
-
-
-class NormCost(Cost):
-    """ p-norm to some power """
-
-    def __init__(self, p=1.0, power=1.0, name=None):
-        super().__init__(name="Norm" if name is None else name, engine="np")
-        self.p = p
-        self.power = power
-
-    def value(self,x,y, *_):
-
-        r"""
-        Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
-
-        Parameters
-        ----------
-        x : Array, shape (n_samples, n_features, d)
-            Data point to be displaced
-        y : Array, shape (n_samples, n_features, d)
-            Data point towards which ``xi`` is displaced
-        """
-        if len(x.shape) > 2:
-            return self._parallel_value(x, y)
-        diff = np.array(x-y).flatten()
-        return np.linalg.norm(diff,ord=self.p)**self.power
-
-    def _parallel_value(self, x, y):
-        return np.linalg.norm(x - y, axis=2, ord=self.p, keepdims=True) ** self.power
-
-
+from .normcost import NormCost
 
 class NormLabelCost(NormCost):
     """ p-norm of the ground metric to change data + label
