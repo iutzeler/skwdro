@@ -94,12 +94,12 @@ def solve_dual(wdro_problem: WDROProblem, sigma_: Union[float, pt.Tensor]=pt.ten
     if loss.presample:
         np.save(
                 "test_pre.npy",
-                optim_presample(30, optimizer, xi, xi_labels, loss)
+                optim_presample(optimizer, xi, xi_labels, loss)
             )
     else:
         np.save(
                 "test_post.npy",
-                optim_postsample(1000, optimizer, xi, xi_labels, loss)
+                optim_postsample(optimizer, xi, xi_labels, loss)
             )
 
     theta = detach_tensor(loss.theta)
@@ -110,7 +110,6 @@ def solve_dual(wdro_problem: WDROProblem, sigma_: Union[float, pt.Tensor]=pt.ten
     return theta, intercept, lambd
 
 def optim_presample(
-        n_iter: int,
         optimizer: pt.optim.Optimizer,
         xi: pt.Tensor,
         xi_labels: Optional[pt.Tensor],
@@ -120,8 +119,6 @@ def optim_presample(
 
     Parameters
     ----------
-    n_iter : int
-        number of gradient descent iterations to perform
     optimizer : pt.optim.Optimizer
         loss-dependant optimizer, can be customized if needed
     xi : pt.Tensor
@@ -157,7 +154,7 @@ def optim_presample(
         return objective.item()
 
     losses = []
-    for _ in range(n_iter):
+    for _ in loss.iterations:
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
         with pt.no_grad(): losses.append(closure(False))
@@ -165,7 +162,6 @@ def optim_presample(
     return losses
 
 def optim_postsample(
-        n_iter: int,
         optimizer: pt.optim.Optimizer,
         xi: pt.Tensor,
         xi_labels: Optional[pt.Tensor],
@@ -196,7 +192,7 @@ def optim_postsample(
     """
     losses = []
 
-    for _ in range(n_iter):
+    for _ in loss.iterations:
         optimizer.zero_grad()
 
         # Resamples zetas at forward pass

@@ -85,6 +85,10 @@ class _DualLoss(nn.Module, ABC):
         self.n_iter = n_iter
         self._opti = None
 
+    @property
+    def iterations(self):
+        return range(self.n_iter)
+
     @abstractmethod
     def forward(self, *args):
         raise NotImplementedError()
