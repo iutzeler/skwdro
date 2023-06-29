@@ -15,16 +15,16 @@ from skwdro.base.losses import NewsVendorLoss
 from skwdro.base.losses_torch import NewsVendorLoss_torch
 from skwdro.base.costs import NormCost, Cost
 from skwdro.base.costs_torch import NormCost as NormCostTorch
-
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
+from skwdro.base.cost_decoder import cost_from_str
 
 
 
 class NewsVendor(BaseEstimator):
-    """ A NewsVendor Wasserstein Distributionally Robust Estimator.
+    r""" A NewsVendor Wasserstein Distributionally Robust Estimator.
 
     The cost function is XXX
     Uncertainty is XXX
@@ -37,8 +37,8 @@ class NewsVendor(BaseEstimator):
         Buying cost
     u   : float, default=7
         Selling cost
-    cost: Loss, default=NormCost()
-        Transport cost
+    cost: str, default="n-NC-1-2"
+        Tiret-separated code to define the transport cost: "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic'
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
     n_zeta_samples: int, default=10
@@ -64,9 +64,9 @@ class NewsVendor(BaseEstimator):
     def __init__(
             self,
             rho: float=1e-2,
-            k: int=5,
-            u: int=7,
-            cost: Cost=NormCost(),
+            k: float=5,
+            u: float=7,
+            cost: str="n-NC-1-2",
             solver_reg: float=.01,
             n_zeta_samples: int=10,
             solver: str="entropic"):
@@ -115,16 +115,17 @@ class NewsVendor(BaseEstimator):
         if d>1:
             raise ValueError(f"The input X should be one-dimensional, got {d}")
 
+        cost = cost_from_str(self.cost)
         # Define problem w/ hyperparameters
         self.problem_ = WDROProblem(
                 loss=NewsVendorLoss(k=self.k, u=self.u),
-                cost=self.cost,
+                cost=cost,
                 d=1,
-                Xi_bounds=[0, 20],
+                xi_bounds=[0, 20],
                 n=1,
-                Theta_bounds=[0, np.inf],
+                theta_bounds=[0, np.inf],
                 rho=self.rho,
-                P=EmpiricalDistributionWithoutLabels(m=m,samples=X))
+                p_hat=EmpiricalDistributionWithoutLabels(m=m,samples=X))
         # #################################
 
         if "torch" in self.solver:
@@ -134,7 +135,7 @@ class NewsVendor(BaseEstimator):
                 # Default is to sample once the zetas
                 self.problem_.loss = DualPreSampledLoss(
                         NewsVendorLoss_torch(k=self.k,u=self.u),
-                        self.cost,
+                        cost,
                         self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho),
@@ -143,7 +144,7 @@ class NewsVendor(BaseEstimator):
                 # Use this option to resample the zetas at each gradient step
                 self.problem_.loss = DualLoss(
                         NewsVendorLoss_torch(k=self.k,u=self.u),
-                        self.cost,
+                        cost,
                         self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho),

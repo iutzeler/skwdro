@@ -19,22 +19,15 @@ from skwdro.base.losses_torch import LogisticLoss as LogisticLossTorch
 from skwdro.base.costs import Cost, NormCost
 from skwdro.base.costs_torch import NormLabelCost
 from skwdro.solvers.optim_cond import OptCond
+from skwdro.base.cost_decoder import cost_from_str
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
-def _cost_from_str(code: str) -> Cost:
-    id_, power_, type_ = code.split('-')
-    if id_ == "NC":
-        return NormCost(p=float(type_), power=float(power_), name=code)
-    elif id_ == "NLC":
-        return NormLabelCost(p=float(type_), power=float(power_), kappa=1e8, name=code)
-    else: raise ValueError("Cost code invalid: "+code)
-
 class LogisticRegression(BaseEstimator, ClassifierMixin):
-    """ A Wasserstein Distributionally Robust logistic regression classifier.
+    r""" A Wasserstein Distributionally Robust logistic regression classifier.
 
 
     The cost function is XXX
@@ -43,14 +36,14 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
     Parameters
     ----------
-    rho : float, default=1e-2
+    rho: float, default=1e-2
         Robustness radius
-    l2_reg  : float, default=None
+    l2_reg: float, default=None
         l2 regularization
-    fit_intercept : boolean, default=True
+    fit_intercept: boolean, default=True
         Determines if an intercept is fit or not
-    cost: Loss, default=NormCost(p=2)
-        Transport cost
+    cost: str, default="n-NC-1-2"
+        Tiret-separated code to define the transport cost: "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic_torch'
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
     solver_reg: float, default=1e-2
@@ -93,7 +86,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  rho: float=1e-2,
                  l2_reg: float=0.,
                  fit_intercept: bool=True,
-                 cost: str="NC-1-2",
+                 cost: str="n-NC-1-2",
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
@@ -173,16 +166,17 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         # Define cleanly the hyperparameters of the problem.
+        cost = cost_from_str(self.cost)
         self.problem_ = WDROProblem(
-                cost=_cost_from_str(self.cost),
-                Xi_bounds=[-1e8,1e8],
-                Theta_bounds=[-1e8,1e8],
-                rho=self.rho,
+                cost=cost,
                 loss=LogisticLoss(l2_reg=self.l2_reg),
+                p_hat=emp,
                 n=d,
                 d=d,
-                dLabel=1,
-                P=emp
+                d_labels=1,
+                xi_bounds=[-1e8,1e8],
+                theta_bounds=[-1e8,1e8],
+                rho=self.rho
             )
         # #########################################
 
@@ -211,7 +205,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 # Default torch implementation resamples from pi_0 at each SGD step
                 self.problem_.loss = DualLoss(
                         LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        NormLabelCost(2., 1., 1e8),
+                        cost,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
@@ -221,7 +215,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
                 self.problem_.loss = DualPreSampledLoss(
                         LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        NormLabelCost(2., 1., 1e8),
+                        cost,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.rho),
                         rho_0=pt.tensor(self.rho)

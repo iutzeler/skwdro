@@ -105,12 +105,12 @@ class Weber(BaseEstimator):
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)),
                 cost = cost,
-                Xi_bounds=[0,20],
-                Theta_bounds=[0,np.inf],
+                xi_bounds=[0,20],
+                theta_bounds=[0,np.inf],
                 rho=self.rho,
-                P=emp,
+                p_hat=emp,
                 d=d,
-                dLabel=1,
+                d_labels=1,
                 n=d
                 )
 

@@ -6,19 +6,19 @@ import numpy as np
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
 
+import skwdro.solvers.specific_solvers as spS
+import skwdro.solvers.entropic_dual_solvers as entS
+import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
 from skwdro.base.losses import PortfolioLoss_torch
 from skwdro.base.losses_torch import *
 from skwdro.base.costs_torch import NormCost as NormCostTorch
 from skwdro.base.costs import NormCost
 from skwdro.solvers.oracle_torch import DualLoss
-
-import skwdro.solvers.specific_solvers as spS
-import skwdro.solvers.entropic_dual_solvers as entS
-import skwdro.solvers.entropic_dual_torch as entTorch
+from skwdro.base.cost_decoder import cost_from_str
 
 class Portfolio(BaseEstimator):
-    """ A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
+    r""" A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
 
     The cost function is XXX
     Uncertainty is XXX
@@ -33,8 +33,8 @@ class Portfolio(BaseEstimator):
         Confidence level of the Conditional Value at Risk
     fit_intercept: boolean, default=None
         Determines if an intercept is fit or not
-    cost: Loss, default=NormCost(p=1)
-        Transport cost
+    cost: str, default="n-NC-1-2"
+        Tiret-separated code to define the transport cost: "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic'
         Solver to be used: 'entropic' or 'dedicated'
     solver_reg: float, default=1.0
@@ -67,7 +67,7 @@ class Portfolio(BaseEstimator):
                  eta=0,
                  alpha=.95,
                  fit_intercept=None,
-                 cost=None,
+                 cost="n-NC-1-1",
                  solver="dedicated",
                  solver_reg: float=1e-2,
                  n_zeta_samples: int=10,
@@ -117,15 +117,15 @@ class Portfolio(BaseEstimator):
         self.n_features_in_ = m
         emp = EmpiricalDistributionWithoutLabels(m=N, samples=X)
 
-        self.cost_ = NormCost(1, 1., "L1 cost")
+        self.cost_ = cost_from_str(self.cost)# NormCost(1, 1., "L1 cost")
         self.problem_ = WDROProblem(
                 # TODO: PUT PortfolioLoss INSTEAD, ONLY USE TORCH VERSION IF SOLVER IS ENTROPIC. DOESN'T PASS TYPECHECK BECAUSE loss IS NEITHER A DUAL LOSS NOR A NUMPY LOSS, AND PortfolioLoss DOESN'T WORK (for some error with a multiplication, I'll let u investigate)
                 loss=PortfolioLoss_torch(eta=self.eta, alpha=self.alpha),
                 cost=self.cost_,
-                Xi_bounds=[-np.inf,np.inf],
-                Theta_bounds=[-np.inf,np.inf],
+                xi_bounds=[-np.inf,np.inf],
+                theta_bounds=[-np.inf,np.inf],
                 rho=self.rho,
-                P=emp,
+                p_hat=emp,
                 d=m,
                 n=m
             )
@@ -168,5 +168,3 @@ class Portfolio(BaseEstimator):
         assert self.is_fitted_ == True #We have to fit before evaluating
 
         return self.problem_.loss.value(theta=self.coef_, xi=X)
-
-

@@ -124,7 +124,7 @@ class MyWDRORegressor(BaseEstimator, RegressorMixin):
                 loss = None,
                 cost = cost,
                 rho=self.rho,
-                P=emp
+                p_hat=emp
             )
 
         # #########################################

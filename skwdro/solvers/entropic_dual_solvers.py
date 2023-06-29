@@ -91,11 +91,11 @@ def WangGaoXie_v2(wdro_problem: WDROProblem, epsilon=0.1, n_samples=50, fit_inte
 
     d = wdro_problem.d
 
-    no_labels = wdro_problem.dLabel == 0
+    no_labels = wdro_problem.d_label == 0
 
-    data_structure = wdro_problem.P
+    data_structure = wdro_problem.p_hat
 
-    m = wdro_problem.P.m
+    m = wdro_problem.p_hat.m
     rho =  wdro_problem.rho
 
     # Starting lambda is 1/rho

@@ -1,6 +1,6 @@
 '''
 Basic test for the specific solver linked to the Mean-Risk Portfolio Problem.
-We test with m = 2 assets, and only one of them gives money. The best 
+We test with m = 2 assets, and only one of them gives money. The best
 decision thus is to invest all of the portfolio on the one that generates
 benefit.
 '''
@@ -9,7 +9,7 @@ import numpy as np
 from skwdro.operations_research import Portfolio
 
 def generate_data(N):
-    X = np.array([1,0]) 
+    X = np.array([1,0])
     return np.tile(X,(N,1)) #Duplicate the above line N times
 
 def test_fit_low_radius():

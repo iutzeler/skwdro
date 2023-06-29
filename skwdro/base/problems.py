@@ -68,27 +68,27 @@ class WDROProblem:
             self,
             cost: Cost,
             loss: LossType,
-            P: Distribution,
+            p_hat: Distribution,
             n: int=0,
-            Theta_bounds: Bounds=None,
             d: int=0,
-            Xi_bounds: Bounds=None,
-            dLabel: int=0,
-            XiLabel_bounds: Bounds=None,
+            d_labels: int=0,
+            theta_bounds: Bounds=None,
+            xi_bounds: Bounds=None,
+            xi_labels_bounds: Bounds=None,
             rho: float=0.,
             name="WDRO Problem"):
 
         ## Optimization variable
         self.n = n # size of Theta
-        self.Theta_bounds = Theta_bounds
+        self.theta_bounds = theta_bounds
 
         ## Uncertain variable
         self.d = d # size of Xi
-        self.Xi_bounds = Xi_bounds
+        self.xi_bounds = xi_bounds
 
         ## Uncertain labels
-        self.dLabel = dLabel # size of Xi
-        self.XiLabel_bounds = XiLabel_bounds
+        self.d_label = d_labels # size of Xi
+        self.xi_labels_bounds = xi_labels_bounds
 
         ## Problem loss
         self.loss = loss
@@ -100,7 +100,7 @@ class WDROProblem:
         self.c = cost.value
 
         ## Base distribution
-        self.P = P
+        self.p_hat = p_hat
 
         ## Problem name
         self.name = name

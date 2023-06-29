@@ -2,15 +2,20 @@ import numpy as np
 from cvxopt import matrix, solvers
 import cvxpy as cp
 
+from skwdro.base.losses_torch import NewsVendorLoss
 from skwdro.solvers.result import wrap_solver_result
-from skwdro.base.costs import Cost, NormCost
+from skwdro.base.costs import NormCost
+from skwdro.base.problems import WDROProblem
 
 @wrap_solver_result
-def WDRONewsvendorSolver(WDROProblem):
-    return WDRONewsvendorSpecificSolver(k=WDROProblem.loss.k,u=WDROProblem.loss.u,rho=WDROProblem.rho,samples=WDROProblem.P.samples)
+def WDRONewsvendorSolver(pbm: WDROProblem):
+    l = pbm.loss
+    assert isinstance(l, NewsVendorLoss)
+    return WDRONewsvendorSpecificSolver(k=float(l.k.item()), u=float(l.u.item()), rho=pbm.rho, samples=pbm.p_hat.samples)
 
 @wrap_solver_result
-def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
+def WDRONewsvendorSpecificSolver(k: float=5, u: float=7, rho: float=1.0,samples=None):
+    assert samples is not None
     z = np.sort(samples, axis=0)
     n = z.shape[0]
     a = np.array([sum(z[:i, 0]) for i in range(n-1)])
@@ -47,6 +52,7 @@ def SAANewsvendorSolver(WDROProblem):
 
 @wrap_solver_result
 def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
+    assert samples is not None
 
     z = np.sort(samples, axis=0)
 
@@ -94,6 +100,7 @@ def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
 
 @wrap_solver_result
 def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
+    assert samples is not None
 
     z = np.sort(samples, axis=0)
 
@@ -122,6 +129,7 @@ def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
 
 @wrap_solver_result
 def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=False):
+    assert X is not None and y is not None
     n,d = X.shape
 
     if fit_intercept:
@@ -192,7 +200,7 @@ def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.n
 @wrap_solver_result
 def WDROPortfolioSolver(WDROProblem, cost, C, d, eta, alpha, fit_intercept=None):
     return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=cost, eta=eta, \
-                                       alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.P.samples)
+                                       alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.p_hat.samples)
 
 
 @wrap_solver_result
@@ -200,6 +208,7 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     '''
     Solver for the dual program linked to Mean-Risk portfolio problem (Kuhn 2017).
     '''
+    assert samples is not None
 
     #Problem data
     a = np.array([-1, -1 - eta/alpha])
@@ -250,5 +259,3 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     result = problem.solve()
 
     return theta.value, fit_intercept, lam.value, result
-
-
