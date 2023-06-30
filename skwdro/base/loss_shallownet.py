@@ -17,15 +17,15 @@ class ShallowNetLoss(Loss):
             sampler: Optional[LabeledSampler]=None,
             *,
             d: int=0,
-            nbneurone: int=0,
+            n_neurons: int=0,
             fit_intercept: bool=False) -> None:
         super(ShallowNetLoss, self).__init__(sampler)
-        assert nbneurone is not None and nbneurone > 0, "Please provide a valid layer height nbneurone>0"
+        assert n_neurons is not None and n_neurons > 0, "Please provide a valid layer height n_neurons>0"
         assert d > 0, "Please provide a valid data dimension d>0"
         self.L = nn.MSELoss(reduction='none')
 
-        self.linear1 = nn.Linear(d, nbneurone, bias=fit_intercept) # d -> nbneurone
-        self.linear2 = nn.Linear(nbneurone, 1, bias=fit_intercept) # nbneurone -> 1
+        self.linear1 = nn.Linear(d, n_neurons, bias=fit_intercept) # d -> n_neurons
+        self.linear2 = nn.Linear(n_neurons, 1, bias=fit_intercept) # n_neurons -> 1
 
         #self.linear1 = nn.Linear(d, 1, bias=fit_intercept) # debug=linearreg
 

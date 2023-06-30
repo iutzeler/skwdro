@@ -12,10 +12,7 @@ from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
-from skwdro.solvers.optim_cond import OptCond
 
-import skwdro.solvers.specific_solvers as spS
-import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
@@ -51,13 +48,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
     Examples
     --------
     >>> import numpy as np
-    >>> from skwdro.linear_models import LinearRegression
-    >>> XXX
-    >>> estimator = LinearRegression()
-    >>> estimator.fit(X_train,y_train)
-    LinearRegression()
-    >>> estimator.predict(X_test)
-    >>> estimator.score(X_test,y_test)
+    >>> TODO
     """
 
     def __init__(self,
@@ -66,9 +57,9 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                  fit_intercept=True,
                  cost=None,
                  solver="entropic",
-                 solver_reg=1.0,
+                 solver_reg=0.01,
                  n_zeta_samples: int=10,
-                 nbneurone=None,
+                 n_neurons=None,
                  opt_cond=None
                  ):
 
@@ -89,7 +80,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         self.solver_reg = solver_reg
         self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
-        self.nbneurone = nbneurone
+        self.n_neurons = n_neurons
 
 
 
@@ -136,7 +127,6 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                 rho=self.rho,
                 P=emp,
                 dLabel=1,
-                #nbneurone=self.nbneurone,
                 d=d,
                 n=d
             )
@@ -147,9 +137,9 @@ class ShallowNet(BaseEstimator, RegressorMixin):
             raise NotImplementedError
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
-                    ShallowNetLossTorch(None, nbneurone=self.nbneurone, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
-                    n_samples=10,
+                    n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
@@ -161,9 +151,9 @@ class ShallowNet(BaseEstimator, RegressorMixin):
             self.parameters_ = self.problem_.loss.loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
-                    ShallowNetLossTorch(None, nbneurone=self.nbneurone, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
-                    n_samples=10,
+                    n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
@@ -195,18 +185,15 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         y : ndarray, shape (n_samples,)
             The prediction
         """
+
         # Check is fit had been called
         check_is_fitted(self, ['X_', 'y_'])
 
         # Input validation
         X = check_array(X)
         X = pt.tensor(X, dtype=pt.float32, device="cpu")
-        #print(self.parameters_)
-        model = ShallowNetLossTorch(None, nbneurone=self.nbneurone, d=self.problem_.d, fit_intercept=self.fit_intercept)
+        model = ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept)
         model.load_state_dict(self.parameters_)
 
         return model.pred(X).cpu().detach().numpy()
-
-        
-        #return self.intercept_ + X@self.coef_
 
