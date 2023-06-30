@@ -12,10 +12,7 @@ from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
-from skwdro.solvers.optim_cond import OptCond
 
-import skwdro.solvers.specific_solvers as spS
-import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
@@ -185,6 +182,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         y : ndarray, shape (n_samples,)
             The prediction
         """
+
         # Check is fit had been called
         check_is_fitted(self, ['X_', 'y_'])
 
