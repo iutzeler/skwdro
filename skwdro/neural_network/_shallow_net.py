@@ -56,10 +56,10 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                  l2_reg=None,
                  fit_intercept=True,
                  cost=None,
-                 solver="entropic",
+                 solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
-                 n_neurons=None,
+                 n_neurons: int=10,
                  opt_cond=None
                  ):
 
@@ -195,5 +195,5 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         model = ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept)
         model.load_state_dict(self.parameters_)
 
-        return model.pred(X).cpu().detach().numpy()
+        return model.pred(X).cpu().detach().numpy().flatten()
 
