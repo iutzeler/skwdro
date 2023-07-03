@@ -6,7 +6,7 @@ import torch.multiprocessing as mp
 import torch.distributions as distributions
 
 import numpy as np
-    
+
 import sklearn
 import sklearn.datasets
 import sklearn.model_selection
@@ -14,7 +14,6 @@ from sklearn.neighbors import KernelDensity
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-import tikzplotlib
 
 import tqdm
 import time
@@ -50,7 +49,7 @@ class LogisticRegLoss(nn.Module):
         assert inner.size() == b
 
         return -self.logsigmoid(inner) + 1e-3 * torch.linalg.norm(self.linear.weight)**2
-    
+
 
 
 def generate_data(d, n_train, n_test, cluster_std):
@@ -93,7 +92,7 @@ def train(model, x, y):
             print(f"{model.lbd.grad=}")
             print(f"{model.lbd=}\n")
 
-        
+
         def zero_closure(lbd):
             with torch.no_grad():
                 model.lbd.requires_grad = False
@@ -164,20 +163,5 @@ def main(robust, filename):
 
 if __name__ == "__main__":
     robust = True
-    filname = None
+    filename = None
     main(robust, filename)
-    
-    
-
-
-
-
-
-
-
-
-        
-
-
-
-

@@ -41,7 +41,7 @@ estimator = LogisticRegression(
         rho=1e-2,
         l2_reg=None,
         fit_intercept=True,
-        cost=cost,
+        cost_power=2,
         solver="dedicated"
         )
 print(".", end='')
@@ -62,7 +62,7 @@ estimator_ent = LogisticRegression(
         rho=1e-2,
         l2_reg=None,
         fit_intercept=True,
-        cost=cost,
+        cost_power=2,
         n_zeta_samples=20,
         solver="entropic_torch"
         )
@@ -71,6 +71,11 @@ estimator_ent = LogisticRegression(
 print(".", end='')
 estimator_ent.fit(X, y)
 print(".")
+plt.plot(estimator_ent.solver_result_.losses)
+plt.yscale("log")
+plt.show()
+plt.yscale("linear")
+
 
 print("Lambda: ", estimator_ent.dual_var_)
 print("Theta: ", estimator_ent.coef_, estimator_ent.intercept_)
@@ -84,7 +89,7 @@ estimator_pre = LogisticRegression(
         rho=1e-2,
         l2_reg=None,
         fit_intercept=True,
-        cost=cost,
+        cost_power=2,
         n_zeta_samples=20,
         solver="entropic_torch_pre"
         )

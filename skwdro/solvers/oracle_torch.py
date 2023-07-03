@@ -1,5 +1,6 @@
 from typing import Any, Tuple, Optional
 from abc import ABC, abstractmethod, abstractproperty
+from itertools import chain
 
 import torch as pt
 import torch.nn.functional as F
@@ -39,8 +40,32 @@ class _DualLoss(nn.Module, ABC):
     def forward(self, *args):
         raise NotImplementedError()
 
+    def displacement(self, xi, xi_labels) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        frozen_params = list(chain(self.loss.parameters(), (self._lam,)))
+        for param in frozen_params:
+            param.requires_grad = False
+
+        diff_xi = xi.clone().detach().unsqueeze(0).requires_grad_(True)
+        diff_xi_l = xi_labels.clone().detach().unsqueeze(0).requires_grad_(True) if xi_labels is not None else None
+
+        out = self.loss.value(diff_xi / self.lam, diff_xi_l / self.lam if diff_xi_l is not None else None).squeeze()
+        out.backward(pt.ones(xi.size(0)))
+        for param in frozen_params:
+            param.requires_grad = True
+
+        assert diff_xi.grad is not None
+        if diff_xi_l is not None:
+            assert diff_xi_l.grad is not None
+            return diff_xi.grad, diff_xi_l.grad
+        else:
+            return diff_xi.grad, None
+
     def compute_dual(self, xi, xi_labels, zeta, zeta_labels):
-        first_term = self.lam**2 * self.rho
+        first_term = self.lam * self.rho
+
+        disps = self.displacement(xi, xi_labels)
+        zeta += disps[0] / 2.
+        if zeta_labels is not None: zeta_labels += disps[1] / 2.
 
         l = self.loss.value(zeta, zeta_labels)
         c = self.cost(
@@ -49,11 +74,19 @@ class _DualLoss(nn.Module, ABC):
                 xi_labels.unsqueeze(0) if xi_labels is not None else None,
                 zeta_labels
                 )
-        integrand = l - self.lam**2 * c
+        integrand = l - self.lam * c
         integrand /= self.epsilon
 
+        sigma2 = self.sampler.data_s.scale_tril[0, 0, 0]**2 * 2
+        correction_impsamp = integrand - c / sigma2 + self.cost(
+                xi.unsqueeze(0) + disps[0],
+                zeta,
+                xi_labels.unsqueeze(0) + disps[1] if xi_labels is not None else None,
+                zeta_labels
+                ) / sigma2
+
         # Expectation on the zeta samples
-        second_term = pt.logsumexp(integrand, 0).mean(dim=0)
+        second_term = pt.logsumexp(correction_impsamp, 0).mean(dim=0)
         second_term -= pt.log(pt.tensor(zeta.size(0)))
         return first_term + self.epsilon*second_term.squeeze()
 

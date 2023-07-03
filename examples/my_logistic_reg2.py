@@ -4,7 +4,7 @@ import torch.distributions as distributions
 import torch.multiprocessing as mp
 
 import numpy as np
-    
+
 import sklearn
 import sklearn.datasets
 import sklearn.model_selection
@@ -26,11 +26,11 @@ import argparse
 mp.set_sharing_strategy("file_system")
 
 at = lambda x : torch.as_tensor(x, dtype=torch.float32)
-    
+
 def adv_grad(coef, intercept, x, y):
     coef, intercept = at(coef).unsqueeze(0), at(intercept).unsqueeze(0)
     assert coef.shape == (1, d)
-    assert intercept.shape == (1,)
+    assert intercept.shape == (1,), intercept.shape
 
     x, y = at(x), at(y)
     b, = y.shape
@@ -43,7 +43,7 @@ def adv_grad(coef, intercept, x, y):
     assert weight.shape == (d,)
 
     adv_gradient = - y[:, None] * weight[None,:] * F.sigmoid(-inner)[:, None]
-    assert adv_gradient.shape == (b, d) 
+    assert adv_gradient.shape == (b, d)
     return adv_gradient
 
 def perturbed_data(coef, intercept, x, y, sigma, step):
@@ -87,6 +87,7 @@ def computeloss(coef, intercept, x, y):
     return - F.logsigmoid(inner).mean().item()
 
 def eval_perf(model, eval_train, X_test, y_test, pert_sigma, pert_step):
+    model.intercept_ = np.array(model.intercept_[0])
     X_pert, y_pert = perturbed_data(model.coef_, model.intercept_, X_test, y_test, pert_sigma, pert_step)
     eval_test  = computeloss(model.coef_, model.intercept_, at(X_test),  at(y_test))
     eval_pert  = computeloss(model.coef_, model.intercept_, at(X_pert),  at(y_pert))
@@ -114,7 +115,7 @@ def plot_metrics(robust, metrics, solver):
     ktrain = KernelDensity(bandwidth=bandwidth).fit(np.array(train).reshape(-1, 1))
     ktest  = KernelDensity(bandwidth=bandwidth).fit(np.array(test).reshape(-1, 1))
     kpert  = KernelDensity(bandwidth=bandwidth).fit(np.array(pert).reshape(-1, 1))
-    x = np.linspace(0., 0.2, 100).reshape(-1,1)
+    x = np.linspace(0., 0.3, 100).reshape(-1,1)
     plt.plot(x, np.exp(ktrain.score_samples(x)), label=f"Robust loss on train set with {solver=}" if robust else "Loss on train set")
     plt.plot(x, np.exp(ktest.score_samples(x)), label="Loss on test set")
     plt.plot(x, np.exp(kpert.score_samples(x)), label="Loss on perturbed test set")
@@ -128,15 +129,14 @@ def plot_metrics(robust, metrics, solver):
 d = 10
 n_train = 100
 n_test = 100
-rho = 0.01
+rho = 1e-4
 pert_step = 3*rho
-pert_sigma = 0.
+pert_sigma = 1e-2
 cluster_std = 0.7
-n_xp = 100
+n_xp = 30
 eps = 1e-4
 
 def make_xp(robust, solver):
-    rho = rho if robust else 0
     model = skwdro.linear_models.LogisticRegression(rho=rho, solver_reg=eps, solver=solver, kappa=1e8)
     X_train, X_test, y_train, y_test = generate_data(d, n_train, n_test, cluster_std)
     model.fit(X_train, y_train)
@@ -179,8 +179,6 @@ if __name__ == "__main__":
     if args.plot or args.all:
         plot(args.robust, filename, args.solver)
 
-    
-    
 
 
 
@@ -189,7 +187,9 @@ if __name__ == "__main__":
 
 
 
-        
+
+
+
 
 
 
