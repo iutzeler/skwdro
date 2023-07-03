@@ -24,6 +24,10 @@ class RhoTunedEstimator(BaseEstimator):
         self.max_power = max_power
 
     def fit(self, X, y):
+
+        #Verify that estimator has a score method
+        assert hasattr(self.estimator, "score")
+
         #Tuning rho using grid search
         param_grid_ = {"rho": [10**(-i) for i in range(self.max_power,self.min_power,-1)]}
         grid_cv_ = KFold(n_splits=5, shuffle=False)
