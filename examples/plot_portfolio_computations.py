@@ -8,7 +8,7 @@ import torch as pt
 from joblib import Parallel, delayed
 from os import makedirs
 
-from skwdro.base.rho_tuner import RhoTunedEstimator
+from skwdro.base.rho_tuners import *
 
 M = 10 #Number of assets
 ALPHA = 0.2 #Confidence level

@@ -27,6 +27,9 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, estimator_solver="dedi
 
     rho_possible_values = [10**(-i) for i in range(4,-4,-1)]
 
+    #nb_bins = len(rho_possible_values)
+    nb_bins = 20
+
     #Create an histogram that shows the values taken for the tuning of rho
     plt.figure()
     plt.xticks(rho_possible_values)
@@ -34,7 +37,7 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, estimator_solver="dedi
     plt.xlabel("Rho values")
     plt.ylabel("Number of occurences")
     plt.title("Distribution of rho values taken when tuning rho")
-    sns.histplot(data=tuned_rho_data, bins=len(rho_possible_values), stat="count", discrete=True)
+    sns.histplot(data=tuned_rho_data, bins=nb_bins, stat="count")
 
     #Saving the histogram
     home_dir = os.path.expanduser("~")
