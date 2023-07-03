@@ -37,6 +37,10 @@ class Portfolio(BaseEstimator):
         Risk-aversion parameter linked to the Conditional Value at Risk
     alpha: float in (0,1], default=0.95
         Confidence level of the Conditional Value at Risk
+    C : (nb_constraints, nb_assets), default=None
+        Matrix of constraints observed by the user.
+    d : (nb_constraints,), default=None
+        Vector of constraints observed by the user.
     fit_intercept: boolean, default=None
         Determines if an intercept is fit or not
     cost: str, default="n-NC-1-2"
@@ -51,12 +55,6 @@ class Portfolio(BaseEstimator):
         Seed used by the random number generator when using non-deterministic methods
         on the estimator
 
-    Attributes
-    ----------
-    C : (nb_constraints, nb_assets)
-        Matrix of constraints observed by the user.
-    d : (nb_constraints,)
-        Vector of constraints observed by the user.
 
     Examples
     >>> from skwdro.estimators import Portfolio
@@ -74,6 +72,8 @@ class Portfolio(BaseEstimator):
                  rho=1e-2,
                  eta=0,
                  alpha=.95,
+                 C=None,
+                 d=None,
                  fit_intercept=None,
                  cost="n-NC-1-1",
                  solver="dedicated",
@@ -99,6 +99,8 @@ class Portfolio(BaseEstimator):
         self.rho = rho
         self.eta = eta
         self.alpha = alpha
+        self.C = C
+        self.d = d
         self.fit_intercept = fit_intercept
         self.cost = cost
         self.solver = solver
@@ -107,7 +109,7 @@ class Portfolio(BaseEstimator):
         self.n_zeta_samples = n_zeta_samples
         self.seed = seed
 
-    def fit(self, X, y=None, C=None, d=None):
+    def fit(self, X, y=None):
         """Fits the WDRO regressor.
 
         Parameters
@@ -154,12 +156,12 @@ class Portfolio(BaseEstimator):
         
         # Setup values C and d that define the polyhedron of xi_maj
 
-        if (C is None or d is None):
+        if (self.C is None or self.d is None):
             self.C_ = np.zeros((1,m))
             self.d_ = np.zeros((1,1))
         else:
-            self.C_ = C
-            self.d_ = d
+            self.C_ = self.C
+            self.d_ = self.d
 
         if np.shape(self.C_)[1] != m: #Check that the matrix-vector product is well-defined
             raise ValueError("The number of columns of C don't match the number of lines of any xi")
@@ -167,7 +169,7 @@ class Portfolio(BaseEstimator):
         if self.solver == "entropic":
             raise NotImplementedError("Entropic solver for Portfolio not implemented yet")
         elif self.solver == "dedicated":
-            self.coef_, _, self.dual_var_, self.result_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
+            self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSolver(self.problem_, self.cost_, self.C_, \
                                                                     self.d_, self.eta_, self.alpha_)
         elif self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
             epsilon = pt.tensor(self.solver_reg_)
@@ -219,6 +221,7 @@ class Portfolio(BaseEstimator):
             self.reducer_loss_ = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
 
             self.result_ = self.reducer_loss_.value(theta=self.coef_, xi=X).mean()
+            self.tau_ = self.problem_.loss.loss.tau
 
         self.is_fitted_ = True
 
@@ -234,7 +237,7 @@ class Portfolio(BaseEstimator):
         X : array-like, shape (n_samples_test,m)
             The testing input samples.
         y : None
-            The prediction. Always none for a portfolio estimator.
+            The prediction. Always None for a portfolio estimator.
         '''
         return -self.eval(X)
 

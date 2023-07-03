@@ -11,7 +11,7 @@ from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
 from joblib import Parallel, delayed
 from os import makedirs
 
-from skwdro.base.rho_tuner import RhoTunedEstimator
+from skwdro.base.rho_tuners import *
 
 M = 10 #Number of assets
 ALPHA = 0.2 #Confidence level
@@ -60,12 +60,17 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning):
 
     X_train, X_test = generate_train_test_data(N=N, m=M)
 
-    rho_tuner = RhoTunedEstimator(estimator)
-    rho_tuner.fit(X=X_train, y=None)
+    if rho_tuning is True:
+        #rho_tuner = RhoTunedEstimator(estimator)
+        rho_tuner = BlanchetRhoTunedEstimator(estimator)
+        rho_tuner.fit(X=X_train, y=None)
 
-    best_estimator = rho_tuner.best_estimator_
+        best_estimator = rho_tuner.best_estimator_
 
-    tuned_rho = best_estimator.rho if rho_tuning is True else 0
+        tuned_rho = best_estimator.rho if rho_tuning is True else 0
+    else:
+        best_estimator = estimator
+        tuned_rho = 0
 
     #Define adversarial data
     adv = 1/np.sqrt(N)

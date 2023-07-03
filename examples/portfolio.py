@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from skwdro.operations_research import Portfolio
+from skwdro.base.rho_tuners import *
 
 N = 10 #Number of samples
 
@@ -25,8 +26,12 @@ C = np.eye(2)
 d = np.array([0.2,0.5])
 
 #Creating the estimator and solving the problem
-estimator = Portfolio(solver="dedicated", rho=1e-10)
-estimator.fit(X, C=C, d=d)
+estimator = Portfolio(solver="dedicated", rho=1e-10, C=C, d=d)
+
+rho_tuner= BlanchetRhoTunedEstimator(estimator)
+rho_tuner.fit(X=X, y=None)
+
+print("Best value for rho: ", estimator.rho_)
 
 print("Value of C (after fitting):", estimator.C_)
 print("Value of d (after fitting):", estimator.d_)

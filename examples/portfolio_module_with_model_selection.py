@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from skwdro.operations_research import Portfolio
-from skwdro.base.rho_tuner import RhoTunedEstimator
+from skwdro.base.rho_tuners import *
 
 def main():
 
@@ -23,10 +23,12 @@ def main():
     #Creating the estimator and solving the problem
     estimator = Portfolio(solver="entropic_torch_post", reparam="softmax", n_zeta_samples=10*N)
 
-    rho_tuner = RhoTunedEstimator(estimator)
+    #rho_tuner = RhoTunedEstimator(estimator)
+    rho_tuner= BlanchetRhoTunedEstimator(estimator)
     rho_tuner.fit(X=X, y=None)
 
     best_estimator = rho_tuner.best_estimator_
+    print("Best estimator: ", best_estimator)
 
     theta = best_estimator.coef_
     lam = best_estimator.dual_var_
