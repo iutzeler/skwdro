@@ -253,12 +253,9 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
 
     #Solving the problem
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
-    problem.solve(verbose=False)
-
-    #Getting the result of the dual objective value
     result = problem.solve()
 
-    if theta.value is None:
+    if theta.value is None or np.isnan(sum(theta.value)):
         raise ValueError("No solution exists for the Mean-Risk Portfolio problem")
 
-    return theta.value, fit_intercept, lam.value, result
+    return theta.value, tau.value, lam.value, result
