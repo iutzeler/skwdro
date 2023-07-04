@@ -1,7 +1,8 @@
 
 import numpy as np
 
-from skwdro.operations_research import Portfolio, NewsVendor
+from skwdro.operations_research import *
+from skwdro.linear_models import * 
 from sklearn.model_selection import train_test_split
 import torch as pt
 
@@ -13,36 +14,67 @@ from os import makedirs
 
 from skwdro.base.rho_tuners import *
 
+##### PORTFOLIO PARAMETERS #####
 M = 10 #Number of assets
 ALPHA = 0.2 #Confidence level
 ETA = 10 #Risk-aversion quantificator of the investor
 
-def generate_data(N,m):
+def generate_data(N,m,estimator):
     '''
     Generates data based on an model for the assets that takes systematic and unsystematic
     risk factors into account. This model is described in Section 7.2 of Daniel Kuhn's paper on WDRO.
     '''
-    psi = np.random.normal(0,0.02,size=(1,10))
+
+    class_name = estimator.__class__.__name__
     X = np.array([])
-    
-    for _ in range(N):
-        zeta_i = np.array([np.random.normal(0.03*j, 0.025*j + 0.02) for j in range(m)]).reshape((1,10))
-        xi_i = psi + zeta_i
-        if(X.shape[0] == 0): #Anticipate on vstack's behaviour regarding the dimensions of arrays
-            X = np.array(xi_i)
-        else:
-            X = np.vstack((X,xi_i))
+    y = np.array([])
 
-    return X
+    match class_name:
+        case "Portfolio":
+            psi = np.random.normal(0,0.02,size=(1,M))
+            for _ in range(N):
+                zeta_i = np.array([np.random.normal(0.03*j, 0.025*j + 0.02) for j in range(m)]).reshape((1,10))
+                xi_i = psi + zeta_i
+                if(X.shape[0] == 0): #Anticipate on vstack's behaviour regarding the dimensions of arrays
+                    X = np.array(xi_i)
+                else:
+                    X = np.vstack((X,xi_i))
 
-def generate_train_test_data(N,m):
+            return X, None, class_name
+        case "LogisticRegression":
+
+            X_left_x = np.random.uniform(low=-0.5, high=0.2, size=100)
+            X_left_y = np.random.uniform(low=-0.5,high=0.5, size=100)
+            X_left = np.array([[x,y] for (x,y) in zip(X_left_x, X_left_y)])
+
+            X_right_x = np.random.uniform(low=-0.2, high=0.5, size=50)
+            X_right_y = np.random.uniform(low=-0.5,high=0.5, size=50)
+            X_right = np.array([[x,y] for (x,y) in zip(X_right_x, X_right_y)])
+
+            X = np.concatenate((X_left, X_right))
+            y = np.random.randint(2, size=len(X))
+
+            return X, y, class_name
+
+        case "Newsvendor":
+            raise NotImplementedError()
+        case "Weber":
+            raise NotImplementedError()
+        case "LinearRegression":
+            raise NotImplementedError()
+        case _:
+            raise TypeError("Class name for the problem not recognized")
+
+def generate_train_test_data(N,m,estimator):
     '''
     Generates data as described above and splits data into a training and a testing sample.
     '''
-    X = generate_data(N,m)
-    X_train, X_test = train_test_split(X, train_size=0.5, test_size=0.5, random_state=42)
-
-    return X_train, X_test
+    X, y, class_name = generate_data(N,m,estimator)
+    if class_name in {"Portfolio", "Newsvendor", "Weber"}:
+        X_train, X_test = train_test_split(X, train_size=0.5, test_size=0.5, random_state=42)
+        return X_train, X_test, None, None
+    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.5, test_size=0.5, random_state=42)
+    return X_train, X_test, y_train, y_test
 
 def stochastic_problem_approx(estimator,size=10000):
     '''
@@ -52,17 +84,16 @@ def stochastic_problem_approx(estimator,size=10000):
     X = generate_data(N=size, m=estimator.problem_.d)
     return estimator.eval(X)
 
-def parallel_for_loop_histograms(N, estimator, rho_tuning):
+def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     '''
     Parallelization of the for loop on the number of simulations.
     '''
     #Define the training and testing data
 
-    X_train, X_test = generate_train_test_data(N=N, m=M)
+    X_train, X_test, y_train, y_test = generate_train_test_data(N=N, m=M, estimator=estimator)
 
     if rho_tuning is True:
-        #rho_tuner = RhoTunedEstimator(estimator)
-        rho_tuner = BlanchetRhoTunedEstimator(estimator)
+        rho_tuner = BlanchetRhoTunedEstimator(estimator) if blanchet is True else RhoTunedEstimator(estimator)
         rho_tuner.fit(X=X_train, y=None)
 
         best_estimator = rho_tuner.best_estimator_
@@ -70,6 +101,7 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning):
         tuned_rho = best_estimator.rho if rho_tuning is True else 0
     else:
         best_estimator = estimator
+        best_estimator.fit(X=X_train, y=y_train)
         tuned_rho = 0
 
     #Define adversarial data
@@ -86,7 +118,7 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning):
 
     return eval_train, eval_test, eval_adv_test, tuned_rho
 
-def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rho_tuning):
+def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tuning, blanchet):
     '''
     Computes Kuhn's histograms that were presented at the DTU CEE Summer School 2018.
     '''
@@ -100,23 +132,13 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
     '''
 
     filename = './examples/stored_data/parallel_portfolio_histogram_WDRO_data.npy'
+    rho_filename = './examples/stored_data/rho_tuning_data.npy'
 
     if compute is True: 
 
-        #Define sigma for adversarial distribution pi_{0} and number of its samples
-        '''
-        sigma = 0 if estimator_solver not in \
-            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
-        '''
-        n_zeta_samples = 0 if estimator_solver not in \
-            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
-
-        #Create the estimator and solve the problem
-        estimator = Portfolio(solver=estimator_solver, reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-
         print("Before joblib parallel computations")
         eval_data = Parallel(n_jobs=-1)(
-            delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning)
+            delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
             for _ in range(nb_simulations)
         )
         eval_data_train = [x for x, _, _, _ in eval_data]
@@ -141,11 +163,11 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
         
         f.close()
 
-        #We store in a different file the chosen rho values for each simulation 
-        rho_filename = './examples/stored_data/rho_tuning_data.npy'
-        with open(rho_filename, 'wb') as f:
-            np.save(f, tuned_rho_data)
-        f.close()
+        if rho_tuning is True:
+            #We store in a different file the chosen rho values for each simulation 
+            with open(rho_filename, 'wb') as f:
+                np.save(f, tuned_rho_data)
+            f.close()
 
     return filename, rho_filename
 
@@ -219,7 +241,7 @@ def parallel_for_loop_curves(N, estimator_solver, rho_values, nb_simulations):
 
 def parallel_compute_curves(nb_simulations, estimator_solver, compute):
     samples_size = np.array([30])
-    rho_values = np.array([10**(-i) for i in range(4,-4,-1)])
+    rho_values = np.array([10**(-i) for i in range(1,-3,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
 
