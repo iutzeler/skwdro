@@ -5,7 +5,8 @@ import time
 import matplotlib.pyplot as plt
 import os
 
-def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, estimator_solver="dedicated", compute=True, rho_tuning=True):
+def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, *, estimator,
+                    compute=True, rho_tuning=True, blanchet=True):
     '''
     Plots Kuhn's histograms that were presented at the DTU CEE Summer School 2018.
     Setting rho=0 stands for the SAA method of resolution of the stochastic problem.
@@ -14,7 +15,8 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, estimator_solver="dedi
     start = time.time()
 
     filename, rho_filename = parallel_compute_histograms(N=N, nb_simulations=nb_simulations, 
-                                           estimator_solver=estimator_solver, compute=compute, rho_tuning=rho_tuning)
+                                            estimator=estimator, compute=compute,
+                                            rho_tuning=rho_tuning, blanchet=blanchet)
 
     with open (filename, 'rb') as f:
         eval_data_train = np.load(f)
@@ -22,28 +24,33 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, estimator_solver="dedi
         eval_data_adv_test = np.load(f)
     f.close()
 
-    with open (rho_filename, 'rb') as f:
-        tuned_rho_data = np.load(f)
-    f.close()
-
-    rho_possible_values = [10**(-i) for i in range(4,-4,-1)]
-
-    #nb_bins = len(rho_possible_values)
-    nb_bins = 20
-
     #Create an histogram that shows the values taken for the tuning of rho
-    plt.figure()
-    plt.xticks(rho_possible_values)
-    plt.xscale("log")
-    plt.xlabel("Rho values")
-    plt.ylabel("Number of occurences")
-    plt.title("Distribution of rho values taken when tuning rho")
-    sns.histplot(data=tuned_rho_data, bins=nb_bins, stat="count")
-
-    #Saving the histogram
     home_dir = os.path.expanduser("~")
-    image_path = os.path.join(home_dir, "rho_values.png")
-    plt.savefig(image_path)
+    if rho_tuning is True:
+
+        with open (rho_filename, 'rb') as f:
+            tuned_rho_data = np.load(f)
+        f.close()
+
+        #TODO: Adapt rho_possible_values and nb_bins to rho tuning method
+        rho_possible_values = [10**(-i) for i in range(4,-4,-1)]
+
+        #nb_bins = len(rho_possible_values)
+        nb_bins = 20
+
+        discrete = False if blanchet is True else True
+
+        plt.figure()
+        plt.xticks(rho_possible_values)
+        plt.xscale("log")
+        plt.xlabel("Rho values")
+        plt.ylabel("Number of occurences")
+        plt.title("Distribution of rho values taken when tuning rho")
+        sns.histplot(data=tuned_rho_data, bins=nb_bins, stat="count", discrete=discrete)
+
+        #Saving the histogram
+        image_path = os.path.join(home_dir, "rho_values.png")
+        plt.savefig(image_path)
     
     #Create an histogram showing the performance of the model on train, test and adversarial data
     plt.figure()
@@ -118,9 +125,22 @@ def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
 
 def main():
     N = 30 #Size of samples for Kuhn's histograms
+    estimator_solver = "dedicated"
+
+    #Define sigma for adversarial distribution pi_{0} and number of its samples
+    '''
+    sigma = 0 if estimator_solver not in \
+        {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
+    '''
+    n_zeta_samples = 0 if estimator_solver not in \
+        {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
+
+    #Create the estimator and solve the problem
+    estimator = Portfolio(solver=estimator_solver, reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    #estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(compute=True)
+    plot_histograms(nb_simulations=20, compute=True, estimator=estimator, rho_tuning=True)
     #plot_curves(compute=True)
 
 

@@ -82,7 +82,6 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         self.estimator.fit(X,y)
 
         self.theta_erm_ = self.estimator.coef_
-        print("Theta erm:", self.theta_erm_)
 
         #Data-driven evaluations for the estimation of rho
 
