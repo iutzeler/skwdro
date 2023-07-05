@@ -76,13 +76,13 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, *, estimator,
     #Visualization
     plt.show()  
 
-def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
+def plot_curves(nb_simulations=200, *, estimator, compute=True):
     '''
     Plots Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
     '''
     start = time.time()
 
-    samples_size, filename = parallel_compute_curves(nb_simulations, estimator_solver, compute)
+    samples_size, filename = parallel_compute_curves(nb_simulations, estimator, compute)
 
     with open (filename, 'rb') as f:
         rho_values = np.load(f)
@@ -125,7 +125,7 @@ def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
 
 def main():
     N = 30 #Size of samples for Kuhn's histograms
-    estimator_solver = "dedicated"
+    estimator_solver = "entropic_torch_post"
 
     #Define sigma for adversarial distribution pi_{0} and number of its samples
     '''
@@ -141,7 +141,7 @@ def main():
 
     #plot_histograms(rho=0, compute=True)
     plot_histograms(nb_simulations=2, compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
-    #plot_curves(compute=True)
+    #plot_curves(nb_simulations=20, estimator=estimator, compute=True)
 
 
 if __name__ == "__main__":

@@ -192,7 +192,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver=="dedicated":
             # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
             # One may use it by specifying this option
-            self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLogisticSpecificSolver(
+            self.coef_ , self.intercept_, self.dual_var_, self.result_ = spS.WDROLogisticSpecificSolver(
                     rho=self.problem_.rho,
                     kappa=1000,
                     X=X,
@@ -236,9 +236,16 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     seed=self.random_state,
                     sigma_=self.solver_reg,
                 )
+            
+            # Stock the robust loss result 
+            if self.solver == "entropic_torch_pre":
+                #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
+                raise NotImplementedError("Result for pre_sample not available")
+            elif self.solver == "entropic_torch_post":
+                self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_)
+
         else:
             raise NotImplementedError()
-
         self.is_fitted_ = True
 
         # Return the classifier
