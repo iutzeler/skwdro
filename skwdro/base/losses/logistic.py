@@ -42,7 +42,7 @@ class LogisticLoss(Loss):
             else:
                 val = 0
                 for i in range(m):
-                    print(y,theta,X)
+                    #print(y,theta,X)
                     val += np.log(1+np.exp(-y[i]*(np.dot(X[i,:],theta)+intercept)))
 
                 return val/m

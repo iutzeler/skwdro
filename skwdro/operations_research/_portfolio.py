@@ -15,8 +15,6 @@ from skwdro.base.losses import PortfolioLoss_torch
 from skwdro.base.losses_torch_portfolio import *
 from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
 
-import skwdro.base.costs as npcost
-import skwdro.base.costs_torch as ptcost
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.base.losses_torch_portfolio import *
 from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
@@ -81,7 +79,7 @@ class Portfolio(BaseEstimator):
                  C=None,
                  d=None,
                  fit_intercept=None,
-                 cost="n-NC-1-1",
+                 cost="t-NC-1-1",
                  solver="dedicated",
                  solver_reg=1e-3,
                  reparam="softmax",
@@ -133,22 +131,26 @@ class Portfolio(BaseEstimator):
         self.alpha_ = float(self.alpha)
         self.solver_reg_ = float(self.solver_reg)
 
-        # Check that X has correct shape
+        #Check that X has correct shape
         X = check_array(X)
 
-        # Check random state
+        #Check data type (as check_array sometimes transforms X into a numpy array)
+        if isinstance(X, (np.ndarray,np.generic)) and self.solver != "dedicated":
+            X = pt.from_numpy(X)
+
+        #Check random state
         self.random_state_ = check_random_state(self.random_state)
 
-        # Store data
+        #Store data
         self.X_ = X
 
-        # Setup problem parameters
+        #Setup problem parameters
         N = np.shape(X)[0] #N samples for the empirical distribution
         m = np.shape(X)[1] #m assets
         self.n_features_in_ = m
         emp = EmpiricalDistributionWithoutLabels(m=N, samples=X)
 
-        self.cost_ = cost_from_str(self.cost)# NormCost(1, 1., "L1 cost")
+        self.cost_ = cost_from_str(self.cost) #NormCost(1, 1., "L1 cost")
         self.problem_ = WDROProblem(
                 loss=PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_),
                 cost=self.cost_,
@@ -160,7 +162,7 @@ class Portfolio(BaseEstimator):
                 n=m
             )
         
-        # Setup values C and d that define the polyhedron of xi_maj
+        #Setup values C and d that define the polyhedron of xi_maj
 
         if (self.C is None or self.d is None):
             self.C_ = np.zeros((1,m))
@@ -219,15 +221,16 @@ class Portfolio(BaseEstimator):
             '''
                       
             self.coef_, _, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma = pt.tensor(self.solver_reg_)
+                    wdro_problem=self.problem_,
+                    sigma_=pt.tensor(self.solver_reg_)
             ) 
 
-            #We optimize on tau once again
-            self.reducer_loss_ = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
-
-            self.result_ = self.reducer_loss_.value(theta=self.coef_, xi=X).mean()
-            self.tau_ = self.problem_.loss.loss.tau
+            # Stock the robust loss result 
+            if self.solver == "entropic_torch_pre":
+                #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
+                raise NotImplementedError("Result for pre_sample not available")
+            elif self.solver == "entropic_torch_post":
+                self.result_ = self.problem_.loss.forward(xi=self.X_)           
 
         self.is_fitted_ = True
 

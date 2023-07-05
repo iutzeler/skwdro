@@ -81,8 +81,22 @@ def stochastic_problem_approx(estimator,size=10000):
     Evaluates the real objective value with lots of samples as an approximation of the objective value
     of the original Mean-Value Portfolio stochastic problem.
     '''
-    X = generate_data(N=size, m=estimator.problem_.d)
-    return estimator.eval(X)
+    X, y, class_name = generate_data(N=size, m=estimator.problem_.d, estimator=estimator)
+
+    return eval(estimator=estimator, class_name=class_name, X=X, y=y)
+
+#TODO: Adapt structure when entropic case will be okay
+def eval(estimator, class_name, X, y):
+
+    if class_name == "Portfolio":
+        eval = estimator.eval(X)
+    else:
+        if estimator.solver == "dedicated":
+            eval = estimator.problem_.loss.value_split(theta=estimator.coef_, X=X, y=y)
+        else:
+            eval = estimator.problem_.loss.loss.value(xi=X, xi_labels=y)
+    
+    return eval
 
 def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     '''
@@ -104,16 +118,16 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
         best_estimator.fit(X=X_train, y=y_train)
         tuned_rho = 0
 
-    best_estimator = estimator.optimize_parameters(X_train) #TODO: ?????
-
     #Define adversarial data
     adv = 1/np.sqrt(N)
     X_adv_test = X_test - adv*best_estimator.coef_
 
     #Evaluate the loss value for the training and testing datasets
-    eval_train = estimator.eval(X_train)
-    eval_test = estimator.eval(X_test)
-    eval_adv_test = estimator.eval(X_adv_test)
+
+    eval_train = eval(estimator=estimator, class_name=class_name, X=X_train, y=y_train)
+    eval_test = eval(estimator=estimator, class_name=class_name, X=X_test, y=y_test)
+    eval_adv_test = eval(estimator=estimator, class_name=class_name, X=X_adv_test, y=y_test)
+
     print("Eval train: ", eval_train)
     print("Eval test: ", eval_test)
     print("Eval adv test: ", eval_adv_test)
@@ -137,17 +151,6 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
     rho_filename = './examples/stored_data/rho_tuning_data.npy'
 
     if compute is True: 
-
-        #Define sigma for adversarial distribution pi_{0} and number of its samples
-        '''
-        sigma = 0 if estimator_solver not in \
-            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
-        '''
-        n_zeta_samples = 0 if estimator_solver not in \
-            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
-
-        #Create the estimator and solve the problem
-        estimator = Portfolio(solver=estimator_solver, reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
 
         print("Before joblib parallel computations")
         eval_data = Parallel(n_jobs=-1)(
@@ -177,10 +180,10 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
         f.close()
 
         if rho_tuning is True:
-                #We store in a different file the chosen rho values for each simulation 
-                with open(rho_filename, 'wb') as f:
-                    np.save(f, tuned_rho_data)
-                f.close()
+            #We store in a different file the chosen rho values for each simulation 
+            with open(rho_filename, 'wb') as f:
+                np.save(f, tuned_rho_data)
+            f.close()
 
     return filename, rho_filename
 
@@ -191,39 +194,40 @@ def simulations_parallel_for_loop_curves(N, estimator):
     reliability_cpt = 0
 
     #Define the training and testing data
-    X_train, X_test = generate_train_test_data(N=N, m=M)
+    X_train, X_test, y_train, y_test, class_name = generate_train_test_data(N=N, m=M, estimator=estimator)
 
-    estimator.fit(X_train)
+    estimator.fit(X=X_train, y=y_train)
 
     #Evaluate the loss value for the testing dataset
-    eval_test = estimator.eval(X_test)
+    eval_test = eval(estimator=estimator, class_name=class_name, X=X_test, y=y_test)
     print("eval_test: ", eval_test)
 
-    #Approximate the real loss value and compate it to the WDRO loss value
+    #Approximate the real loss value and compare it to the WDRO loss value
     eval_approx_loss = stochastic_problem_approx(estimator)
+    eval_result = estimator.result_
+
     print("eval_approx_loss: ", eval_approx_loss)
-    print("estimator.result_:", estimator.result_)
-    if eval_approx_loss <= estimator.result_:
+    print("estimator.result_:", eval_result)
+    if eval_approx_loss <= eval_result:
         reliability_cpt += 1
 
     return eval_test, reliability_cpt
 
-def rho_parallel_for_loop_curves(N, estimator_solver, rho_value, nb_simulations):
+def rho_parallel_for_loop_curves(N, estimator, rho_value, nb_simulations):
     '''
     Parallelization of the loop on the number of simulations.
     '''
 
-    #Define sigma for adversarial distribution pi_{0}
-    sigma = 0 if estimator_solver \
-        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho_value if rho_value != 0 else 0.1)
-    n_zeta_samples = 0 if estimator_solver \
-        not in {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
-    
-    #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, rho=rho_value, reparam="softmax", solver_reg=sigma, alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    #Create a new instance to solve concurrential access issues and solve the problem 
+    if estimator.__class__.__name__ == "Portfolio":
+        curves_estimator = Portfolio(solver=estimator.solver, rho=rho_value, reparam=estimator.reparam, 
+                            alpha=ALPHA, eta=ETA, n_zeta_samples=estimator.n_zeta_samples)
+    else:
+        curves_estimator = estimator.__class__(solver=estimator.solver, rho=rho_value,
+                                        n_zeta_samples=estimator.n_zeta_samples)
 
     eval_reliability_data_test = Parallel(n_jobs=-1)(
-        delayed(simulations_parallel_for_loop_curves)(N=N, estimator=estimator)
+        delayed(simulations_parallel_for_loop_curves)(N=N, estimator=curves_estimator)
         for _ in range(nb_simulations)
     )
 
@@ -237,13 +241,13 @@ def rho_parallel_for_loop_curves(N, estimator_solver, rho_value, nb_simulations)
 
     return np.mean(eval_data_test), reliability
 
-def parallel_for_loop_curves(N, estimator_solver, rho_values, nb_simulations):
+def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
     '''
     Parallelization of the loop on the number of simulations.
     '''
 
     mean_eval_reliability = Parallel(n_jobs=-1)(
-    delayed(rho_parallel_for_loop_curves)(N=N, estimator_solver=estimator_solver, rho_value=rho_value, nb_simulations=nb_simulations)
+    delayed(rho_parallel_for_loop_curves)(N=N, estimator=estimator, rho_value=rho_value, nb_simulations=nb_simulations)
     for rho_value in rho_values)
 
     mean_eval_data_test = [x for x, _ in mean_eval_reliability]
@@ -252,9 +256,9 @@ def parallel_for_loop_curves(N, estimator_solver, rho_values, nb_simulations):
     return mean_eval_data_test, reliability_test
 
 
-def parallel_compute_curves(nb_simulations, estimator_solver, compute):
+def parallel_compute_curves(nb_simulations, estimator, compute):
     samples_size = np.array([30])
-    rho_values = np.array([10**(-i) for i in range(1,-3,-1)])
+    rho_values = np.array([10**(-i) for i in range(3,-3,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
 
@@ -265,7 +269,7 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
             np.save(f, rho_values)
 
             mean_eval_rel_sizes = Parallel(n_jobs=-1)(
-                delayed(parallel_for_loop_curves)(N=size, estimator_solver=estimator_solver, rho_values=rho_values, nb_simulations=nb_simulations)
+                delayed(parallel_for_loop_curves)(N=size, estimator=estimator, rho_values=rho_values, nb_simulations=nb_simulations)
                 for size in samples_size)
             
             mean_eval_data_test_sizes = [x for x, _ in mean_eval_rel_sizes]
@@ -278,4 +282,3 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
         f.close()
 
     return samples_size, filename
-

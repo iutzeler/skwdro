@@ -145,9 +145,9 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-        problem.solve(verbose=False)
+        result = problem.solve(verbose=False)
 
-        return beta.value[:d], beta.value[d+1+n] , beta.value[d]
+        return beta.value[:d], beta.value[d+1+n] , beta.value[d], result
     else:
         beta = cp.Variable(d+1+n)
 
@@ -161,9 +161,9 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-        problem.solve(verbose=False)
+        result = problem.solve(verbose=False)
 
-        return beta.value[:d], 0.0 , beta.value[d]
+        return beta.value[:d], 0.0 , beta.value[d], result
 
 
 
