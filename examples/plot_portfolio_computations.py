@@ -93,17 +93,6 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
 
     if compute is True: 
 
-        #Define sigma for adversarial distribution pi_{0} and number of its samples
-        '''
-        sigma = 0 if estimator_solver not in \
-            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
-        '''
-        n_zeta_samples = 0 if estimator_solver not in \
-            {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
-
-        #Create the estimator and solve the problem
-        estimator = Portfolio(solver=estimator_solver, reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-
         print("Before joblib parallel computations")
         eval_data = Parallel(n_jobs=-1)(
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning)
@@ -159,7 +148,7 @@ def parallel_for_loop_curves(N, estimator_solver, rho):
     #Evaluate the loss value for the testing dataset
     eval_test = estimator.eval(X_test)
 
-    #Approximate the real loss value and compate it to the WDRO loss value
+    #Approximate the real loss value and compare it to the WDRO loss value
     eval_approx_loss = stochastic_problem_approx(estimator)
     if eval_approx_loss <= estimator.result_:
         reliability_cpt += 1
