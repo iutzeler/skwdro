@@ -62,13 +62,13 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, estimator_solver="dedi
     plt.legend()
     plt.show()  
 
-def plot_curves(nb_simulations=200, estimator_solver="dedicated", compute=True):
+def plot_curves(nb_simulations=200, *, estimator, compute=True):
     '''
     Plots Kuhn's curves from Section 7.2 of the 2017 WDRO paper.
     '''
     start = time.time()
 
-    samples_size, filename = parallel_compute_curves(nb_simulations, estimator_solver, compute)
+    samples_size, filename = parallel_compute_curves(nb_simulations, estimator, compute)
 
     with open (filename, 'rb') as f:
         rho_values = np.load(f)
