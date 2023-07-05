@@ -140,7 +140,7 @@ def main():
     #estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(nb_simulations=2, compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
+    plot_histograms(nb_simulations=20, compute=True, estimator=estimator, rho_tuning=True, blanchet=True)
     #plot_curves(nb_simulations=20, estimator=estimator, compute=True)
 
 

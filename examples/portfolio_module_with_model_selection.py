@@ -32,7 +32,7 @@ def main():
 
     theta = best_estimator.coef_
     lam = best_estimator.dual_var_
-    tau = best_estimator.problem_.loss.loss.tau.item()
+    tau = best_estimator.problem_.loss.primal_loss.tau.item()
 
     print("Value of theta: ", theta)
     print("Value of tau:", tau)
@@ -45,7 +45,7 @@ def main():
 
     indexes = np.array([i for i in range(len(losses))])
 
-    print("Optimal value for the primal problem: ", best_estimator.problem_.loss.loss.value(X=X).mean())
+    print("Optimal value for the primal problem: ", best_estimator.problem_.loss.primal_loss.value(X=X).mean())
     if best_estimator.solver == "entropic_torch_pre":
         print("Optimal value for the dual problem: ", best_estimator.problem_.loss.forward(xi=X, zeta=X.unsqueeze(0), zeta_labels=None, xi_labels=None))
     elif best_estimator.solver == "entropic_torch_post":
