@@ -5,9 +5,7 @@ from skwdro.operations_research import *
 from skwdro.linear_models import * 
 from sklearn.model_selection import train_test_split
 import torch as pt
-
-from sklearn.experimental import enable_halving_search_cv 
-from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
+import matplotlib.pyplot as plt
 
 from joblib import Parallel, delayed
 from os import makedirs
@@ -18,6 +16,23 @@ from skwdro.base.rho_tuners import *
 M = 10 #Number of assets
 ALPHA = 0.2 #Confidence level
 ETA = 10 #Risk-aversion quantificator of the investor
+
+##### VERIFICATION CODE FOR LOG_REG #####
+
+def plot_line(est, x):
+    c0, c1 = est.coef_
+    return -(x*c0 + est.intercept_) / c1
+
+def plot_sim_log_reg(estimator, X, y):
+    plt.scatter(X[y==0, 0], X[y==0, 1], color="r")
+    plt.scatter(X[y==1, 0], X[y==1, 1], color="b")
+    line_plot = [X[:, 0].min(), X[:, 0].max()]
+    plt.plot(line_plot, [plot_line(estimator, line_plot[0]), plot_line(estimator, line_plot[1])], \
+            'k--', label=f"{estimator.solver}: {estimator.score(X, y)}")
+
+    plt.legend()
+    plt.show()
+
 
 def generate_data(N,m,estimator):
     '''
@@ -44,11 +59,11 @@ def generate_data(N,m,estimator):
         case "LogisticRegression":
 
             X_left_x = np.random.uniform(low=-0.5, high=0.2, size=100)
-            X_left_y = np.random.uniform(low=-0.5,high=0.5, size=100)
+            X_left_y = np.random.uniform(low=-0.5,high=0.2, size=100)
             X_left = np.array([[x,y] for (x,y) in zip(X_left_x, X_left_y)])
 
             X_right_x = np.random.uniform(low=-0.2, high=0.5, size=50)
-            X_right_y = np.random.uniform(low=-0.5,high=0.5, size=50)
+            X_right_y = np.random.uniform(low=-0.2,high=0.5, size=50)
             X_right = np.array([[x,y] for (x,y) in zip(X_right_x, X_right_y)])
 
             X = np.concatenate((X_left, X_right))
@@ -94,7 +109,7 @@ def eval(estimator, class_name, X, y):
         if estimator.solver == "dedicated":
             eval = estimator.problem_.loss.value_split(theta=estimator.coef_, X=X, y=y)
         else:
-            eval = estimator.problem_.loss.loss.value(xi=X, xi_labels=y)
+            eval = estimator.problem_.loss.primal_loss.value(xi=pt.from_numpy(X).float(), xi_labels=pt.from_numpy(y).float().unsqueeze(-1)).mean()
     
     return eval
 
@@ -132,6 +147,9 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     print("Eval test: ", eval_test)
     print("Eval adv test: ", eval_adv_test)
 
+    if class_name == "LogisticRegression":
+        plot_sim_log_reg(estimator, X_train, y_train) #Visualization for the Logistic Regression problem
+
     return eval_train, eval_test, eval_adv_test, tuned_rho
 
 def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tuning, blanchet):
@@ -151,17 +169,19 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
     rho_filename = './examples/stored_data/rho_tuning_data.npy'
 
     if compute is True: 
-
-        print("Before joblib parallel computations")
-        eval_data = Parallel(n_jobs=-1)(
+       
+        eval_data = Parallel(n_jobs=-1, verbose=10)(
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
             for _ in range(nb_simulations)
         )
+
+        #debug mode
+        #eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
+
         eval_data_train = [x for x, _, _, _ in eval_data]
         eval_data_test = [y for _, y, _, _ in eval_data]
         eval_data_adv_test = [z for _, _, z, _ in eval_data]
         tuned_rho_data = [t for _, _, _, t in eval_data]
-        print("After joblib parallel computations")
 
         #We store the computed data
         with open (filename, 'wb') as f:
@@ -219,17 +239,21 @@ def rho_parallel_for_loop_curves(N, estimator, rho_value, nb_simulations):
     '''
 
     #Create a new instance to solve concurrential access issues and solve the problem 
+    cost = estimator.cost
     if estimator.__class__.__name__ == "Portfolio":
-        curves_estimator = Portfolio(solver=estimator.solver, rho=rho_value, reparam=estimator.reparam, 
+        curves_estimator = Portfolio(solver=estimator.solver, cost=cost, rho=rho_value, reparam=estimator.reparam, 
                             alpha=ALPHA, eta=ETA, n_zeta_samples=estimator.n_zeta_samples)
     else:
-        curves_estimator = estimator.__class__(solver=estimator.solver, rho=rho_value,
+        curves_estimator = estimator.__class__(solver=estimator.solver, rho=rho_value, cost=cost,
                                         n_zeta_samples=estimator.n_zeta_samples)
 
     eval_reliability_data_test = Parallel(n_jobs=-1)(
         delayed(simulations_parallel_for_loop_curves)(N=N, estimator=curves_estimator)
         for _ in range(nb_simulations)
     )
+
+    #debug mode
+    #_, _ = simulations_parallel_for_loop_curves(N=N, estimator=curves_estimator)
 
     #The datatypes in the two lists are the same so we only test on one of them
     if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
@@ -249,6 +273,9 @@ def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
     mean_eval_reliability = Parallel(n_jobs=-1)(
     delayed(rho_parallel_for_loop_curves)(N=N, estimator=estimator, rho_value=rho_value, nb_simulations=nb_simulations)
     for rho_value in rho_values)
+
+    #debug mode
+    #_, _ = rho_parallel_for_loop_curves(N=N, estimator=estimator, rho_value=1e-3, nb_simulations=nb_simulations)
 
     mean_eval_data_test = [x for x, _ in mean_eval_reliability]
     reliability_test = [y for _, y in mean_eval_reliability]
@@ -271,6 +298,9 @@ def parallel_compute_curves(nb_simulations, estimator, compute):
             mean_eval_rel_sizes = Parallel(n_jobs=-1)(
                 delayed(parallel_for_loop_curves)(N=size, estimator=estimator, rho_values=rho_values, nb_simulations=nb_simulations)
                 for size in samples_size)
+
+            #debug mode
+            _, _ = parallel_for_loop_curves(N=30, estimator=estimator, rho_values=rho_values, nb_simulations=nb_simulations)
             
             mean_eval_data_test_sizes = [x for x, _ in mean_eval_rel_sizes]
             reliability_test_sizes = [y for _, y in mean_eval_rel_sizes]
