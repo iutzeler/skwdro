@@ -213,6 +213,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.problem_.loss = DualLoss(
                         LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         cost,
+                        n_iter=1000,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
@@ -242,7 +243,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
                 raise NotImplementedError("Result for pre_sample not available")
             elif self.solver == "entropic_torch_post":
-                self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_)
+                self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(self.X_), xi_labels=pt.from_numpy(self.y_))
 
         else:
             raise NotImplementedError()

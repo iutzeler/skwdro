@@ -79,7 +79,7 @@ class Portfolio(BaseEstimator):
                  C=None,
                  d=None,
                  fit_intercept=None,
-                 cost="t-NC-1-1",
+                 cost="n-NC-1-1",
                  solver="dedicated",
                  solver_reg=1e-3,
                  reparam="softmax",
@@ -133,10 +133,6 @@ class Portfolio(BaseEstimator):
 
         #Check that X has correct shape
         X = check_array(X)
-
-        #Check data type (as check_array sometimes transforms X into a numpy array)
-        if isinstance(X, (np.ndarray,np.generic)) and self.solver != "dedicated":
-            X = pt.from_numpy(X)
 
         #Check random state
         self.random_state_ = check_random_state(self.random_state)
@@ -230,7 +226,9 @@ class Portfolio(BaseEstimator):
                 #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
                 raise NotImplementedError("Result for pre_sample not available")
             elif self.solver == "entropic_torch_post":
-                self.result_ = self.problem_.loss.forward(xi=self.X_)           
+                self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(self.X_))
+
+            self.tau_ = self.problem_.loss.primal_loss.tau.item()         
 
         self.is_fitted_ = True
 

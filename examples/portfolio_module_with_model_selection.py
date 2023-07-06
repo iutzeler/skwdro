@@ -32,7 +32,7 @@ def main():
 
     theta = best_estimator.coef_
     lam = best_estimator.dual_var_
-    tau = best_estimator.problem_.loss.primal_loss.tau.item()
+    tau = best_estimator.tau_
 
     print("Value of theta: ", theta)
     print("Value of tau:", tau)

@@ -136,12 +136,12 @@ def main():
         {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
 
     #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-    #estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
+    #estimator = Portfolio(solver=estimator_solver, cost="t-NC-1-2", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    estimator = LogisticRegression(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(nb_simulations=20, compute=True, estimator=estimator, rho_tuning=True, blanchet=True)
-    #plot_curves(nb_simulations=20, estimator=estimator, compute=True)
+    plot_histograms(nb_simulations=1, compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
+    #plot_curves(nb_simulations=1, estimator=estimator, compute=True)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ def indicator_func(xii, theta, estimator):
 
     if isinstance(estimator, Portfolio):
         tau = estimator.tau_ if (isinstance(estimator.tau_, (np.ndarray,np.generic))) \
-            else estimator.tau_.detach().numpy()
+            else estimator.tau_
         result = np.sign(-(theta@np.array(xii) + tau))
         assert result != 0, "The loss function is not differentiable"
         return result if result == 1 else 0

@@ -86,7 +86,7 @@ estimator_pre = LogisticRegression(
         fit_intercept=True,
         cost="t-NLC-2-2",
         n_zeta_samples=20,
-        solver="entropic_torch_pre"
+        solver="entropic_torch_post"
         )
 
 
