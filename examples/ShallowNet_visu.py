@@ -134,7 +134,7 @@ if __name__ == '__main__':
         return np.square(yhat.flatten()-y.flatten()).sum()/len(yhat)
 
     # Standard pytorch shallow network
-    mdl = ShallowNet(dim_data, n_neurons, fit_intercept=True, ly1=ly1, ly2=ly2, lr=1e-2)
+    mdl = ShallowNet(dim_data, n_neurons, fit_intercept=True, ly1=ly1, ly2=ly2, lr=1e-3)
     mdl.fit(X_train, y_train, iterlimit=1000, timelimit=None, gradcheck=None) # deter
     #mdl.fit(X_train, y_train, iterlimit=1000, timelimit=10, gradcheck=True) # will differ
     gd_fit_train, gd_fit_test = Loss(mdl.predict(X_train), y_train), Loss(mdl.predict(X_test), y_test)

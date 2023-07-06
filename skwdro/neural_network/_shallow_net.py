@@ -124,11 +124,11 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         self.problem_ = WDROProblem(
                 loss=None,
                 cost=NormCost(p=2),
-                Xi_bounds=[-1e8,1e8],
-                Theta_bounds=[-1e8,1e8],
+                xi_bounds=[-1e8,1e8],
+                theta_bounds=[-1e8,1e8],
                 rho=self.rho,
-                P=emp,
-                dLabel=1,
+                p_hat=emp,
+                d_labels=1,
                 d=d,
                 n=d
             )
@@ -146,9 +146,9 @@ class ShallowNet(BaseEstimator, RegressorMixin):
     
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg,
+                    sigma_=self.solver_reg,
                 )
-            self.parameters_ = self.problem_.loss.loss.parameters_iter # meh, todo?
+            self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
                     ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
@@ -160,8 +160,9 @@ class ShallowNet(BaseEstimator, RegressorMixin):
 
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg,
+                    sigma_=self.solver_reg,
                 )
+            self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver=="entropic":
             raise NotImplementedError
         elif self.solver=="dedicated":
