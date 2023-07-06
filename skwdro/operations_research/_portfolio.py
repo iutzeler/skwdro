@@ -79,7 +79,7 @@ class Portfolio(BaseEstimator):
                  C=None,
                  d=None,
                  fit_intercept=None,
-                 cost="t-NC-1-1",
+                 cost="n-NC-1-1",
                  solver="dedicated",
                  solver_reg=1e-3,
                  reparam="softmax",

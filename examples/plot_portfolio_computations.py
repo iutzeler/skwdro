@@ -74,6 +74,9 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
     print(eval_test)
     print(eval_adv_test)
 
+    if class_name == "LogisticRegression":
+        plot_sim_log_reg(estimator, X_train, y_train) #Visualization for the Logistic Regression problem
+
     return eval_train, eval_test, eval_adv_test, tuned_rho
 
 def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rho_tuning):
@@ -98,11 +101,14 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning)
             for _ in range(nb_simulations)
         )
+
+        #debug mode
+        #eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
+
         eval_data_train = [x for x, _, _, _ in eval_data]
         eval_data_test = [y for _, y, _, _ in eval_data]
         eval_data_adv_test = [z for _, _, z, _ in eval_data]
         tuned_rho_data = [t for _, _, _, t in eval_data]
-        print("After joblib parallel computations")
 
         #We store the computed data
         with open (filename, 'wb') as f:
@@ -180,28 +186,17 @@ def parallel_compute_curves(nb_simulations, estimator_solver, compute):
                         for _ in range(nb_simulations)
                     )
 
-                    #The datatypes in the two lists are the same so we only test on one of them
-                    if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
-                        eval_data_test = [x.detach().numpy() for x, _ in eval_reliability_data_test]
-                    else:
-                        eval_data_test = [x for x, _ in eval_reliability_data_test]
-                    
-                    reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
-                    
-                    #At the end of each set of simulations, we compute the mean value for the out-of-sample performance
-                    mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
-                    reliability_test = np.append(reliability_test, reliability)
-                
-                np.save(f, mean_eval_data_test)
-                np.save(f, reliability_test)
+    #The datatypes in the two lists are the same so we only test on one of them
+    if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
+        eval_data_test = [x.detach().numpy() for x, _ in eval_reliability_data_test]
+    else:
+        eval_data_test = [x for x, _ in eval_reliability_data_test]
+    
+    reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
 
-        f.close()
+    return np.mean(eval_data_test), reliability
 
-    return samples_size, filename
-
-#TODO: PARALLELIZE WITH JOBLIB ON RHO_VALUES AND SAMPLES_SIZE TOO
-
-def super_parallel_for_loop_curves(N, estimator_solver, rho):
+def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
     '''
     Parallelization of the loop on the number of simulations.
     '''
@@ -244,31 +239,16 @@ def super_parallel_compute_curves(nb_simulations, estimator_solver, compute):
 
             np.save(f, rho_values)
 
-            for size in samples_size:
-                mean_eval_data_test = np.array([]) #Mean value of the out-of-sample performance for each rho
-                reliability_test = np.array([]) #Probability array that the WDRO objective value is a supremum of the real value
-                for rho_value in rho_values:
+            mean_eval_rel_sizes = Parallel(n_jobs=-1)(
+                delayed(parallel_for_loop_curves)(N=size, estimator=estimator, rho_values=rho_values, nb_simulations=nb_simulations)
+                for size in samples_size)
+            
+            mean_eval_data_test_sizes = [x for x, _ in mean_eval_rel_sizes]
+            reliability_test_sizes = [y for _, y in mean_eval_rel_sizes]
 
-                    eval_reliability_data_test = Parallel(n_jobs=-1)(
-                        delayed(parallel_for_loop_curves)(N=size, estimator_solver=estimator_solver, rho=rho_value)
-                        for _ in range(nb_simulations)
-                    )
-
-                    #The datatypes in the two lists are the same so we only test on one of them
-                    if isinstance(eval_reliability_data_test[0][0], pt.torch.Tensor):
-                        eval_data_test = [x.detach().numpy() for x, _ in eval_reliability_data_test]
-                    else:
-                        eval_data_test = [x for x, _ in eval_reliability_data_test]
-                    
-                    reliability = sum([y for _, y in eval_reliability_data_test])/nb_simulations
-                    
-
-                    #At the end of each set of 200 simulations, we compute the mean value for the out-of-sample performance
-                    mean_eval_data_test = np.append(mean_eval_data_test,np.mean(eval_data_test))
-                    reliability_test = np.append(reliability_test, reliability)
-                
-                np.save(f, mean_eval_data_test)
-                np.save(f, reliability_test)
+            for i in range(len(mean_eval_data_test_sizes)):
+                np.save(f, mean_eval_data_test_sizes[i])
+                np.save(f, reliability_test_sizes[i])
 
         f.close()
 
