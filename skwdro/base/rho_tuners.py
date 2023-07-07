@@ -43,9 +43,10 @@ class RhoTunedEstimator(BaseEstimator):
         client_ = Client(processes=False) 
 
         #grid_estimator_= GridSearchCV(estimator=self.estimator, param_grid=param_grid_, cv=grid_cv_, 
-        #                               refit=True, n_jobs=-1, verbose=3)
+        #                               refit=True, n_jobs=-1, verbose=3, error_score="raise")
         grid_estimator_= HalvingGridSearchCV(estimator=self.estimator, param_grid=param_grid_, cv=grid_cv_,
-                                    refit=True, n_jobs=-1, verbose=3, min_resources="smallest")
+                                    refit=True, n_jobs=-1, verbose=3, min_resources="smallest",
+                                    error_score="raise")
  
         with jb.parallel_backend("dask", scatter=[X, y]):  
             grid_estimator_.fit(X, y) #Fit on the new estimator
@@ -62,8 +63,42 @@ class RhoTunedEstimator(BaseEstimator):
         return self
     
 class BlanchetRhoTunedEstimator(BaseEstimator):
-    """A custom estimator based on statistical analysis (Blanchet 2021) 
-    that tunes Wasserstein radius rho."""
+    """A custom general estimator based on statistical analysis (Blanchet 2021) 
+    that tunes Wasserstein radius rho. Takes norm cost equal to 2.
+    Every differential computations are done using torch's autodiff methods."""
+
+    def __init__(self, estimator):
+
+        if estimator is None:
+            raise ValueError("Estimator cannot be None for rho tuning")
+
+        self.estimator = estimator
+
+    def fit(self, X, y):
+
+        #Confidence level for the presence of a minimizer in the Wasserstein ball
+        confidence_level = 0.95
+
+        #Creating ERM decision: for that we fix rho = 0 to solve the SAA problem
+
+        rho = 0 if self.estimator.solver == "dedicated" else 0.1 #TODO: Adapt value of rho for entropic cases
+        
+        self.estimator.rho = rho
+        self.estimator.fit(X,y)
+
+        self.theta_erm_ = self.estimator.coef_
+
+        #Data-driven evaluations for the estimation of rho
+
+        self.n_samples_ = len(X)
+
+        loss = self.estimator.problem_.loss
+
+
+    
+class PortfolioBlanchetRhoTunedEstimator(BaseEstimator):
+    """A custom portfolio estimator based on statistical analysis (Blanchet 2021) 
+    that tunes Wasserstein radius rho. Explicit formulae takes norm cost equal to 1."""
 
     def __init__(self, estimator):
 

@@ -71,8 +71,9 @@ def generate_data(N,m,estimator):
 
             return X, y, class_name
 
-        case "Newsvendor":
-            raise NotImplementedError()
+        case "NewsVendor":
+            X = np.random.exponential(scale=2.0,size=(20,1))
+            return X, None, class_name
         case "Weber":
             raise NotImplementedError()
         case "LinearRegression":
@@ -85,7 +86,7 @@ def generate_train_test_data(N,m,estimator):
     Generates data as described above and splits data into a training and a testing sample.
     '''
     X, y, class_name = generate_data(N,m,estimator)
-    if class_name in {"Portfolio", "Newsvendor", "Weber"}:
+    if class_name in {"Portfolio", "NewsVendor", "Weber"}:
         X_train, X_test = train_test_split(X, train_size=0.5, test_size=0.5, random_state=42)
         return X_train, X_test, None, None, class_name
     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.5, test_size=0.5, random_state=42)
@@ -109,7 +110,12 @@ def eval(estimator, class_name, X, y):
         if estimator.solver == "dedicated":
             eval = estimator.problem_.loss.value_split(theta=estimator.coef_, X=X, y=y)
         else:
-            eval = estimator.problem_.loss.primal_loss.value(xi=pt.from_numpy(X).float(), xi_labels=pt.from_numpy(y).float().unsqueeze(-1)).mean()
+            if y is None:
+                eval = estimator.problem_.loss.primal_loss.value(xi=pt.from_numpy(X).float(),
+                                                                xi_labels=None).mean()
+            else:
+                eval = estimator.problem_.loss.primal_loss.value(xi=pt.from_numpy(X).float(),
+                                                                xi_labels=pt.from_numpy(y).float().unsqueeze(-1)).mean()
     
     return eval
 
@@ -135,7 +141,8 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
 
     #Define adversarial data
     adv = 1/np.sqrt(N)
-    X_adv_test = X_test - adv*best_estimator.coef_
+    best_decision = best_estimator.coef_
+    X_adv_test = X_test - adv*best_decision
 
     #Evaluate the loss value for the training and testing datasets
 
@@ -146,6 +153,7 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     print("Eval train: ", eval_train)
     print("Eval test: ", eval_test)
     print("Eval adv test: ", eval_adv_test)
+    print("Best decision: ", best_decision)
 
     if class_name == "LogisticRegression":
         plot_sim_log_reg(estimator, X_train, y_train) #Visualization for the Logistic Regression problem
@@ -196,7 +204,7 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
             np.save(f, eval_data_train)
             np.save(f, eval_data_test)
             np.save(f, eval_data_adv_test)
-        
+
         f.close()
 
         if rho_tuning is True:

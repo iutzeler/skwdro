@@ -68,16 +68,7 @@ class NewsVendor(BaseEstimator):
             cost: str="n-NC-1-2",
             solver_reg: float=.01,
             n_zeta_samples: int=10,
-            solver: str="entropic",
-            random_state: int=0
-            ):
-
-
-        if rho is not float:
-            try:
-                rho = float(rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
+            solver: str="entropic"):
 
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
@@ -105,21 +96,27 @@ class NewsVendor(BaseEstimator):
             Returns self.
         """
 
-
         # Input validation
         X = check_array(X)
         X = np.array(X)
+
+        #Type checking for rho
+        if self.rho is not float:
+            try:
+                self.rho = float(self.rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
         m,d = np.shape(X)
 
         if d>1:
             raise ValueError(f"The input X should be one-dimensional, got {d}")
 
-        cost = cost_from_str(self.cost)
+        self.cost_ = cost_from_str(self.cost)
         # Define problem w/ hyperparameters
         self.problem_ = WDROProblem(
-                loss=NewsVendorLoss(k=int(self.k), u=int(self.u)),
-                cost=cost,
+                loss=NewsVendorLoss(k=self.k, u=self.u),
+                cost=self.cost_,
                 d=1,
                 xi_bounds=[0, 20],
                 n=1,
@@ -130,7 +127,7 @@ class NewsVendor(BaseEstimator):
 
         if "torch" in self.solver:
             custom_sampler = NoLabelsCostSampler(
-                    cost,
+                    self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     epsilon=pt.tensor(self.rho),
                     seed=self.random_state
@@ -140,7 +137,7 @@ class NewsVendor(BaseEstimator):
                 # Default is to sample once the zetas
                 self.problem_.loss = DualPreSampledLoss(
                         NewsVendorLoss_torch(custom_sampler, k=self.k,u=self.u),
-                        cost,
+                        self.cost_,
                         self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho),
@@ -149,8 +146,9 @@ class NewsVendor(BaseEstimator):
                 # Use this option to resample the zetas at each gradient step
                 self.problem_.loss = DualLoss(
                         NewsVendorLoss_torch(custom_sampler, k=self.k,u=self.u),
-                        cost,
+                        self.cost_,
                         self.n_zeta_samples,
+                        n_iter=1000,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho),
                         )
@@ -185,4 +183,50 @@ class NewsVendor(BaseEstimator):
 
         # `fit` should always return `self`
         return self
+    
+    def score(self, X, y=None):
+        '''
+        Score method to estimate the quality of the model.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples_test,m)
+            The testing input samples.
+        y : None
+            The prediction. Always None for a Newsvendor estimator.
+        '''
+        return -self.eval(X)
+
+    def eval(self, X):
+        '''
+        Evaluates the loss with the theta obtained from the fit function.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples_test,m)
+            The testing input samples.
+        '''
+
+        assert self.is_fitted_ == True #We have to fit before evaluating
+
+        def entropic_case(X):
+            if isinstance(X, (np.ndarray,np.generic)):
+                X = pt.from_numpy(X)
+
+            return self.problem_.loss.primal_loss.value(xi=X).mean()
+
+        match self.solver:
+            case "dedicated":
+                return self.problem_.loss.value(theta=self.coef_, xi=X)
+            case "entropic":
+                return NotImplementedError("Entropic solver for Portfolio not implemented yet")
+            case "entropic_torch":
+                return entropic_case(X)
+            case "entropic_torch_pre":
+                return entropic_case(X)
+            case "entropic_torch_post":
+                return entropic_case(X)            
+            case _:
+                return ValueError("Solver not recognized")
+
 
