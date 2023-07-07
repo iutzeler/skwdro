@@ -64,7 +64,8 @@ def parallel_for_loop_histograms(N, rho, estimator_solver, adv):
 
     #Define adversarial data
     adv = 1/np.sqrt(N)
-    X_adv_test = X_test - adv*best_estimator.coef_
+    best_decision = best_estimator.coef_
+    X_adv_test = X_test - adv*best_decision
 
     #Evaluate the loss value for the training and testing datasets
     eval_train = estimator.eval(X_train)
@@ -123,7 +124,7 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
             np.save(f, eval_data_train)
             np.save(f, eval_data_test)
             np.save(f, eval_data_adv_test)
-        
+
         f.close()
 
         #We store in a different file the chosen rho values for each simulation 
