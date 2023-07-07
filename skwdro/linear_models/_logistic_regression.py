@@ -128,6 +128,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = np.array(X)
         y = np.array(y)
 
+        #Type checking for rho
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
@@ -166,9 +167,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         # Define cleanly the hyperparameters of the problem.
-        cost = cost_from_str(self.cost)
+        self.cost_ = cost_from_str(self.cost)
         self.problem_ = WDROProblem(
-                cost=cost,
+                cost=self.cost_,
                 loss=LogisticLoss(l2_reg=self.l2_reg),
                 p_hat=emp,
                 n=d,

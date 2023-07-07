@@ -244,7 +244,7 @@ class Portfolio(BaseEstimator):
         X : array-like, shape (n_samples_test,m)
             The testing input samples.
         y : None
-            The prediction. Always None for a portfolio estimator.
+            The prediction. Always None for a Portfolio estimator.
         '''
         return -self.eval(X)
 
