@@ -17,7 +17,7 @@ from skwdro.base.costs_torch import NormLabelCost
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
-class ShallowNet(BaseEstimator, RegressorMixin):
+class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
     """ A Wasserstein Distributionally Robust shallow network.
 
 
