@@ -1,6 +1,7 @@
 """
 Neural Network, 1 layer Relu, 1 linear
 """
+
 import numpy as np
 import torch as pt
 
@@ -17,7 +18,7 @@ import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 
 class ShallowNet(BaseEstimator, RegressorMixin):
-    """ A Wasserstein Distributionally Robust linear regression.
+    """ A Wasserstein Distributionally Robust shallow network.
 
 
     The cost function is XXX
@@ -27,10 +28,10 @@ class ShallowNet(BaseEstimator, RegressorMixin):
     ----------
     rho : float, default=1e-2
         Robustness radius
-    l2_reg  : float, default=None
-        l2 regularization
+    n_neurons : int, default=10
+        Number of ReLU neurons
     fit_intercept : boolean, default=True
-        Determines if an intercept is fit or not
+        If true, layers will include a bias
     cost: Loss, default=NormCost(p=2)
         Transport cost
     solver: str, default='entropic'
@@ -60,6 +61,8 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
                  n_neurons: int=10,
+                 ly1= None,
+                 ly2= None,
                  opt_cond=None
                  ):
 
@@ -81,12 +84,11 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.n_neurons = n_neurons
-
-
-
+        self.ly1 = ly1
+        self.ly2 = ly2
 
     def fit(self, X, y):
-        """Fits the WDRO classifier.
+        """Fits the WDRO neural network.
 
         Parameters
         ----------
@@ -122,22 +124,20 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         self.problem_ = WDROProblem(
                 loss=None,
                 cost=NormCost(p=2),
-                Xi_bounds=[-1e8,1e8],
-                Theta_bounds=[-1e8,1e8],
+                xi_bounds=[-1e8,1e8],
+                theta_bounds=[-1e8,1e8],
                 rho=self.rho,
-                P=emp,
-                dLabel=1,
+                p_hat=emp,
+                d_labels=1,
                 d=d,
                 n=d
             )
 
         # #########################################
 
-        if self.solver=="entropic":
-            raise NotImplementedError
-        elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
+        if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
-                    ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept, ly1=self.ly1, ly2=self.ly2),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
@@ -146,9 +146,9 @@ class ShallowNet(BaseEstimator, RegressorMixin):
     
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg,
+                    sigma_=self.solver_reg,
                 )
-            self.parameters_ = self.problem_.loss.loss.parameters_iter
+            self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
                     ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
@@ -160,8 +160,11 @@ class ShallowNet(BaseEstimator, RegressorMixin):
 
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    sigma=self.solver_reg,
+                    sigma_=self.solver_reg,
                 )
+            self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
+        elif self.solver=="entropic":
+            raise NotImplementedError
         elif self.solver=="dedicated":
             raise NotImplementedError
         else:
@@ -193,7 +196,22 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         X = check_array(X)
         X = pt.tensor(X, dtype=pt.float32, device="cpu")
         model = ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept)
-        model.load_state_dict(self.parameters_)
+        model.load_state_dict(self.parameters_) # load
 
         return model.pred(X).cpu().detach().numpy().flatten()
 
+    def params(self):
+        """ Return the network's parameters in a standard format
+        Returns
+        -------
+        ly1 : ndarray, shape (n_neurons, data_dim+1)
+            First layer with bias concatenated
+        ly2 : ndarray, shape (1, n_neurons)
+            Second layer
+        """
+
+        ly1nb = self.parameters_["linear1.weight"].cpu().detach().numpy()
+        ly1b = self.parameters_["linear1.bias"].cpu().detach().numpy()
+        ly1 = np.hstack((ly1nb, ly1b[:,None]))
+        ly2 = self.parameters_["linear2.weight"].cpu().detach().numpy()
+        return np.array(ly1), np.array(ly2) # otherwise it's just a pointer to memory...
