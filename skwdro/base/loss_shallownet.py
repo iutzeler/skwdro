@@ -18,14 +18,24 @@ class ShallowNetLoss(Loss):
             *,
             d: int=0,
             n_neurons: int=0,
+            ly1=None,
+            ly2=None,
             fit_intercept: bool=False) -> None:
         super(ShallowNetLoss, self).__init__(sampler)
         assert n_neurons is not None and n_neurons > 0, "Please provide a valid layer height n_neurons>0"
         assert d > 0, "Please provide a valid data dimension d>0"
+        if ly1 is not None:
+            assert len(ly1) == n_neurons # would be weird
         self.L = nn.MSELoss(reduction='none')
 
         self.linear1 = nn.Linear(d, n_neurons, bias=fit_intercept) # d -> n_neurons
-        self.linear2 = nn.Linear(n_neurons, 1, bias=fit_intercept) # n_neurons -> 1
+        self.linear2 = nn.Linear(n_neurons, 1, bias=False) # n_neurons -> 1
+
+        dtype, device = pt.float32, "cpu" # maybe put in parameters, todo?
+        if ly1 is not None and ly2 is not None:
+            self.linear1.weight.data = pt.tensor(ly1[:, :-1], dtype=dtype, device=device, requires_grad=True)
+            self.linear1.bias.data = pt.tensor(ly1[:, -1:].flatten(), dtype=dtype, device=device, requires_grad=True)
+            self.linear2.weight.data = pt.tensor(ly2, dtype=dtype, device=device, requires_grad=True)
 
         #self.linear1 = nn.Linear(d, 1, bias=fit_intercept) # debug=linearreg
 
@@ -35,8 +45,6 @@ class ShallowNetLoss(Loss):
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
         xi_labels_pred = self.pred(xi)
-
-        #xi_labels_pred = self.linear1(xi) # debug=linearreg
 
         return self.L(
                 xi_labels_pred,
@@ -52,7 +60,8 @@ class ShallowNetLoss(Loss):
 
     @property
     def intercept(self) -> pt.Tensor:
-        return pt.concatenate((self.linear1.bias, self.linear2.bias))
+        return self.linear1.bias
+        #return pt.concatenate((self.linear1.bias, self.linear2.bias))
 
     @property
     def parameters_iter(self):
