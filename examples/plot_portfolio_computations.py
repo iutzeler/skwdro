@@ -96,10 +96,9 @@ def parallel_compute_histograms(N, nb_simulations, estimator_solver, compute, rh
     filename = './examples/stored_data/parallel_portfolio_histogram_WDRO_data.npy'
 
     if compute is True: 
-
-        print("Before joblib parallel computations")
-        eval_data = Parallel(n_jobs=-1)(
-            delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning)
+       
+        eval_data = Parallel(n_jobs=-1, verbose=10)(
+            delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
             for _ in range(nb_simulations)
         )
 
