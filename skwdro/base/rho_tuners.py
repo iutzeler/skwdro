@@ -3,11 +3,15 @@ from sklearn.base import BaseEstimator
 import joblib as jb
 import numpy as np
 
+import torch.nn as nn
+import torch as pt
+
 from sklearn.experimental import enable_halving_search_cv 
 from sklearn.model_selection import GridSearchCV, HalvingGridSearchCV, KFold
 
 from dask.distributed import Client 
 
+from skwdro.base.losses_torch.base_loss import Loss
 import skwdro.base.rho_tuners_computations as cpt
 
 from skwdro.operations_research import *
@@ -62,6 +66,23 @@ class RhoTunedEstimator(BaseEstimator):
 
         return self
     
+class DiffLoss(Loss):
+    """Intermediary loss created from another loss.
+    Useful for differentation on theta and X for Blanchet's algorithm."""
+
+    def __init__(self, loss, X, y):
+        super(DiffLoss, self).__init__()
+        self.loss = loss
+        self.X = nn.Parameter(pt.as_tensor(X), requires_grad=False)
+        self.y = nn.Parameter(pt.as_tensor(y), requires_grad=False) if y is not None else None
+        self._theta = nn.Parameter(pt.rand(1))
+
+    def value(self):
+        return self.loss.value(xi=self.X, xi_labels=self.y)
+    
+    def theta(self) -> pt.Tensor:
+        return self._theta
+    
 class BlanchetRhoTunedEstimator(BaseEstimator):
     """A custom general estimator based on statistical analysis (Blanchet 2021) 
     that tunes Wasserstein radius rho. Takes norm cost equal to 2.
@@ -92,9 +113,50 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
 
         self.n_samples_ = len(X)
 
-        loss = self.estimator.problem_.loss
+        #Creation of an intermediary loss for differentiation
+        loss = self.estimator.problem_.loss.primal_loss
+        diff_loss = DiffLoss(loss=loss, X=X, y=y)
+        output = diff_loss.value().mean()
+        print(output)
+        output.backward(retain_graph=True) #We differentiate first on theta
 
+        for name, param in diff_loss.named_parameters():
+            if param.requires_grad:
+                print(name, param.data)
 
+        #Verifying that the backward method worked
+        assert any(parameter.grad is not None for parameter in diff_loss.parameters())
+
+        self.h_samples_ = diff_loss.value().detach().numpy()
+        #self.h_samples_ = np.array([cpt.compute_h(xii=X[i], theta=self.theta_erm_, estimator=self.estimator) for i in range(self.n_samples_)])
+
+        print(self.h_samples_)
+
+        self.cov_matrix_ = np.cov(self.h_samples_)
+        self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
+                                                            cov=self.cov_matrix_,
+                                                            size=self.n_samples_)
+
+        #We now differentiate w.r.t X
+        diff_loss.X.requires_grad = True
+        diff_loss.theta.requires_grad = False
+        diff_loss.backward()
+
+        assert any(parameter.grad is not None for parameter in diff_loss.parameters())
+        self.conjugate_samples_ =  np.array([cpt.compute_phi_star(X=X, z=self.normal_samples_[i], 
+                                                                  diff_loss=diff_loss)
+                                                                for i in range(len(self.normal_samples_))])
+
+        self.samples_quantile_ = np.quantile(a=self.conjugate_samples_, q=confidence_level)
+
+        #Compute rho thanks to the statistical analysis and the DRO estimator
+        #Taking the square root as a transformation of rho as Blanchet uses a squared cost function
+        self.estimator.rho = np.sqrt((1/self.n_samples_)*self.samples_quantile_)
+        self.estimator.fit(X,y)
+
+        self.best_estimator_ = self.estimator
+
+        return self
     
 class PortfolioBlanchetRhoTunedEstimator(BaseEstimator):
     """A custom portfolio estimator based on statistical analysis (Blanchet 2021) 
@@ -131,7 +193,7 @@ class PortfolioBlanchetRhoTunedEstimator(BaseEstimator):
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
                                                             cov=self.cov_matrix_,
                                                             size=self.n_samples_)
-        self.conjugate_samples_ =  np.array([cpt.compute_phi_star(X=X, z=self.normal_samples_[i], 
+        self.conjugate_samples_ =  np.array([cpt.compute_phi_star_portfolio(X=X, z=self.normal_samples_[i], 
                                                                   theta=self.theta_erm_, 
                                                                   estimator=self.estimator)
                                                                 for i in range(len(self.normal_samples_))])

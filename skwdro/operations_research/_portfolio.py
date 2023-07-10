@@ -197,6 +197,7 @@ class Portfolio(BaseEstimator):
                                                                 m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta_),
                                                                 alpha=pt.as_tensor(self.alpha_)),
                     cost = self.cost_,
+                    n_iter=1000,
                     n_samples=self.n_zeta_samples,
                     epsilon_0 = pt.tensor(self.solver_reg_),
                     rho_0 = pt.as_tensor(self.rho_)

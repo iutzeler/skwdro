@@ -128,7 +128,7 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     X_train, X_test, y_train, y_test, class_name = generate_train_test_data(N=N, m=M, estimator=estimator)
 
     if rho_tuning is True:
-        rho_tuner = BlanchetRhoTunedEstimator(estimator) if blanchet is True else RhoTunedEstimator(estimator)
+        rho_tuner = PortfolioBlanchetRhoTunedEstimator(estimator) if blanchet is True else RhoTunedEstimator(estimator)
         rho_tuner.fit(X=X_train, y=y_train)
 
         best_estimator = rho_tuner.best_estimator_
@@ -178,6 +178,7 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
 
     if compute is True: 
        
+        
         eval_data = Parallel(n_jobs=-1, verbose=10)(
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
             for _ in range(nb_simulations)

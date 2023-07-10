@@ -19,11 +19,11 @@ class RiskPortfolioLoss_torch(Loss):
         self._theta = pt.tensor(0.1)
         self.reparam = reparam
         self.name = name
-        self.sampler = NoLabelsCostSampler(cost,xi,epsilon)
+        self.sampler = NoLabelsCostSampler(cost,xi.float(),epsilon)
 
-    def value(self, X):
-        if isinstance(X, (np.ndarray,np.generic)):
-            X = pt.from_numpy(X)
+    def value(self, xi, xi_labels=None):
+        if isinstance(xi, (np.ndarray,np.generic)):
+            xi = pt.from_numpy(xi)
         if self.reparam == "softmax":
             softmax = nn.Softmax(dim=1)
             self._theta = softmax(self._theta_tilde)
@@ -35,7 +35,7 @@ class RiskPortfolioLoss_torch(Loss):
             self._theta = self._theta_tilde
         else:
             raise ValueError("Reparametrization function not recognized")
-        return -nn.functional.linear(input=X.type(pt.FloatTensor), weight=self._theta, bias=None)
+        return -nn.functional.linear(input=xi.type(pt.FloatTensor), weight=self._theta, bias=None)
     
     @property
     def theta(self):
@@ -61,10 +61,10 @@ class MeanRisk_torch(Loss):
         self.name = name
         self.sampler = loss.sampler
 
-    def value(self, X, X_labels=None):
-        if isinstance(X, (np.ndarray,np.generic)):
-            X = pt.from_numpy(X)
-        f_theta = self.loss.value(X)
+    def value(self, xi, xi_labels=None):
+        if isinstance(xi, (np.ndarray,np.generic)):
+            xi = pt.from_numpy(xi)
+        f_theta = self.loss.value(xi)
         relu = nn.ReLU()
         positive_part = relu(f_theta - self._tau)
         return f_theta + self.eta*self._tau + (self.eta/self.alpha)*positive_part
