@@ -90,12 +90,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  opt_cond=None
                  ):
 
-        if rho is not float:
-            try:
-                rho = float(rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -130,6 +124,13 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         X, y = check_X_y(X, y, y_numeric=True)
         X = np.array(X)
         y = np.array(y)
+
+        #Type checking for rho
+        if self.rho is not float:
+            try:
+                self.rho = float(self.rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
         if len(y.shape) != 1:
             y.flatten()

@@ -139,9 +139,10 @@ def main():
     #estimator = Portfolio(solver=estimator_solver, cost="t-NC-1-2", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
     #estimator = LogisticRegression(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
     estimator = NewsVendor(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
+    #estimator = LinearRegression(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(nb_simulations=5, compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
+    plot_histograms(nb_simulations=2, compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
     #plot_curves(nb_simulations=1, estimator=estimator, compute=True)
 
 

@@ -32,7 +32,14 @@ def compute_h(xii, theta, estimator):
     else:
         raise NotImplementedError()
     
-def compute_phi_star(X, z, theta, estimator):
+def compute_phi_star(X, z, diff_loss): 
+
+    n_samples = len(X)
+    A = (1/n_samples)*np.sum([np.matmul((diff_loss.value(idx=k)).T,diff_loss.value(idx=k))
+            for k in range(n_samples)])
+    return np.linalg.norm(x=z, ord=2)/np.matmul(z.T,A)@z
+    
+def compute_phi_star_portfolio(X, z, theta, estimator):
 
     if isinstance(estimator, Portfolio):
         eta = estimator.eta_
