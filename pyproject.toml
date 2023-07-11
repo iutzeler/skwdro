@@ -74,6 +74,7 @@ python = "3.11"
 [tool.hatch.envs.test]
 features = ["test"]
 [tool.hatch.envs.test.scripts]
+test-misc = "pytest ./tests/misc"
 test-custom = "pytest ./tests/torch_tests"
 test-sklearn = "pytest ./skwdro/tests"
 
