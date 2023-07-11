@@ -37,8 +37,18 @@ def compute_phi_star(X, z, diff_loss):
     n_samples = len(X)
     A = (1/n_samples)*np.sum([np.matmul((diff_loss.value(idx=k)).T,diff_loss.value(idx=k))
             for k in range(n_samples)])
-    return np.linalg.norm(x=z, ord=2)/np.matmul(z.T,A)@z
     
+    if np.linalg.det(A) != 0: #Case where A is inversible
+        inv_A = np.linalg.inv(A)
+        alpha_opt = inv_A@z
+    else: #A is not inversible, hence phi_star depends on the pseudo-inverse of A
+        pseudo_inv_A = np.linalg.pinv(A)
+        alpha_opt = pseudo_inv_A@z
+        if np.isclose(A@alpha_opt, z) is False: #We consider in that case that z is not in range(A)
+            return -np.inf
+        
+    return alpha_opt.T@z - (1/2)*np.matmul(z.T,A)@z
+            
 def compute_phi_star_portfolio(X, z, theta, estimator):
 
     if isinstance(estimator, Portfolio):
