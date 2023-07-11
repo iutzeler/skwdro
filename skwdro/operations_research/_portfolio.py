@@ -71,7 +71,8 @@ class Portfolio(BaseEstimator):
                  solver="dedicated",
                  solver_reg: float=1e-2,
                  n_zeta_samples: int=10,
-                 random_state=None
+                 random_state=None,
+                 seed: int=0
                  ):
 
         #Verifying conditions on rho, eta and alpha
@@ -91,6 +92,7 @@ class Portfolio(BaseEstimator):
         self.solver_reg = solver_reg
         self.random_state = random_state
         self.n_zeta_samples = n_zeta_samples
+        self.seed = seed
 
     def fit(self, X, y=None, C=None, d=None):
         """Fits the WDRO regressor.

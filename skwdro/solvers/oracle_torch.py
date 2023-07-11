@@ -169,7 +169,7 @@ class _DualLoss(nn.Module, ABC):
         else:
             return self.primal_loss.sampler.sample(n_samples)
 
-    def default_sampler(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor], epsilon: pt.Tensor) -> BaseSampler:
+    def default_sampler(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor], epsilon: pt.Tensor, seed: int) -> BaseSampler:
         r""" Wraper for the original loss sampler
 
         Parameters
@@ -191,7 +191,7 @@ class _DualLoss(nn.Module, ABC):
         xi : (m, d)
         xi_labels : (m, d')
         """
-        return self.primal_loss.default_sampler(xi, xi_labels, epsilon)
+        return self.primal_loss.default_sampler(xi, xi_labels, epsilon, seed)
 
     @abstractproperty
     def presample(self) -> bool:

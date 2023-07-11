@@ -90,6 +90,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
+                 seed: int=0,
                  opt_cond: Optional[OptCond]=OptCond(2)
                  ):
 
@@ -110,7 +111,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver_reg     = solver_reg
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
-
+        self.seed           = seed
 
 
 
@@ -226,6 +227,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             # The problem is solved with the new "dual loss"
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
+                    seed=self.seed,
                     sigma_=self.solver_reg,
                 )
         else:

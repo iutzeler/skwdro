@@ -69,7 +69,9 @@ class NewsVendor(BaseEstimator):
             cost: str="n-NC-1-2",
             solver_reg: float=.01,
             n_zeta_samples: int=10,
-            solver: str="entropic"):
+            solver: str="entropic",
+            seed: int=0
+            ):
 
 
         if rho is not float:
@@ -88,8 +90,7 @@ class NewsVendor(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
         self.n_zeta_samples = n_zeta_samples
-
-
+        self.seed = seed
 
     def fit(self, X, y=None):
         """Fits a WDRO model
@@ -118,7 +119,7 @@ class NewsVendor(BaseEstimator):
         cost = cost_from_str(self.cost)
         # Define problem w/ hyperparameters
         self.problem_ = WDROProblem(
-                loss=NewsVendorLoss(k=self.k, u=self.u),
+                loss=NewsVendorLoss(k=int(self.k), u=int(self.u)),
                 cost=cost,
                 d=1,
                 xi_bounds=[0, 20],
@@ -130,7 +131,6 @@ class NewsVendor(BaseEstimator):
 
         if "torch" in self.solver:
             # Use torch backend to solve the entropy-regularized version
-            self.cost = NormCostTorch(1, 1)
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
                 # Default is to sample once the zetas
                 self.problem_.loss = DualPreSampledLoss(
@@ -154,6 +154,7 @@ class NewsVendor(BaseEstimator):
             # Solve dual problem
             self.coef_ , self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
+                    self.seed,
                     sigma_=self.solver_reg)
 
         elif self.solver=="dedicated":

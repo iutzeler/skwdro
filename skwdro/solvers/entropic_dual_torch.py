@@ -41,7 +41,7 @@ def extract_data(dist: Distribution):
 
 
 @wrap_solver_result
-def solve_dual(wdro_problem: WDROProblem, sigma_: Union[float, pt.Tensor]=pt.tensor(.1)):
+def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Tensor]=pt.tensor(.1)):
     r""" Solve the dual problem with the loss-dependant grandient descent algorithm.
 
     Parameters
@@ -83,7 +83,7 @@ def solve_dual(wdro_problem: WDROProblem, sigma_: Union[float, pt.Tensor]=pt.ten
 
     # Initialize sampler.
     if loss._sampler is None:
-        loss.sampler = loss.default_sampler(xi, xi_labels, sigma)
+        loss.sampler = loss.default_sampler(xi, xi_labels, sigma, seed)
     assert isinstance(loss.sampler, BaseSampler)
 
     # If user wants to specify a custom optimizer, they need to register an instance

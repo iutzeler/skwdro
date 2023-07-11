@@ -87,6 +87,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  solver="entropic",
                  solver_reg=1.0,
                  n_zeta_samples: int=10,
+                 seed: int=0,
                  opt_cond=None
                  ):
 
@@ -107,7 +108,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.solver_reg     = solver_reg
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
-
+        self.seed           = seed
 
 
 
@@ -191,6 +192,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
+                    seed=self.seed,
                     sigma_=self.solver_reg,
                 )
         elif self.solver=="dedicated":

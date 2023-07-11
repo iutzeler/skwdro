@@ -7,6 +7,8 @@ from tests.torch_tests.utils import generate_blob
 
 dummy_cost = costs.NormLabelCost(2, 1, 1e2)
 
+SEED = 666
+
 def assert_shapes(sampler):
     test_labs_values = isinstance(sampler, smplr.ClassificationNormalBernouilliSampler)
     samples_x, samples_y = sampler.sample(20)
@@ -27,18 +29,18 @@ def assert_grad(sampler, xi, xi_labels, s):
 def test_size_samples_classif():
     xi, xi_labels = generate_blob()
     list(map(assert_shapes, [
-            smplr.ClassificationNormalNormalSampler(xi, xi_labels.unsqueeze(-1), l_sigma=.1, sigma=.1),
-            smplr.ClassificationNormalBernouilliSampler(xi, xi_labels.unsqueeze(-1), p=.1, sigma=.1),
-            smplr.LabeledCostSampler(dummy_cost, xi, xi_labels.unsqueeze(-1), epsilon=.1)
+            smplr.ClassificationNormalNormalSampler(xi, xi_labels.unsqueeze(-1), SEED, l_sigma=.1, sigma=.1),
+            smplr.ClassificationNormalBernouilliSampler(xi, xi_labels.unsqueeze(-1), SEED, p=.1, sigma=.1),
+            smplr.LabeledCostSampler(dummy_cost, xi, xi_labels.unsqueeze(-1), .1, SEED)
         ]))
 
 def test_grads_sampler():
     xi, xi_labels = generate_blob(rg=True)
     s = pt.tensor([.1], requires_grad=True)
     for sampler in [
-            smplr.ClassificationNormalNormalSampler(xi, xi_labels.unsqueeze(-1), l_sigma=s, sigma=s),
-            smplr.LabeledCostSampler(dummy_cost, xi, xi_labels.unsqueeze(-1), epsilon=s),
-            smplr.NoLabelsCostSampler(dummy_cost, xi, s)
+            smplr.ClassificationNormalNormalSampler(xi, xi_labels.unsqueeze(-1), SEED, l_sigma=s, sigma=s),
+            smplr.LabeledCostSampler(dummy_cost, xi, xi_labels.unsqueeze(-1), s, SEED),
+            smplr.NoLabelsCostSampler(dummy_cost, xi, s, SEED)
             ]:
         assert_grad(sampler, xi, xi_labels, s)
 
