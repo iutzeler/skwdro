@@ -44,7 +44,7 @@ class Loss(nn.Module):
         self._sampler = None
 
     @abstractclassmethod
-    def default_sampler(cls, xi, xi_labels, epsilon) -> BaseSampler:
+    def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> BaseSampler:
         raise NotImplementedError("Please Implement this method")
 
     def forward(self, *args):

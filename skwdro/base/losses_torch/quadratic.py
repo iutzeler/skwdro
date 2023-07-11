@@ -31,8 +31,8 @@ class QuadraticLoss(Loss):
                 xi_labels)
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon):
-        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
+    def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
+        return ClassificationNormalNormalSampler(xi, xi_labels, seed, sigma=epsilon, l_sigma=epsilon)
 
     @property
     def theta(self) -> pt.Tensor:

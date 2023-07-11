@@ -57,7 +57,9 @@ class Weber(BaseEstimator):
             kappa: float=10.0,
             solver_reg: float=1e-2,
             n_zeta_samples: int=10,
-            solver="entropic_torch"):
+            solver="entropic_torch",
+            seed: int=0
+            ):
 
         if rho is not float:
             try:
@@ -73,6 +75,7 @@ class Weber(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
         self.n_zeta_samples = n_zeta_samples
+        self.seed = seed
 
     def fit(self, X, y):
         """Fits a Weber WDRO model
@@ -116,7 +119,7 @@ class Weber(BaseEstimator):
 
         if self.solver=="entropic_torch":
             # The only option available at the moment
-            self.coef_ , _, self.dual_var_ = entTorch.solve_dual(self.problem_, sigma_=0.1)
+            self.coef_ , _, self.dual_var_ = entTorch.solve_dual(self.problem_, self.seed, sigma_=0.1)
         else:
             raise(NotImplementedError)
 

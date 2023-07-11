@@ -63,6 +63,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                  n_neurons: int=10,
                  ly1= None,
                  ly2= None,
+                 seed: int=0,
                  opt_cond=None
                  ):
 
@@ -86,6 +87,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
         self.n_neurons = n_neurons
         self.ly1 = ly1
         self.ly2 = ly2
+        self.seed = seed
 
     def fit(self, X, y):
         """Fits the WDRO neural network.
@@ -143,10 +145,11 @@ class ShallowNet(BaseEstimator, RegressorMixin):
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
-    
+
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma_=self.solver_reg,
+                    self.seed,
                 )
             self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
@@ -161,6 +164,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma_=self.solver_reg,
+                    self.seed,
                 )
             self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver=="entropic":
