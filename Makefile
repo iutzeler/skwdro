@@ -8,7 +8,5 @@ shell:
 	hatch -v -e $(ENV) shell
 
 test:
-	echo "General tests:"
+	@echo "General tests:"
 	hatch -e $(TEST_ENV) run test
-	echo "Separate tests, for random behavior"
-	pytest tests/misc
