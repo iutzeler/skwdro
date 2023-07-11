@@ -9,6 +9,8 @@ dummy_cost = costs.NormLabelCost(2, 2, 1e2)
 
 SEED = 666
 
+SEED = 666
+
 def assert_shapes(sampler):
     test_labs_values = isinstance(sampler, smplr.ClassificationNormalBernouilliSampler)
     samples_x, samples_y = sampler.sample(20)
