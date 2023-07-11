@@ -149,7 +149,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma_=self.solver_reg,
-                    self.seed,
+                    seed=self.seed
                 )
             self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
@@ -164,7 +164,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma_=self.solver_reg,
-                    self.seed,
+                    seed=self.seed
                 )
             self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver=="entropic":
