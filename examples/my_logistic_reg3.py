@@ -108,18 +108,24 @@ def generate_data(d, n_train, n_test, cluster_std):
     X_train, X_test, y_train, y_test = sklearn.model_selection.train_test_split(X, y, test_size=n_test, train_size=n_train)
     return torch.from_numpy(X_train).to(torch.float32), torch.from_numpy(X_test).to(torch.float32), torch.from_numpy(y_train).to(torch.float32), torch.from_numpy(y_test).to(torch.float32)
 
-def train(model, x, y):
+def train(model, x, y, robust):
     model.train()
     grads = []
     times = []
     crits = []
     start = time.time()
-    opt = optim.Adam(model.model.parameters(), lr=1e-3)
-    for _ in range(300):
-        opt.zero_grad()
-        loss = model.model.forward(x, y).mean()
-        loss.backward()
-        opt.step()
+    opt = optim.LBFGS(model.model.parameters(), line_search_fn="strong_wolfe")
+    for _ in range(50):
+        def closure():
+            opt.zero_grad()
+            loss = model.model.forward(x, y).mean()
+            loss.backward()
+            #opt.step()
+            return loss
+        opt.step(closure)
+
+    if not robust:
+        return model.model.forward(x, y).mean().item()
 
 
     # opt = optim.LBFGS(model.parameters(), line_search_fn=None, max_iter=1)
@@ -217,25 +223,24 @@ def tikzplotlib_fix_ncols(obj):
 
 
 def plot_metrics(robust, metrics, save_tex=False):
-    #train = [m[0] for m in metrics]
-    test  = [m[0] - m[1] for m in metrics]
-    pert  = [m[0] - m[2] for m in metrics]
+    train = [m[0] for m in metrics]
+    test  = [m[1] for m in metrics]
+    pert  = [m[2] for m in metrics]
+    plt.figure()
     #bins = plot_metric(train, "Train", "blue", 100)
     #plot_metric(test, "Test", "orange", bins, alpha=0.3)
     #plot_metric(pert, "Pert", "red", bins)
     #data={'Train':train, 'Test':test, 'Pert':pert}
     #sns.histplot(data=[train, test, pert], bins=50, stat="probability", log_scale=False, kde="True")
     bandwidth=1e-2
-    #ktrain = KernelDensity(bandwidth=bandwidth).fit(np.array(train).reshape(-1, 1))
+    ktrain = KernelDensity(bandwidth=bandwidth).fit(np.array(train).reshape(-1, 1))
     ktest  = KernelDensity(bandwidth=bandwidth).fit(np.array(test).reshape(-1, 1))
     kpert  = KernelDensity(bandwidth=bandwidth).fit(np.array(pert).reshape(-1, 1))
-    x = np.linspace(-0.2, 0.2, 100).reshape(-1,1)
-    #plt.plot(x, np.exp(ktrain.score_samples(x)), label="Robust loss on train set" if robust else "Loss on train set", color="C1")
-    plt.plot(x, np.exp(ktest.score_samples(x)), label="(Robust loss on train set) - (Loss on test set)", color="C2")
-    plt.plot(x, np.exp(kpert.score_samples(x)), label="(Robust loss on train set) - (Loss on perturbed test set)", color="C0")
-    ymax = max(max(np.exp(ktest.score_samples(x))), max(np.exp(kpert.score_samples(x))))
-    plt.vlines(0, 0, ymax+1, color="C1")
-    plt.ylim(ymax=ymax+0.5)
+    x = np.linspace(0., 0.2, 100).reshape(-1,1)
+    plt.plot(x, np.exp(ktrain.score_samples(x)), label=f"Robust loss on train set" if robust else "Loss on train set")
+    plt.plot(x, np.exp(ktest.score_samples(x)), label="Loss on test set")
+    plt.plot(x, np.exp(kpert.score_samples(x)), label="Loss on perturbed test set")
+    plt.ylim(ymax=30)
     if robust:
         plt.title("Smoothed histogram of losses with the WDRO predictor")
     else:
@@ -270,7 +275,7 @@ def make_xp(robust):
     else:
         model = LangevinApproxDRO(logistic, rho, n_train, eps, sigma, sample_y=False, p=p, lr=1e-5, T=1000, m_train=100, sigma_langevin=sigma)
     X_train, X_test, y_train, y_test = generate_data(d, n_train, n_test, cluster_std)
-    eval_train = train(model, X_train, y_train)
+    eval_train = train(model, X_train, y_train, robust)
     metrics = eval_perf(model, eval_train, X_test, y_test, pert_sigma, pert_step)
     print(metrics, flush=True)
     return metrics
