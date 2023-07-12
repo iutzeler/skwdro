@@ -162,9 +162,6 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
             
         #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
-        if "MeanRisk" not in class_name:
-            diff_loss.loss.theta.retain_grad()
-
         output[0].backward(retain_graph=True)
         grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if "MeanRisk" not in class_name \
                     else diff_loss.theta_tau.grad.numpy().astype(float)
@@ -198,15 +195,15 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
 
         print("PHASE 2: HESSIAN COMPUTATIONS")
 
-        self.conjugate_samples_ =  np.array([cpt.compute_phi_star(X=X, z=self.normal_samples_[i], 
+        self.conjugate_samples_ =  pt.tensor([cpt.compute_phi_star(X=X, z=self.normal_samples_[i], 
                                                                   diff_loss=diff_loss)
                                                                 for i in range(len(self.normal_samples_))])
 
-        self.samples_quantile_ = np.quantile(a=self.conjugate_samples_, q=confidence_level)
+        self.samples_quantile_ = pt.quantile(a=self.conjugate_samples_, q=confidence_level)
 
         #Compute rho thanks to the statistical analysis and the DRO estimator
         #Taking the square root as a transformation of rho as Blanchet uses a squared cost function
-        self.estimator.rho = np.sqrt((1/self.n_samples_)*self.samples_quantile_)
+        self.estimator.rho = pt.sqrt((1/self.n_samples_)*self.samples_quantile_)
         self.estimator.fit(X,y)
 
         self.best_estimator_ = self.estimator

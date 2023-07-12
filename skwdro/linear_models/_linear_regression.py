@@ -183,6 +183,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                         QuadraticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         cost,
                         n_samples=10,
+                        n_iter=1000,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
                     )
