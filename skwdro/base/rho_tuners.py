@@ -73,10 +73,15 @@ class DiffLoss(Loss):
     def __init__(self, loss, X, y):
         super(DiffLoss, self).__init__()
         self.loss = loss
+
+        #In this case we have to treat theta and tau as one parameter
+        '''
+        if "Portfolio" in loss.__class__.__name__:
+            pass
+        '''
+
         self.X = nn.Parameter(pt.as_tensor(X), requires_grad=False)
         self.y = nn.Parameter(pt.as_tensor(y), requires_grad=False) if y is not None else None
-        self._theta = nn.Parameter(pt.rand(1))
-
     def value(self):
         return self.loss.value(xi=self.X, xi_labels=self.y)
     
@@ -116,31 +121,48 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         #Creation of an intermediary loss for differentiation
         loss = self.estimator.problem_.loss.primal_loss
         diff_loss = DiffLoss(loss=loss, X=X, y=y)
-        output = diff_loss.value().mean()
-        print(output)
-        output.backward(retain_graph=True) #We differentiate first on theta
+        output = diff_loss.value()
+
+        print("Output value: ", diff_loss.value().detach().numpy())
+
+        diff_loss.loss.theta.retain_grad()
+
+        #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
         for name, param in diff_loss.named_parameters():
             if param.requires_grad:
                 print(name, param.data)
 
-        #Verifying that the backward method worked
-        assert any(parameter.grad is not None for parameter in diff_loss.parameters())
+        output[0].backward(retain_graph=True)
+        self.h_samples_ = np.array([diff_loss.loss.theta.grad.numpy().astype(float)])
+        print("Before: ", self.h_samples_)
 
-        self.h_samples_ = diff_loss.value().detach().numpy()
-        #self.h_samples_ = np.array([cpt.compute_h(xii=X[i], theta=self.theta_erm_, estimator=self.estimator) for i in range(self.n_samples_)])
+        for i in range(1,self.n_samples_):
+            output[i].backward(retain_graph=True)
+            assert diff_loss.loss.theta.grad is not None, "Issue with the differentiation w.r.t theta"
+            self.h_samples_ = np.vstack((self.h_samples_, np.array([diff_loss.loss.theta.grad.numpy().astype(float)])))
 
-        print(self.h_samples_)
-
-        self.cov_matrix_ = np.cov(self.h_samples_)
+        print("After: ", self.h_samples_)
+        print(self.h_samples_.shape)
+        print(type(self.h_samples_[0][0]))
+            
+        self.cov_matrix_ = np.cov(m=self.h_samples_, bias=True) if self.h_samples_.shape[1] == 1 else np.cov(m=self.h_samples_)
+        print("Cov matrix:", self.cov_matrix_)
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
                                                             cov=self.cov_matrix_,
                                                             size=self.n_samples_)
 
         #We now differentiate w.r.t X
         diff_loss.X.requires_grad = True
-        diff_loss.theta.requires_grad = False
-        diff_loss.backward()
+        diff_loss.loss._theta.requires_grad = False
+
+        for name, param in diff_loss.named_parameters():
+            if param.requires_grad:
+                print(name, param.data)
+
+        output.backward(gradient=pt.as_tensor(self.h_samples_)) #To adapt
+
+        print(diff_loss.X.grad)
 
         assert any(parameter.grad is not None for parameter in diff_loss.parameters())
         self.conjugate_samples_ =  np.array([cpt.compute_phi_star(X=X, z=self.normal_samples_[i], 
@@ -189,7 +211,11 @@ class PortfolioBlanchetRhoTunedEstimator(BaseEstimator):
 
         self.h_samples_ = np.array([cpt.compute_h(xii=X[i], theta=self.theta_erm_, estimator=self.estimator)
                                     for i in range(self.n_samples_)])
+
         self.cov_matrix_ = np.cov(self.h_samples_)
+        print("Cov matrix:", self.cov_matrix_)
+        print(self.cov_matrix_.shape)
+
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
                                                             cov=self.cov_matrix_,
                                                             size=self.n_samples_)
