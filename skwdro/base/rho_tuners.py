@@ -75,15 +75,35 @@ class DiffLoss(Loss):
         self.loss = loss
 
         #In this case we have to treat theta and tau as one parameter
-        '''
-        if "Portfolio" in loss.__class__.__name__:
-            pass
-        '''
+        if "MeanRisk" in loss.__class__.__name__:
+            self.theta_tau = nn.Parameter(pt.cat((self.loss.loss.theta_tilde.data, self.loss.tau.data), 0))
 
-        self.X = nn.Parameter(pt.as_tensor(X), requires_grad=False)
+        for name, param in self.named_parameters(): #Set other parameters than theta to false
+            if param.requires_grad:
+                print(name)
+                print(type(name))
+
+        self.X = nn.Parameter(pt.as_tensor(X))
         self.y = nn.Parameter(pt.as_tensor(y), requires_grad=False) if y is not None else None
+
+    def convert(self):
+        return (self.X.data.float(), self.y) if self.y is None else \
+            (self.X.data.float(), self.y.data.float().unsqueeze(-1).mean())
+
     def value(self):
-        return self.loss.value(xi=self.X, xi_labels=self.y)
+        X_conv, y_conv = self.convert()
+        return self.loss.value(xi=X_conv, xi_labels=y_conv)
+    
+    def value_idx(self, idx):
+
+        #Torch conversions
+        X_conv, y_conv = self.convert()
+        idx = int(idx.item()) if type(idx) == pt.Tensor else idx
+
+        print(idx)
+        if y_conv is None:
+            return self.loss.value(xi=X_conv[idx], xi_labels=None)
+        return self.loss.value(xi=X_conv[idx], xi_labels=y_conv[idx])
     
     def theta(self) -> pt.Tensor:
         return self._theta
@@ -123,48 +143,61 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         diff_loss = DiffLoss(loss=loss, X=X, y=y)
         output = diff_loss.value()
 
-        print("Output value: ", diff_loss.value().detach().numpy())
+        print("Output: ", output)
+        print(output.size())
 
-        diff_loss.loss.theta.retain_grad()
+        class_name = self.estimator.__class__.__name__
 
+        if "MeanRisk" not in class_name:
+            diff_loss.loss.theta.retain_grad()
+        else:
+            diff_loss.loss.loss.theta_tilde.retain_grad()
+            diff_loss.loss.tau.retain_grad()
+
+        '''
+        for k in range(self.n_samples_):
+            print("Gradient: ", pt.autograd.grad(diff_loss.value_idx(idx=k), diff_loss.theta_tau, 
+                                   grad_outputs=pt.ones_like(diff_loss.value_idx(idx=k)), allow_unused=True))
+        '''
+            
         #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
-        for name, param in diff_loss.named_parameters():
-            if param.requires_grad:
-                print(name, param.data)
+        if "MeanRisk" not in class_name:
+            diff_loss.loss.theta.retain_grad()
 
         output[0].backward(retain_graph=True)
-        self.h_samples_ = np.array([diff_loss.loss.theta.grad.numpy().astype(float)])
-        print("Before: ", self.h_samples_)
+        grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if "MeanRisk" not in class_name \
+                    else diff_loss.theta_tau.grad.numpy().astype(float)
+        self.h_samples_ = np.array([grad_theta])
 
         for i in range(1,self.n_samples_):
             output[i].backward(retain_graph=True)
-            assert diff_loss.loss.theta.grad is not None, "Issue with the differentiation w.r.t theta"
-            self.h_samples_ = np.vstack((self.h_samples_, np.array([diff_loss.loss.theta.grad.numpy().astype(float)])))
+            #print("Theta tau: ", diff_loss.theta_tau.grad)
+            #print("Theta tilde:", diff_loss.loss.loss.theta_tilde.grad)
+            #print("Theta:", diff_loss.loss.loss.theta.grad)
+            #print("Tau: ", diff_loss.loss.tau.grad)
+            print("\n")
+            #assert diff_loss.loss.theta.grad is not None, "Issue with the differentiation w.r.t theta"
+            grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if "MeanRisk" not in class_name \
+                        else diff_loss.theta_tau.grad.numpy().astype(float)
+            self.h_samples_ = np.vstack((self.h_samples_, np.array([grad_theta])))
 
-        print("After: ", self.h_samples_)
-        print(self.h_samples_.shape)
-        print(type(self.h_samples_[0][0]))
-            
+        #CASE OF NEWSVENDOR WITH ONLY ONE FEATURE!!
+        #self.h_samples_ = np.squeeze(self.h_samples_)
+        print("h_samples: ", self.h_samples_)
+
         self.cov_matrix_ = np.cov(m=self.h_samples_, bias=True) if self.h_samples_.shape[1] == 1 else np.cov(m=self.h_samples_)
-        print("Cov matrix:", self.cov_matrix_)
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
                                                             cov=self.cov_matrix_,
                                                             size=self.n_samples_)
 
-        #We now differentiate w.r.t X
+        #Differentiate w.r.t theta and X. We thus compute the hessian matrix
         diff_loss.X.requires_grad = True
-        diff_loss.loss._theta.requires_grad = False
 
-        for name, param in diff_loss.named_parameters():
-            if param.requires_grad:
-                print(name, param.data)
+        #diff_loss.loss.theta.grad.zero_()
 
-        output.backward(gradient=pt.as_tensor(self.h_samples_)) #To adapt
+        print("PHASE 2: HESSIAN COMPUTATIONS")
 
-        print(diff_loss.X.grad)
-
-        assert any(parameter.grad is not None for parameter in diff_loss.parameters())
         self.conjugate_samples_ =  np.array([cpt.compute_phi_star(X=X, z=self.normal_samples_[i], 
                                                                   diff_loss=diff_loss)
                                                                 for i in range(len(self.normal_samples_))])
@@ -207,14 +240,14 @@ class PortfolioBlanchetRhoTunedEstimator(BaseEstimator):
 
         #Data-driven evaluations for the estimation of rho
 
-        self.n_samples_ = len(X)
+        self.n_samples_ = len(X)    
+        print(self.n_samples_)
 
         self.h_samples_ = np.array([cpt.compute_h(xii=X[i], theta=self.theta_erm_, estimator=self.estimator)
                                     for i in range(self.n_samples_)])
+        print(self.h_samples_.shape)
 
         self.cov_matrix_ = np.cov(self.h_samples_)
-        print("Cov matrix:", self.cov_matrix_)
-        print(self.cov_matrix_.shape)
 
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
                                                             cov=self.cov_matrix_,
