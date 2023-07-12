@@ -63,12 +63,6 @@ class Weber(BaseEstimator):
             random_state: int=0
             ):
 
-        if rho is not float:
-            try:
-                rho = float(rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -97,6 +91,12 @@ class Weber(BaseEstimator):
         """
 
         X, y = check_X_y(X, y, y_numeric=True)
+
+        if rho is not float:
+            try:
+                rho = float(rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
 
         m,d = np.shape(X)
 
