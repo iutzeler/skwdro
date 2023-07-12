@@ -9,7 +9,7 @@ def fit_new_model(data, data_l):
     model = LogisticRegression(
             rho=1e-3,
             cost="t-NLC-2-2",
-            seed=666
+            random_state=666
             )
     model.fit(data, data_l)
     return model.coef_
