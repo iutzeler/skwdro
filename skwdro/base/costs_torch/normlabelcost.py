@@ -71,7 +71,8 @@ class NormLabelCost(NormCost):
                             loc=xi_labels,
                             scale=epsilon/self.kappa
                         )
-            elif self.p == 2:
+        elif self.power == 2:
+            if self.p == 2:
                 return dst.MultivariateNormal(
                         loc=xi_labels,
                         scale_tril=epsilon*pt.eye(xi_labels.size(-1))/self.kappa

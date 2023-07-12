@@ -42,7 +42,8 @@ class NormCost(Cost):
                             loc=xi,
                             scale=epsilon
                         )
-            elif self.p == 2:
+        elif self.power == 2:
+            if self.p == 2:
                 return dst.MultivariateNormal(
                         loc=xi,
                         scale_tril=epsilon*pt.eye(xi.size(-1))

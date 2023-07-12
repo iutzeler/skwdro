@@ -5,7 +5,7 @@ import skwdro.base.costs_torch as costs
 
 from tests.torch_tests.utils import generate_blob
 
-dummy_cost = costs.NormLabelCost(2, 1, 1e2)
+dummy_cost = costs.NormLabelCost(2, 2, 1e2)
 
 SEED = 666
 
