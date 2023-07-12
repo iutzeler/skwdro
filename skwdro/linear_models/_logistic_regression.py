@@ -202,10 +202,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             )
         elif "torch" in self.solver:
             custom_sampler = LabeledCostSampler(
-                    cost,
+                    self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(self.solver_reg),
+                    epsilon=pt.tensor(self.rho),
                     seed=self.random_state
                 )
             # The problem loss is changed to a more suitable "dual loss"
@@ -213,8 +213,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 # Default torch implementation resamples from pi_0 at each SGD step
                 self.problem_.loss = DualLoss(
                         LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        cost,
-                        n_iter=1000,
+                        self.cost_,
                         n_samples=self.n_zeta_samples,
                         n_iter=1000,
                         epsilon_0=pt.tensor(self.solver_reg),
@@ -225,7 +224,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
                 self.problem_.loss = DualPreSampledLoss(
                         LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        cost,
+                        self.cost_,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
