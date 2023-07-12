@@ -14,7 +14,7 @@ class WeberLoss(Loss):
 
     def __init__(
             self,
-            sampler: Optional[LabeledSampler]=None,
+            sampler: LabeledSampler,
             *,
             name="Weber loss"):
         super(WeberLoss, self).__init__(sampler)

@@ -16,8 +16,7 @@ from scipy.special import expit
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses import LogisticLoss
 from skwdro.base.losses_torch import LogisticLoss as LogisticLossTorch
-from skwdro.base.costs import Cost, NormCost
-from skwdro.base.costs_torch import NormLabelCost
+from skwdro.base.samplers.torch import LabeledCostSampler
 from skwdro.solvers.optim_cond import OptCond
 from skwdro.base.cost_decoder import cost_from_str
 
@@ -86,11 +85,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  rho: float=1e-2,
                  l2_reg: float=0.,
                  fit_intercept: bool=True,
-                 cost: str="n-NC-1-2",
+                 cost: str="t-NC-1-2",
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
-                 seed: int=0,
+                 random_state: int=0,
                  opt_cond: Optional[OptCond]=OptCond(2)
                  ):
 
@@ -111,7 +110,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver_reg     = solver_reg
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
-        self.seed           = seed
+        self.random_state   = random_state
 
 
 
@@ -201,11 +200,18 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     fit_intercept=self.fit_intercept
             )
         elif "torch" in self.solver:
+            custom_sampler = LabeledCostSampler(
+                    cost,
+                    pt.Tensor(self.problem_.p_hat.samples_x),
+                    pt.Tensor(self.problem_.p_hat.samples_y),
+                    epsilon=pt.tensor(self.rho),
+                    seed=self.random_state
+                )
             # The problem loss is changed to a more suitable "dual loss"
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 # Default torch implementation resamples from pi_0 at each SGD step
                 self.problem_.loss = DualLoss(
-                        LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         cost,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
@@ -215,7 +221,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             elif self.solver == "entropic_torch_pre":
                 # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
                 self.problem_.loss = DualPreSampledLoss(
-                        LogisticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         cost,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.rho),
@@ -227,7 +233,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             # The problem is solved with the new "dual loss"
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    seed=self.seed,
+                    seed=self.random_state,
                     sigma_=self.solver_reg,
                 )
         else:
