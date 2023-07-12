@@ -216,6 +216,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                         cost,
                         n_iter=1000,
                         n_samples=self.n_zeta_samples,
+                        n_iter=1000,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
                     )

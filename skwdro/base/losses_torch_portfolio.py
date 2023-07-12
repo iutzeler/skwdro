@@ -15,8 +15,8 @@ class RiskPortfolioLoss_torch(Loss):
     def __init__(self, cost: Optional[NormCost]=None, *, xi, epsilon, sampler: Optional[NoLabelsSampler]=None, m, \
                 reparam="softmax", name="Portfolio Torch Module Risk loss"):
         super(RiskPortfolioLoss_torch, self).__init__(sampler)
-        self._theta_tilde = nn.Parameter(pt.tensor([[0.2 for _ in range(m)]]))
-        self._theta = pt.tensor(0.1)
+        self._theta_tilde = nn.Parameter(pt.tensor([[0.2] for _ in range(m)])) #Useful for reparametrization
+        self._theta = pt.tensor([0.1])
         self.reparam = reparam
         self.name = name
         self.sampler = NoLabelsCostSampler(cost,xi.float(),epsilon)
@@ -35,11 +35,15 @@ class RiskPortfolioLoss_torch(Loss):
             self._theta = self._theta_tilde
         else:
             raise ValueError("Reparametrization function not recognized")
-        return -nn.functional.linear(input=xi.type(pt.FloatTensor), weight=self._theta, bias=None)
+        return -nn.functional.linear(input=xi.type(pt.FloatTensor), weight=self._theta.T, bias=None)
     
     @property
     def theta(self):
         return self._theta
+    
+    @property
+    def theta_tilde(self):
+        return self._theta_tilde
     
     @property
     def intercept(self):
@@ -57,7 +61,7 @@ class MeanRisk_torch(Loss):
         self.loss = loss
         self.eta = nn.Parameter(eta, requires_grad=False)
         self.alpha = nn.Parameter(alpha, requires_grad=False)
-        self._tau = nn.Parameter(pt.tensor(0.0))
+        self._tau = nn.Parameter(pt.tensor([[0.0]]))
         self.name = name
         self.sampler = loss.sampler
 
@@ -80,6 +84,10 @@ class MeanRisk_torch(Loss):
     @property
     def tau(self):
         return self._tau
+    
+    @property
+    def theta_tau(self):
+        return self._theta_tau
     
     @property
     def intercept(self):

@@ -1,4 +1,7 @@
 import numpy as np 
+import torch as pt
+from torch.autograd.functional import hessian
+
 from skwdro.operations_research import *
 from skwdro.linear_models import *
 
@@ -35,17 +38,41 @@ def compute_h(xii, theta, estimator):
 def compute_phi_star(X, z, diff_loss): 
 
     n_samples = len(X)
-    A = (1/n_samples)*np.sum([np.matmul((diff_loss.value(idx=k)).T,diff_loss.value(idx=k))
-            for k in range(n_samples)])
+
+    hessian_products = []
+
+    for k in range(n_samples):
+
+        one_dim = diff_loss.value_idx(idx=k).size() == pt.Size([1])
+        
+        #Needs to take a float input due to autograd restrictions even if index should be int
+        hessian_loss = hessian(func = diff_loss.value_idx, inputs=pt.tensor(float(k)))
+        print("Hessian value: ", hessian_loss)
+
+        hessian_product = (hessian_loss)**2 if one_dim is True \
+            else pt.matmul((hessian_loss).T,hessian_loss)
+        hessian_products.append(hessian_product)
+
+    A = (1/n_samples)*pt.sum(pt.tensor(hessian_products))
+
+    print("Value of A:", A)
+    print("Size of A: ", A.size())
+
+    if one_dim is True: #A is a scalar
+        if A != 0:
+            alpha_opt = z/A
+        else:
+            return -pt.tensor([float("inf")]) if z != pt.tensor([0.]) else 0
     
-    if np.linalg.det(A) != 0: #Case where A is inversible
-        inv_A = np.linalg.inv(A)
-        alpha_opt = inv_A@z
-    else: #A is not inversible, hence phi_star depends on the pseudo-inverse of A
-        pseudo_inv_A = np.linalg.pinv(A)
-        alpha_opt = pseudo_inv_A@z
-        if np.isclose(A@alpha_opt, z) is False: #We consider in that case that z is not in range(A)
-            return -np.inf
+    else:
+        if pt.linalg.det(A) != 0: #Case where A is inversible
+            inv_A = pt.linalg.inv(A)
+            alpha_opt = inv_A@z
+        else: #A is not inversible, hence phi_star depends on the pseudo-inverse of A
+            pseudo_inv_A = pt.linalg.pinv(A)
+            alpha_opt = pseudo_inv_A@z
+            if pt.isclose(A@alpha_opt, z) is False: #We consider in that case that z is not in range(A)
+                return -pt.tensor([float("inf")])
         
     return alpha_opt.T@z - (1/2)*np.matmul(z.T,A)@z
             
