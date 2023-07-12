@@ -13,8 +13,7 @@ from sklearn.metrics import euclidean_distances
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
 from skwdro.base.losses import NewsVendorLoss
 from skwdro.base.losses_torch import NewsVendorLoss_torch
-from skwdro.base.costs import NormCost, Cost
-from skwdro.base.costs_torch import NormCost as NormCostTorch
+from skwdro.base.samplers.torch import NoLabelsCostSampler
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
@@ -70,7 +69,7 @@ class NewsVendor(BaseEstimator):
             solver_reg: float=.01,
             n_zeta_samples: int=10,
             solver: str="entropic",
-            seed: int=0
+            random_state: int=0
             ):
 
 
@@ -90,7 +89,7 @@ class NewsVendor(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
         self.n_zeta_samples = n_zeta_samples
-        self.seed = seed
+        self.random_state = random_state
 
     def fit(self, X, y=None):
         """Fits a WDRO model
@@ -130,11 +129,17 @@ class NewsVendor(BaseEstimator):
         # #################################
 
         if "torch" in self.solver:
+            custom_sampler = NoLabelsCostSampler(
+                    cost,
+                    pt.Tensor(self.problem_.p_hat.samples_x),
+                    epsilon=pt.tensor(self.rho),
+                    seed=self.random_state
+                )
             # Use torch backend to solve the entropy-regularized version
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
                 # Default is to sample once the zetas
                 self.problem_.loss = DualPreSampledLoss(
-                        NewsVendorLoss_torch(k=self.k,u=self.u),
+                        NewsVendorLoss_torch(custom_sampler, k=self.k,u=self.u),
                         cost,
                         self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
@@ -143,7 +148,7 @@ class NewsVendor(BaseEstimator):
             elif self.solver == "entropic_torch_post":
                 # Use this option to resample the zetas at each gradient step
                 self.problem_.loss = DualLoss(
-                        NewsVendorLoss_torch(k=self.k,u=self.u),
+                        NewsVendorLoss_torch(custom_sampler, k=self.k,u=self.u),
                         cost,
                         self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
@@ -154,7 +159,7 @@ class NewsVendor(BaseEstimator):
             # Solve dual problem
             self.coef_ , self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
-                    self.seed,
+                    self.random_state,
                     sigma_=self.solver_reg)
 
         elif self.solver=="dedicated":

@@ -30,7 +30,7 @@ class LogisticLoss(Loss):
     """
     def __init__(
             self,
-            sampler: Optional[LabeledSampler]=None,
+            sampler: LabeledSampler,
             *,
             d: int=0,
             fit_intercept: bool=False) -> None:

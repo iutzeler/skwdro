@@ -35,7 +35,7 @@ class NewsVendorLoss_torch(Loss):
     """
     def __init__(
             self,
-            sampler: Optional[NoLabelsSampler]=None,
+            sampler: NoLabelsSampler,
             *,
             k: float=5,
             u: float=7,

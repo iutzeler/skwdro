@@ -11,7 +11,7 @@ from skwdro.base.samplers.torch.base_samplers import LabeledSampler
 class QuadraticLoss(Loss):
     def __init__(
             self,
-            sampler: Optional[LabeledSampler]=None,
+            sampler: LabeledSampler,
             *,
             d: int=0,
             fit_intercept: bool=False) -> None:

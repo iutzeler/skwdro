@@ -8,7 +8,8 @@ from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
 class Loss(nn.Module):
     """ Base class for loss functions """
-    def __init__(self, sampler: Optional[BaseSampler]=None):
+    _sampler: BaseSampler
+    def __init__(self, sampler: BaseSampler):
         super(Loss, self).__init__()
         self._sampler = sampler
 
@@ -41,7 +42,6 @@ class Loss(nn.Module):
     @sampler.deleter
     def sampler(self):
         del self._sampler
-        self._sampler = None
 
     @abstractclassmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> BaseSampler:
