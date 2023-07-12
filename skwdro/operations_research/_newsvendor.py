@@ -68,7 +68,9 @@ class NewsVendor(BaseEstimator):
             cost: str="n-NC-1-2",
             solver_reg: float=.01,
             n_zeta_samples: int=10,
-            solver: str="entropic"):
+            solver: str="entropic",
+            random_state: int=0
+            ):
 
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
