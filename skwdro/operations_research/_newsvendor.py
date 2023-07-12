@@ -148,6 +148,7 @@ class NewsVendor(BaseEstimator):
                         NewsVendorLoss_torch(custom_sampler, k=self.k,u=self.u),
                         self.cost_,
                         self.n_zeta_samples,
+                        n_iter=1000,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho),
                         )
