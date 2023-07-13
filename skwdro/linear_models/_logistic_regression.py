@@ -204,7 +204,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     cost,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(self.rho),
+                    epsilon=pt.tensor(self.solver_reg),
                     seed=self.random_state
                 )
             # The problem loss is changed to a more suitable "dual loss"
@@ -224,7 +224,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                         LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         cost,
                         n_samples=self.n_zeta_samples,
-                        epsilon_0=pt.tensor(self.rho),
+                        epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
                     )
             else:

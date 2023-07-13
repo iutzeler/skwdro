@@ -106,7 +106,7 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
     intercept = loss.intercept
     if intercept is not None:
         intercept = detach_tensor(intercept)
-    lambd = detach_tensor(loss.lam)
+    lambd = detach_tensor(loss.lam) if loss.rho > 0. else [0.]
     return theta, intercept, lambd
 
 def optim_presample(
