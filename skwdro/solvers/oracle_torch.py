@@ -348,6 +348,8 @@ class DualPreSampledLoss(_DualLoss):
     n_samples : int
         number of :math:`\zeta` samples to draw before the gradient descent begins (can be changed if needed between inferences)
     """
+    zeta:        Optional[pt.Tensor]
+    zeta_labels: Optional[pt.Tensor]
     def __init__(self,
                  loss: Loss,
                  cost: Cost,
@@ -367,6 +369,9 @@ class DualPreSampledLoss(_DualLoss):
                 tolerance_grad=1e-4,
                 tolerance_change=1e-6,
                 history_size=30)
+
+        self.zeta        = None
+        self.zeta_labels = None
 
     def forward(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None, zeta: Optional[pt.Tensor]=None, zeta_labels: Optional[pt.Tensor]=None):
         r""" Forward pass for the dual loss, wrt the already sampled :math:`\zeta` values
@@ -393,8 +398,15 @@ class DualPreSampledLoss(_DualLoss):
         dl : (1,)
         """
         if zeta is None:
-            raise ValueError("Please provide a zeta value for the forward pass of DualPreSampledLoss, else switch to an instance of DualPostSampledLoss.")
+            if self.zeta is None:
+                # No previously registered samples, fail
+                raise ValueError("Please provide a zeta value for the forward pass of DualPreSampledLoss, else switch to an instance of DualPostSampledLoss.")
+            else:
+                # Reuse the same samples as last forward pass
+                return self.compute_dual(xi, xi_labels, self.zeta, self.zeta_labels)
         else:
+            self.zeta        = zeta
+            self.zeta_labels = zeta_labels
             return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
 
     def __str__(self):
@@ -403,6 +415,10 @@ class DualPreSampledLoss(_DualLoss):
     @property
     def presample(self):
         return True
+
+    @property
+    def current_samples(self) -> Tuple[Optional[pt.Tensor], Optional[pt.Tensor]]:
+        return self.zeta, self.zeta_labels
 
 """
 DualLoss is an alias for the "post sampled loss" (resample at every forward pass)
