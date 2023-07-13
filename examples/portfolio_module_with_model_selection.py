@@ -21,7 +21,7 @@ def main():
     X = pt.tile(X,(N,1)) #Duplicate the above line N times
 
     #Creating the estimator and solving the problem
-    estimator = Portfolio(solver="entropic_torch_post", reparam="softmax", n_zeta_samples=10*N)
+    estimator = Portfolio(solver="entropic_torch_post", cost="t-NC-1-2", reparam="softmax", n_zeta_samples=10*N)
 
     rho_tuner = RhoTunedEstimator(estimator)
     #rho_tuner= BlanchetRhoTunedEstimator(estimator)
@@ -45,7 +45,7 @@ def main():
 
     indexes = np.array([i for i in range(len(losses))])
 
-    print("Optimal value for the primal problem: ", best_estimator.problem_.loss.primal_loss.value(X=X).mean())
+    print("Optimal value for the primal problem: ", best_estimator.problem_.loss.primal_loss.value(xi=X).mean())
     if best_estimator.solver == "entropic_torch_pre":
         print("Optimal value for the dual problem: ", best_estimator.problem_.loss.forward(xi=X, zeta=X.unsqueeze(0), zeta_labels=None, xi_labels=None))
     elif best_estimator.solver == "entropic_torch_post":

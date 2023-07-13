@@ -80,6 +80,12 @@ class DiffLoss(Loss):
                 print(type(name))
 
     def convert(self, X, y):
+        if isinstance(X, (np.ndarray,np.generic)):
+            X = pt.from_numpy(X)
+
+        if isinstance(y, (np.ndarray,np.generic)):
+            y = pt.from_numpy(y)
+
         return (X, y) if y is None else \
             (X.data.float(), y.data.float().unsqueeze(-1).mean())
 
@@ -134,25 +140,58 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         if class_name != "Portfolio":
             diff_loss.loss.theta.retain_grad()
         else:
-            diff_loss.loss.loss.theta_tilde.retain_grad()
+            diff_loss.loss.loss.theta.retain_grad()
             diff_loss.loss.tau.retain_grad()
             
-        output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
+        #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
+        output[0].backward(retain_graph=True)
+        print(diff_loss.loss.loss.theta.data)
+        print(pt.tensor([[diff_loss.loss.tau.data]]))
+        grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if class_name != "Portfolio" \
+                    else pt.cat((diff_loss.loss.loss.theta.data, pt.tensor([[diff_loss.loss.tau.data]])),1)
+        self.h_samples_ = grad_theta
+
+        for i in range(1,self.n_samples_):
+            output[i].backward(retain_graph=True)
+            print("Theta tilde:", diff_loss.loss.loss.theta_tilde)
+            print("Theta:", diff_loss.loss.loss.theta)
+            print("Tau: ", diff_loss.loss.tau)
+            print("\n")
+            #assert diff_loss.loss.theta.grad is not None, "Issue with the differentiation w.r.t theta"
+            grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if class_name != "Portfolio" \
+                        else pt.cat((diff_loss.loss.loss.theta.data, pt.tensor([[diff_loss.loss.tau.data]])),1)
+            self.h_samples_ = pt.vstack((self.h_samples_, grad_theta))
+
+        '''
         if class_name != "Portfolio":
             self.h_samples_ = diff_loss.loss.theta.grad.numpy().astype(float)
         else: #We need to concatenate the gradients w.r.t to theta and tau
-            self.h_samples_ = pt.cat((diff_loss.loss.loss.theta_tilde.data, diff_loss.loss.tau.data),0)
+            self.h_samples_ = pt.cat((diff_loss.loss.loss.theta.data, diff_loss.loss.tau.data),0)
+        '''
 
         #CASE OF NEWSVENDOR WITH ONLY ONE FEATURE!!
         #self.h_samples_ = np.squeeze(self.h_samples_)
         print("h_samples: ", self.h_samples_)
         print(self.h_samples_.shape)
 
-        self.cov_matrix_ = np.cov(m=self.h_samples_, bias=True) if self.h_samples_.shape[1] == 1 else np.cov(m=self.h_samples_)
+        #self.cov_matrix_ = np.cov(m=self.h_samples_, bias=True) if self.h_samples_.shape[1] == 1 else np.cov(m=self.h_samples_)
+        #print("NP cov_matrix: ", self.cov_matrix_)
+        self.cov_matrix_ = pt.cov(input=self.h_samples_, correction=0) if self.h_samples_.shape[1] == 1 else pt.cov(input=self.h_samples_)
+        print("PT cov_matrix: ", self.cov_matrix_)
+        print(self.cov_matrix_.size())
+
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.h_samples_.shape[0])]),
                                                             cov=self.cov_matrix_,
                                                             size=self.n_samples_)
+        print("NP normal samples: ", self.normal_samples_)
+        self.normal_samples_ = pt.as_tensor(self.normal_samples_) #TO REMOVE WHEN TORCH VERSION WILL WORK
+
+        '''
+        mult_norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.shape[0]), covariance_matrix=self.cov_matrix_)
+        self.normal_samples_ = mult_norm.sample()
+        print("PT normal samples: ", self.normal_samples_)
+        '''
 
         print("PHASE 2: HESSIAN COMPUTATIONS")
 
