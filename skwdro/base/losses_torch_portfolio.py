@@ -84,6 +84,10 @@ class MeanRisk_torch(Loss):
     @property
     def tau(self):
         return self._tau
+
+    @tau.setter
+    def tau(self, val):
+        self._tau = val
     
     @property
     def theta_tau(self):
