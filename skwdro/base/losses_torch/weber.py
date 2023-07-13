@@ -16,11 +16,10 @@ class WeberLoss(Loss):
             self,
             sampler: LabeledSampler,
             *,
-            name="Weber loss"):
+            d: int=2,
+            ):
         super(WeberLoss, self).__init__(sampler)
-        self.pos = nn.Parameter(pt.tensor([0.0,0.0]))
-        self.name = name
-
+        self.pos = nn.Parameter(pt.zeros(d))
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
         distances = pt.linalg.norm(xi - self.pos, dim=-1)[:,:,None]

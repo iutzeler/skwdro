@@ -85,7 +85,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  rho: float=1e-2,
                  l2_reg: float=0.,
                  fit_intercept: bool=True,
-                 cost: str="t-NC-1-2",
+                 cost: str="t-NLC-2-2",
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
