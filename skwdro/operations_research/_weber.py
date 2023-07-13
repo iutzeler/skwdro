@@ -10,7 +10,8 @@ from sklearn.utils.validation import check_X_y
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
-from skwdro.solvers.oracle_torch import DualLoss
+from skwdro.base.samplers.torch import LabeledCostSampler
+from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 from skwdro.base.losses_torch.weber import WeberLoss
 
 
@@ -57,8 +58,9 @@ class Weber(BaseEstimator):
             kappa: float=10.0,
             solver_reg: float=1e-2,
             n_zeta_samples: int=10,
+            cost: str="t-NLC-2-2",
             solver="entropic_torch",
-            seed: int=0
+            random_state: int=0
             ):
 
         if rho is not float:
@@ -75,7 +77,8 @@ class Weber(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
         self.n_zeta_samples = n_zeta_samples
-        self.seed = seed
+        self.random_state = random_state
+        self.cost = cost
 
     def fit(self, X, y):
         """Fits a Weber WDRO model
@@ -98,30 +101,69 @@ class Weber(BaseEstimator):
         m,d = np.shape(X)
 
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y.reshape(-1,1))
-        cost = NormLabelCostTorch(kappa=self.kappa)
+        cost = NormLabelCostTorch(p=2,power=2,kappa=self.kappa)
 
-        self.problem_ = WDROProblem(
-                loss=DualLoss(
-                    WeberLoss(),
-                    cost,
-                    n_samples=self.n_zeta_samples,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho)),
-                cost = cost,
-                xi_bounds=[0,20],
-                theta_bounds=[0,np.inf],
-                rho=self.rho,
-                p_hat=emp,
-                d=d,
-                d_labels=1,
-                n=d
+
+
+        custom_sampler = LabeledCostSampler(
+                        cost,
+                        pt.Tensor(emp.samples_x),
+                        pt.Tensor(emp.samples_y),
+                        epsilon=pt.tensor(self.rho),
+                        seed=self.random_state
+                    )
+
+
+
+        if "torch" in self.solver:
+
+            if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
+                self.problem_ = WDROProblem(
+                                    loss=DualLoss(
+                                        WeberLoss(custom_sampler,d=d),
+                                        cost,
+                                        n_samples=self.n_zeta_samples,
+                                        epsilon_0=pt.tensor(self.solver_reg),
+                                        rho_0=pt.tensor(self.rho)),
+                                    cost = cost,
+                                    xi_bounds=[0,20],
+                                    theta_bounds=[0,np.inf],
+                                    rho=self.rho,
+                                    p_hat=emp,
+                                    d=d,
+                                    d_labels=1,
+                                    n=d
+                                    )
+
+            elif self.solver == "entropic_torch_pre":
+                self.problem_ = WDROProblem(
+                                    loss=DualPreSampledLoss(
+                                        WeberLoss(custom_sampler,d=d),
+                                        cost,
+                                        n_samples=self.n_zeta_samples,
+                                        epsilon_0=pt.tensor(self.solver_reg),
+                                        rho_0=pt.tensor(self.rho)),
+                                    cost = cost,
+                                    xi_bounds=[0,20],
+                                    theta_bounds=[0,np.inf],
+                                    rho=self.rho,
+                                    p_hat=emp,
+                                    d=d,
+                                    d_labels=1,
+                                    n=d
+                                    )
+
+            else:
+                raise NotImplementedError
+
+            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
+                    self.problem_,
+                    seed=self.random_state,
+                    sigma_=self.solver_reg,
                 )
-
-        if self.solver=="entropic_torch":
-            # The only option available at the moment
-            self.coef_ , _, self.dual_var_ = entTorch.solve_dual(self.problem_, self.seed, sigma_=0.1)
         else:
-            raise(NotImplementedError)
+            raise NotImplementedError
+        
 
 
         self.is_fitted_ = True
