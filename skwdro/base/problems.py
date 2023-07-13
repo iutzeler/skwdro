@@ -126,5 +126,5 @@ class EmpiricalDistributionWithLabels(Distribution):
 
     def __init__(self, m: int, samples_x: np.ndarray, samples_y: np.ndarray, name="Empirical distribution"):
         super(EmpiricalDistributionWithLabels, self).__init__(m, name)
-        self._samples_x = samples_x
-        self._samples_y = samples_y
+        self._samples_x = samples_x.copy()
+        self._samples_y = samples_y.copy()
