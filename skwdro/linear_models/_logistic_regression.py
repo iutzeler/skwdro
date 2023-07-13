@@ -205,7 +205,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(self.rho),
+                    epsilon=pt.tensor(self.solver_reg),
                     seed=self.random_state
                 )
             # The problem loss is changed to a more suitable "dual loss"
