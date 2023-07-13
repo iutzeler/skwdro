@@ -148,6 +148,8 @@ class _DualLoss(nn.Module, ABC):
                     xi.unsqueeze(0), # (1, m, d)
                     xi_labels.unsqueeze(0) if xi_labels is not None else None # (1, m, d') or None
                 ).mean() # (1,)
+        elif self.rho.isnan().any():
+            return pt.tensor(pt.nan, requires_grad=True)
         else:
             raise ValueError("Rho < 0 detected: -> " + str(self.rho.item()) + ", please provide a positive rho value")
 
