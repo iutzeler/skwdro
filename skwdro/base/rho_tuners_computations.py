@@ -4,9 +4,6 @@ import torch as pt
 from skwdro.operations_research import *
 from skwdro.linear_models import *
 
-def func_call(loss, X, y):
-    return pt.func.functional_call(module=loss, parameter_and_buffer_dicts=dict(loss.named_parameters()), args=(X, y))
-
 def indicator_func(xii, theta, estimator):
 
     if isinstance(estimator, Portfolio):
@@ -39,24 +36,36 @@ def compute_h(xii, theta, estimator):
     
 def compute_phi_star(X, y, z, diff_loss): 
 
+    def func_call(X, y):
+        print(dict(diff_loss.named_parameters()).keys())
+        return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=dict(diff_loss.named_parameters()), args=(X, y))
+
     n_samples = len(X)
+   
+    one_dim = diff_loss.value(X=X, y=y).size() == pt.Size([1])
+    print("One dim value: ", one_dim)
 
     hessian_products = []
 
     for k in range(n_samples):
 
         yk = y[k] if y is not None else None
-        one_dim = diff_loss.value(X=X[k], y=yk).size() == pt.Size([1])
+        Xk_conv, yk_conv = diff_loss.convert(X[k], yk)
         
         #Needs to take a float input due to autograd restrictions even if index should be int
-        hessian_loss = pt.func.hessian(func_call)(diff_loss, X[k], yk)
-        print("Hessian value: ", hessian_loss)
+        hessian_loss = pt.func.hessian(func_call)(Xk_conv, yk_conv).squeeze()
+        #print(hessian_loss.size())
+        #print("Hessian value: ", hessian_loss)
 
         hessian_product = (hessian_loss)**2 if one_dim is True \
             else pt.matmul((hessian_loss).T,hessian_loss)
         hessian_products.append(hessian_product)
 
-    A = (1/n_samples)*pt.sum(pt.tensor(hessian_products))
+    print("Hessian products: ", hessian_products)
+    print("Length of hessian_products: ", len(hessian_products))
+    print("Size of one element inside hessian_products: ", hessian_products[0].size())
+
+    A = (1/2*n_samples)*sum(hessian_products)
 
     print("Value of A:", A)
     print("Size of A: ", A.size())
@@ -67,12 +76,15 @@ def compute_phi_star(X, y, z, diff_loss):
         else:
             return -pt.tensor([float("inf")]) if z != pt.tensor([0.]) else 0
     else:
-        pseudo_inv_A = pt.linalg.pinv(A)
-        alpha_opt = pseudo_inv_A@z
-        if pt.isclose(A@alpha_opt, z) is False: #We consider in that case that z is not in range(A)
+        pseudo_inv_A = pt.linalg.pinv(A)        
+        print(pseudo_inv_A.size())
+        print(z.size())   
+        alpha_opt = pt.matmul(pseudo_inv_A,z)
+        if pt.isclose(pt.dot(A,alpha_opt), z) is False: #We consider in that case that z is not in range(A)
             return -pt.tensor([float("inf")])
-        
-    return alpha_opt.T@z - (1/2)*np.matmul(alpha_opt.T,A)@alpha_opt
+
+
+    return alpha_opt.T@z - (1/2)*pt.dot(pt.matmul(alpha_opt.T,A),alpha_opt)
             
 def compute_phi_star_portfolio(X, z, theta, estimator):
 
