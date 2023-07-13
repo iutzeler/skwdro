@@ -16,8 +16,7 @@ import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses import QuadraticLoss
 from skwdro.base.losses_torch import QuadraticLoss as QuadraticLossTorch
-from skwdro.base.costs import NormCost
-from skwdro.base.costs_torch import NormLabelCost
+from skwdro.base.samplers.torch import LabeledCostSampler
 from skwdro.solvers.optim_cond import OptCond
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 from skwdro.base.cost_decoder import cost_from_str
@@ -83,10 +82,11 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  rho=1e-2,
                  l2_reg=.0,
                  fit_intercept=True,
-                 cost="n-NC-1-2",
-                 solver="entropic",
+                 cost="t-NLC-2-2",
+                 solver="entropic_torch",
                  solver_reg=1.0,
                  n_zeta_samples: int=10,
+                 random_state: int=0,
                  opt_cond=None
                  ):
 
@@ -107,7 +107,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.solver_reg     = solver_reg
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
-
+        self.random_state   = random_state
 
 
 
@@ -169,9 +169,17 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
         elif "torch" in self.solver:
+            custom_sampler = LabeledCostSampler(
+                    cost,
+                    pt.Tensor(self.problem_.p_hat.samples_x),
+                    pt.Tensor(self.problem_.p_hat.samples_y),
+                    epsilon=pt.tensor(self.rho),
+                    seed=self.random_state
+                )
+
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 self.problem_.loss = DualLoss(
-                        QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         cost,
                         n_samples=10,
                         epsilon_0=pt.tensor(self.solver_reg),
@@ -180,7 +188,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             elif self.solver == "entropic_torch_pre":
                 self.problem_.loss = DualPreSampledLoss(
-                        QuadraticLossTorch(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
                         cost,
                         n_samples=10,
                         epsilon_0=pt.tensor(self.solver_reg),
@@ -191,6 +199,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
+                    seed=self.random_state,
                     sigma_=self.solver_reg,
                 )
         elif self.solver=="dedicated":

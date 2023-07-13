@@ -13,9 +13,11 @@ from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
+from skwdro.base.samplers.torch import LabeledCostSampler
 
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
+from skwdro.base.cost_decoder import cost_from_str
 
 class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
     """ A Wasserstein Distributionally Robust shallow network.
@@ -56,13 +58,14 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
                  rho=1e-2,
                  l2_reg=None,
                  fit_intercept=True,
-                 cost=None,
+                 cost="t-NLC-2-2",
                  solver="entropic_torch",
                  solver_reg=0.01,
                  n_zeta_samples: int=10,
                  n_neurons: int=10,
                  ly1= None,
                  ly2= None,
+                 random_state: int=0,
                  opt_cond=None
                  ):
 
@@ -86,6 +89,7 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
         self.n_neurons = n_neurons
         self.ly1 = ly1
         self.ly2 = ly2
+        self.random_state = random_state
 
     def fit(self, X, y):
         """Fits the WDRO neural network.
@@ -119,6 +123,7 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
         self.n_features_in_ = d
 
         # Setup problem parameters ################
+        cost = cost_from_str(self.cost)
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         self.problem_ = WDROProblem(
@@ -134,24 +139,32 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
             )
 
         # #########################################
+        custom_sampler = LabeledCostSampler(
+                    cost,
+                    pt.Tensor(self.problem_.p_hat.samples_x),
+                    pt.Tensor(self.problem_.p_hat.samples_y),
+                    epsilon=pt.tensor(self.rho),
+                    seed=self.random_state
+                )
 
         if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             self.problem_.loss = DualLoss(
-                    ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept, ly1=self.ly1, ly2=self.ly2),
+                    ShallowNetLossTorch(custom_sampler, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept, ly1=self.ly1, ly2=self.ly2),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
-    
+
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma_=self.solver_reg,
+                    seed=self.random_state
                 )
             self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
-                    ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                    ShallowNetLossTorch(custom_sampler, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
@@ -161,6 +174,7 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
             self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
                     self.problem_,
                     sigma_=self.solver_reg,
+                    seed=self.random_state
                 )
             self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver=="entropic":

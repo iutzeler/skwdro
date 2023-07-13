@@ -7,5 +7,16 @@ reset_env:
 shell:
 	hatch -v -e $(ENV) shell
 
-test:
-	hatch -e $(TEST_ENV) run test
+test: test_gen test_sk test_misc
+
+test_gen:
+	@echo "General tests:"
+	@hatch -e $(TEST_ENV) run test:test-custom
+
+test_sk:
+	@echo "Sklearn tests:"
+	@hatch -e $(TEST_ENV) run test:test-sklearn
+
+test_misc:
+	@echo "Solo tests:"
+	@hatch -e $(TEST_ENV) run test:test-misc

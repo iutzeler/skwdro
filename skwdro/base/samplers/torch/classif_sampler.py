@@ -7,7 +7,7 @@ from .base_samplers import IsOptionalCovarianceSampler, LabeledSampler
 class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSampler):
     data_s: dst.MultivariateNormal
     labels_s: dst.MultivariateNormal
-    def __init__(self, xi: pt.Tensor, xi_labels: pt.Tensor, *,
+    def __init__(self, xi: pt.Tensor, xi_labels: pt.Tensor, seed: int, *,
                  sigma: Optional[Union[float, pt.Tensor]]=None,
                  tril: Optional[pt.Tensor]=None,
                  prec: Optional[pt.Tensor]=None,
@@ -29,13 +29,15 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
                 dst.MultivariateNormal(
                     loc=xi_labels,
                     **labels_covar
-                )
+                ),
+                seed
             )
 
     def reset_mean(self, xi, xi_labels):
         self.__init__(
                 xi,
                 xi_labels,
+                self.seed,
                 tril=self.data_s._unbroadcasted_scale_tril,
                 l_tril=self.labels_s._unbroadcasted_scale_tril
                 )
@@ -43,7 +45,7 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
 class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovarianceSampler):
     data_s: dst.MultivariateNormal
     labels_s: dst.TransformedDistribution
-    def __init__(self, xi: pt.Tensor, xi_labels: pt.Tensor, *,
+    def __init__(self, xi: pt.Tensor, xi_labels: pt.Tensor, seed: int, *,
                  p: float,
                  sigma: Optional[Union[float, pt.Tensor]]=None,
                  tril: Optional[pt.Tensor]=None,
@@ -66,7 +68,8 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
                         loc=-xi_labels,
                         scale=2*xi_labels
                     )
-                )
+                ),
+                seed
             )
 
     def sample_labels(self, n_sample: int):
@@ -80,6 +83,7 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
         self.__init__(
                 xi,
                 xi_labels,
+                self.seed,
                 tril=self.data_s._unbroadcasted_scale_tril,
                 p=self.p
                 )

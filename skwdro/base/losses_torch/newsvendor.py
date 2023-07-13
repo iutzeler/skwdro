@@ -35,7 +35,7 @@ class NewsVendorLoss_torch(Loss):
     """
     def __init__(
             self,
-            sampler: Optional[NoLabelsSampler]=None,
+            sampler: NoLabelsSampler,
             *,
             k: float=5,
             u: float=7,
@@ -70,5 +70,5 @@ class NewsVendorLoss_torch(Loss):
         return None
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon):
-        return NewsVendorNormalSampler(xi, sigma=epsilon)
+    def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
+        return NewsVendorNormalSampler(xi, seed, sigma=epsilon)

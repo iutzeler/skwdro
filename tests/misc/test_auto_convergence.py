@@ -5,7 +5,7 @@ from skwdro.base.costs import NormLabelCost
 from skwdro.linear_models import LogisticRegression
 from skwdro.solvers.optim_cond import OptCond
 
-from test_binary_separable_log_classif import generate_points
+from tests.torch_tests.test_binary_separable_log_classif import generate_points
 
 def launch_solver(fi: bool=False):
     estimator = LogisticRegression(
@@ -13,7 +13,7 @@ def launch_solver(fi: bool=False):
             l2_reg=.0,
             cost="t-NLC-2-2",
             fit_intercept=fi,
-            solver="entropic_torch"
+            solver="entropic_torch_pre"
             )
     X, y = generate_points()
     estimator.fit(X, y)
