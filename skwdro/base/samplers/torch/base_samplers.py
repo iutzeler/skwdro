@@ -1,12 +1,17 @@
 from typing import Dict, Optional, Union
+import random
 import torch as pt
 import torch.distributions as dst
 from abc import ABC, abstractmethod, abstractproperty
 
 class BaseSampler(ABC):
-    @abstractmethod
-    def __init__(self):
-        pass
+    seed: int
+    def __init__(self, seed: int):
+        self.seed = seed
+
+        # Set seed
+        pt.manual_seed(seed)
+        random.seed(seed)
 
     @abstractmethod
     def sample(self, n_samples: int):
@@ -27,7 +32,8 @@ class BaseSampler(ABC):
         raise NotImplementedError()
 
 class NoLabelsSampler(BaseSampler, ABC):
-    def __init__(self, data_sampler: dst.Distribution):
+    def __init__(self, data_sampler: dst.Distribution, seed: int):
+        super(NoLabelsSampler, self).__init__(seed)
         self.data_s = data_sampler
 
     def sample(self, n_sample: int):
@@ -38,7 +44,8 @@ class NoLabelsSampler(BaseSampler, ABC):
         return False
 
 class LabeledSampler(BaseSampler, ABC):
-    def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution):
+    def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution, seed: int):
+        super(LabeledSampler, self).__init__(seed)
         self.data_s = data_sampler
         self.labels_s = labels_sampler
 
