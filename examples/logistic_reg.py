@@ -98,6 +98,26 @@ print("Lambda: ", estimator_pre.dual_var_)
 print("Theta: ", estimator_pre.coef_, estimator_pre.intercept_)
 print("Elapsed time: ", time()-t)
 
+print("ERM (rho=0) solver #####")
+t = time()
+print(".", end='')
+estimator_ent = LogisticRegression(
+        rho=0.,
+        l2_reg=0.,
+        fit_intercept=True,
+        cost="t-NLC-2-2",
+        n_zeta_samples=0,
+        solver="entropic_torch"
+        )
+
+
+print(".", end='')
+estimator_ent.fit(X, y)
+print(".")
+
+print("Lambda: ", estimator_ent.dual_var_)
+print("Theta: ", estimator_ent.coef_, estimator_ent.intercept_)
+print("Elapsed time: ", time()-t)
 def plot_line(est, x):
     c0, c1 = est.coef_
     return -(x*c0 + est.intercept_) / c1

@@ -75,7 +75,7 @@ class _DualLoss(nn.Module, ABC):
         # Lambda is tuned during training, and it requires a proxy in its parameter form.
         # _lam is the tuned variable, and softplus(_lam) is the "proxy" that is accessed via
         # self.lam in the code (see the parameter decorated method).
-        self._lam = nn.Parameter(1e-2 / rho_0)
+        self._lam = nn.Parameter(1e-2 / rho_0) if rho_0 > 0. else pt.tensor(0.)
 
         # Private sampler points to the loss l_theta
         self._sampler = loss._sampler
@@ -125,23 +125,33 @@ class _DualLoss(nn.Module, ABC):
         zeta_labels : (n_samples, m, d')
         dl : (1,)
         """
-        first_term = self.lam * self.rho # (1,)
+        if self.rho > 0.:
+            first_term = self.lam * self.rho # (1,)
 
-        # NOTE: Beware of the shape of the loss, we need a trailing dim
-        l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
-        c = self.cost(
-                xi.unsqueeze(0), # (1, m, d)
-                zeta, # (n_samples, m, d)
-                xi_labels.unsqueeze(0) if xi_labels is not None else None, # (1, m, d') or None
-                zeta_labels # (n_samples, m, d') or None
-            ) # -> (n_samples, m, 1)
-        integrand = l - self.lam * c # -> (n_samples, m, 1)
-        integrand /= self.epsilon # -> (n_samples, m, 1)
+            # NOTE: Beware of the shape of the loss, we need a trailing dim
+            l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
+            c = self.cost(
+                    xi.unsqueeze(0), # (1, m, d)
+                    zeta, # (n_samples, m, d)
+                    xi_labels.unsqueeze(0) if xi_labels is not None else None, # (1, m, d') or None
+                    zeta_labels # (n_samples, m, d') or None
+                ) # -> (n_samples, m, 1)
+            integrand = l - self.lam * c # -> (n_samples, m, 1)
+            integrand /= self.epsilon # -> (n_samples, m, 1)
 
-        # Expectation on the zeta samples (collapse 1st dim)
-        second_term = pt.logsumexp(integrand, 0).mean(dim=0) # -> (m, 1)
-        second_term -= pt.log(pt.tensor(zeta.size(0))) # -> (m, 1)
-        return first_term + self.epsilon*second_term.mean() # (1,)
+            # Expectation on the zeta samples (collapse 1st dim)
+            second_term = pt.logsumexp(integrand, 0).mean(dim=0) # -> (m, 1)
+            second_term -= pt.log(pt.tensor(zeta.size(0))) # -> (m, 1)
+            return first_term + self.epsilon*second_term.mean() # (1,)
+        elif self.rho == 0.:
+            return self.rho * self.lam + self.primal_loss(
+                    xi.unsqueeze(0), # (1, m, d)
+                    xi_labels.unsqueeze(0) if xi_labels is not None else None # (1, m, d') or None
+                ).mean() # (1,)
+        elif self.rho.isnan().any():
+            return pt.tensor(pt.nan, requires_grad=True)
+        else:
+            raise ValueError("Rho < 0 detected: -> " + str(self.rho.item()) + ", please provide a positive rho value")
 
     def generate_zetas(self,
                        n_samples: Optional[int]=None
@@ -326,8 +336,16 @@ class DualPostSampledLoss(_DualLoss):
         dl : (1,)
         """
         if reset_sampler: self.reset_sampler_mean(xi, xi_labels)
-        zeta, zeta_labels = self.generate_zetas(self.n_samples)
-        return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
+        if self.rho < 0.:
+            raise ValueError("Rho < 0 detected: -> " + str(self.rho.item()) + ", please provide a positive rho value")
+        elif self.rho == 0.:
+            return self.rho * self.lam + self.primal_loss(
+                    xi.unsqueeze(0), # (1, m, d)
+                    xi_labels.unsqueeze(0) if xi_labels is not None else None # (1, m, d') or None
+                ).mean() # (1,)
+        else:
+            zeta, zeta_labels = self.generate_zetas(self.n_samples)
+            return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
 
     def __str__(self):
         return "Dual loss (sample IN for loop)\n" + 10*"-" + "\n".join(map(str, self.parameters()))
