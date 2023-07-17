@@ -13,13 +13,13 @@ from skwdro.base.samplers.torch.portfolio_sampler import PortfolioNormalSampler
 class RiskPortfolioLoss_torch(Loss):
 
     def __init__(self, cost: Optional[NormCost]=None, *, xi, epsilon, sampler: Optional[NoLabelsSampler]=None, m, \
-                reparam="softmax", name="Portfolio Torch Module Risk loss"):
+                seed, reparam="softmax", name="Portfolio Torch Module Risk loss"):
         super(RiskPortfolioLoss_torch, self).__init__(sampler)
         self._theta_tilde = nn.Parameter(pt.tensor([[0.2 for _ in range(m)]])) #Useful for reparametrization
         self._theta = pt.tensor(0.1)
         self.reparam = reparam
         self.name = name
-        self.sampler = NoLabelsCostSampler(cost,xi.float(),epsilon)
+        self.sampler = NoLabelsCostSampler(cost,xi.float(),epsilon,seed)
 
     def value(self, xi, xi_labels=None):
         if isinstance(xi, (np.ndarray,np.generic)):

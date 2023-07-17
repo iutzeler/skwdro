@@ -108,7 +108,7 @@ def plot_curves(nb_simulations=200, *, estimator, compute=True):
             ax2.plot(rho_values, reliability_test, linestyle='dashed', color='red', label="Reliability")
             ax2.legend()
 
-            #Saving the histograms
+            #Saving the curves
             home_dir = os.path.expanduser("~")
             png_name = "plot_curves_" + str(size) + ".png"
             image_path = os.path.join(home_dir, png_name)
@@ -125,8 +125,8 @@ def plot_curves(nb_simulations=200, *, estimator, compute=True):
 
 def main():
     N = 30 #Size of samples for Kuhn's histograms
-    #estimator_solver = "entropic_torch_post"
-    estimator_solver = "dedicated"
+    estimator_solver = "entropic_torch_post"
+    #estimator_solver = "dedicated"
 
     #Define sigma for adversarial distribution pi_{0} and number of its samples
     '''
@@ -137,15 +137,15 @@ def main():
         {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
 
     #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, cost="n-NC-1-2", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-    #estimator = LogisticRegression(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
+    estimator = Portfolio(solver=estimator_solver, cost="t-NC-1-2", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    #estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
     #estimator = NewsVendor(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
     #estimator = LinearRegression(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
     #estimator = Weber(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    #plot_histograms(compute=True, estimator=estimator, rho_tuning=True, blanchet=True)
-    plot_curves(nb_simulations=5, estimator=estimator, compute=True)
+    plot_histograms(nb_simulations=20, compute=True, estimator=estimator, rho_tuning=True, blanchet=True)
+    #plot_curves(nb_simulations=5,estimator=estimator, compute=True)
 
 
 if __name__ == "__main__":

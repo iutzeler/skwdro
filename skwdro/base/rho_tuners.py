@@ -68,7 +68,7 @@ class DiffLoss(Loss):
     Useful for differentation on theta and X for Blanchet's algorithm."""
 
     def __init__(self, loss):
-        super(DiffLoss, self).__init__()
+        super(DiffLoss, self).__init__(None)
         self.loss = loss
 
         for name, param in self.named_parameters(): #Set other parameters than theta to false
@@ -143,7 +143,7 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
         output[0].backward(retain_graph=True)
-        print(diff_loss.loss.loss.theta.data)
+        print(diff_loss.loss.theta.data)
         print(pt.tensor([[diff_loss.loss.tau.data]]))
         grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if class_name != "Portfolio" \
                     else pt.cat((diff_loss.loss.loss.theta.data, pt.tensor([[diff_loss.loss.tau.data]])),1)
