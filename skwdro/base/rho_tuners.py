@@ -59,7 +59,7 @@ class RhoTunedEstimator(BaseEstimator):
         print("Best score: ", best_score_)
 
         self.best_estimator_ = grid_estimator_.best_estimator_
-        print("Solver reg value: ",self.best_estimator_.solver_reg)  
+        print("Solver reg value: ",self.best_estimator_.solver_reg)
 
         return self
     
@@ -124,7 +124,9 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         self.n_samples_ = len(X)
 
         #Creation of an intermediary loss for differentiation
-        loss = self.estimator.problem_.loss.primal_loss
+        loss = self.estimator.problem_.loss if self.estimator.solver == "dedicated" \
+                        else self.estimator.problem_.loss.primal_loss
+                        
         diff_loss = DiffLoss(loss=loss)
         output = diff_loss.value(X=X, y=y)
 
@@ -137,13 +139,16 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         if class_name != "Portfolio":
             diff_loss.loss.theta.retain_grad()
         else:
-            diff_loss.loss.loss.theta.retain_grad()
-            diff_loss.loss.tau.retain_grad()
+            if self.estimator.solver != "dedicated":
+                diff_loss.loss.loss.theta.retain_grad()
+                diff_loss.loss.tau.retain_grad()
+            else:
+                raise NotImplementedError("No backward for CVXPy solver")
             
         #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
         output[0].backward(retain_graph=True)
-        print(diff_loss.loss.theta.data)
+        print(diff_loss.loss.loss.theta.data)
         print(pt.tensor([[diff_loss.loss.tau.data]]))
         grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if class_name != "Portfolio" \
                     else pt.cat((diff_loss.loss.loss.theta.data, pt.tensor([[diff_loss.loss.tau.data]])),1)
@@ -172,23 +177,15 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         print("h_samples: ", self.h_samples_)
         print(self.h_samples_.shape)
 
-        #self.cov_matrix_ = np.cov(m=self.h_samples_, bias=True) if self.h_samples_.shape[1] == 1 else np.cov(m=self.h_samples_)
-        #print("NP cov_matrix: ", self.cov_matrix_)
         self.cov_matrix_ = pt.cov(input=self.h_samples_, correction=0) if self.h_samples_.shape[1] == 1 else pt.cov(input=self.h_samples_)
-        print("PT cov_matrix: ", self.cov_matrix_)
+        self.cov_matrix_ = self.cov_matrix_ + 1e-6*pt.eye(self.cov_matrix_.size()[0]) 
+        print("PT cov_matrix: ", self.cov_matrix_) #Making the covariance matrix positive definite
         print(self.cov_matrix_.size())
 
-        self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.h_samples_.shape[0])]),
-                                                            cov=self.cov_matrix_,
-                                                            size=self.n_samples_)
-        print("NP normal samples: ", self.normal_samples_)
-        self.normal_samples_ = pt.as_tensor(self.normal_samples_) #TO REMOVE WHEN TORCH VERSION WILL WORK
-
-        '''
         mult_norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.shape[0]), covariance_matrix=self.cov_matrix_)
-        self.normal_samples_ = mult_norm.sample()
+        self.normal_samples_ = mult_norm.sample((self.h_samples_.shape[0],))
         print("PT normal samples: ", self.normal_samples_)
-        '''
+        print("Size: ", self.normal_samples_.size())
 
         print("PHASE 2: HESSIAN COMPUTATIONS")
 
@@ -234,18 +231,18 @@ class PortfolioBlanchetRhoTunedEstimator(BaseEstimator):
 
         #Data-driven evaluations for the estimation of rho
 
-        self.n_samples_ = len(X)    
-        print(self.n_samples_)
+        self.n_samples_ = len(X)  
 
         self.h_samples_ = np.array([cpt.compute_h(xii=X[i], theta=self.theta_erm_, estimator=self.estimator)
                                     for i in range(self.n_samples_)])
-        print(self.h_samples_.shape)
 
         self.cov_matrix_ = np.cov(self.h_samples_)
 
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
                                                             cov=self.cov_matrix_,
                                                             size=self.n_samples_)
+        
+
         self.conjugate_samples_ =  np.array([cpt.compute_phi_star_portfolio(X=X, z=self.normal_samples_[i], 
                                                                   theta=self.theta_erm_, 
                                                                   estimator=self.estimator)

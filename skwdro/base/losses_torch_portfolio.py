@@ -35,7 +35,7 @@ class RiskPortfolioLoss_torch(Loss):
             self._theta = self._theta_tilde
         else:
             raise ValueError("Reparametrization function not recognized")
-        return -nn.functional.linear(input=xi.type(pt.FloatTensor), weight=self._theta.T, bias=None)
+        return -nn.functional.linear(input=xi.type(pt.FloatTensor), weight=self._theta, bias=None)
     
     @property
     def theta(self):
