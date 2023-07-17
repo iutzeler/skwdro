@@ -20,7 +20,7 @@ def main():
     X = pt.tile(X,(N,1)) #Duplicate the above line N times
 
     #Creating the estimator and solving the problem
-    estimator = Portfolio(solver="entropic_torch_post", reparam="none", n_zeta_samples=10*N, rho=1e-10, solver_reg=1e-10)
+    estimator = Portfolio(solver="entropic_torch_post", reparam="softmax", n_zeta_samples=10*N, rho=1e-10, solver_reg=1e-10)
     estimator.fit(X)
 
     print(estimator.get_params)

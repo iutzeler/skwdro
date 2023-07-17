@@ -266,7 +266,7 @@ def rho_parallel_for_loop_curves(N, estimator, rho_value, nb_simulations):
         curves_estimator = estimator.__class__(solver=estimator.solver, rho=rho_value, cost=cost,
                                         n_zeta_samples=estimator.n_zeta_samples)
 
-    eval_reliability_data_test = Parallel(n_jobs=-1)(
+    eval_reliability_data_test = Parallel(n_jobs=-1, verbose=10)(
         delayed(simulations_parallel_for_loop_curves)(N=N, estimator=curves_estimator)
         for _ in range(nb_simulations)
     )
@@ -289,7 +289,7 @@ def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
     Parallelization of the loop on the number of simulations.
     '''
 
-    mean_eval_reliability = Parallel(n_jobs=-1)(
+    mean_eval_reliability = Parallel(n_jobs=-1, verbose=10)(
     delayed(rho_parallel_for_loop_curves)(N=N, estimator=estimator, rho_value=rho_value, nb_simulations=nb_simulations)
     for rho_value in rho_values)
 
@@ -303,8 +303,8 @@ def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
 
 
 def parallel_compute_curves(nb_simulations, estimator, compute):
-    samples_size = np.array([30])
-    rho_values = np.array([10**(-i) for i in range(3,-3,-1)])
+    samples_size = np.array([3000])
+    rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
 
@@ -314,7 +314,7 @@ def parallel_compute_curves(nb_simulations, estimator, compute):
 
             np.save(f, rho_values)
 
-            mean_eval_rel_sizes = Parallel(n_jobs=-1)(
+            mean_eval_rel_sizes = Parallel(n_jobs=-1, verbose=10)(
                 delayed(parallel_for_loop_curves)(N=size, estimator=estimator, rho_values=rho_values, nb_simulations=nb_simulations)
                 for size in samples_size)
 
