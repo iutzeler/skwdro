@@ -84,7 +84,6 @@ class Portfolio(BaseEstimator):
                  solver_reg=1e-3,
                  reparam="softmax",
                  n_zeta_samples: int=10,
-                 random_state=None,
                  seed: int=0
                  ):
 

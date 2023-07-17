@@ -155,9 +155,9 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
 
     #Evaluate the loss value for the training and testing datasets
 
-    eval_train = eval(estimator=estimator, class_name=class_name, X=X_train, y=y_train)
-    eval_test = eval(estimator=estimator, class_name=class_name, X=X_test, y=y_test)
-    eval_adv_test = eval(estimator=estimator, class_name=class_name, X=X_adv_test, y=y_test)
+    eval_train = eval(estimator=best_estimator, class_name=class_name, X=X_train, y=y_train)
+    eval_test = eval(estimator=best_estimator, class_name=class_name, X=X_test, y=y_test)
+    eval_adv_test = eval(estimator=best_estimator, class_name=class_name, X=X_adv_test, y=y_test)
 
     print("Eval train: ", eval_train)
     print("Eval test: ", eval_test)
@@ -187,15 +187,13 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
 
     if compute is True: 
 
-        '''
         eval_data = Parallel(n_jobs=-1, verbose=10)(
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
             for _ in range(nb_simulations)
         )
-        '''
 
         #debug mode
-        eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
+        #eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
 
         eval_data_train = [x for x, _, _, _ in eval_data]
         eval_data_test = [y for _, y, _, _ in eval_data]
@@ -303,7 +301,7 @@ def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
 
 
 def parallel_compute_curves(nb_simulations, estimator, compute):
-    samples_size = np.array([30])
+    samples_size = np.array([3000])
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'
