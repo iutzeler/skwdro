@@ -180,9 +180,11 @@ class Portfolio(BaseEstimator):
 
             self.problem_.loss = DualPreSampledLoss(
                     MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.tensor(X),
-                                                                epsilon=epsilon, 
+                                                                epsilon=pt.tensor(self.solver_reg_), 
                                                                 m=m, 
-                                                                reparam=self.reparam),
+                                                                reparam=self.reparam,
+                                                                eta=pt.as_tensor(self.eta_),
+                                                                alpha=pt.as_tensor(self.alpha_)),
                     eta=pt.as_tensor(self.eta_), 
                     alpha=pt.as_tensor(self.alpha_)),
                     cost = self.cost_,

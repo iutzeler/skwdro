@@ -15,21 +15,22 @@ from skwdro.base.rho_tuners import *
 N = 10 #Number of samples
 
 #Create input: 2 assets with only one that gives us good returns
-#X = np.array([1.,0.])
-X = np.array([0.2,0.5]) 
+X = np.array([1.,0.])
+#X = np.array([0.2,0.5]) 
 X = np.tile(X,(N,1)) #Duplicate the above line N times
 
 print("Value of the samples:", X)
 
 #Creating the polyhedron constraints
-C = np.eye(2)
-d = np.array([0.2,0.5])
+#C = np.eye(2)
+#d = np.array([0.2,0.5])
 
 #Creating the estimator and solving the problem
-estimator = Portfolio(solver="dedicated", rho=1e-10, C=C, d=d)
+estimator = Portfolio(solver="dedicated", rho=1e-10)
+estimator.fit(X)
 
-rho_tuner= BlanchetRhoTunedEstimator(estimator)
-rho_tuner.fit(X=X, y=None)
+#rho_tuner= BlanchetRhoTunedEstimator(estimator)
+#rho_tuner.fit(X=X, y=None)
 
 print("Best value for rho: ", estimator.rho_)
 
