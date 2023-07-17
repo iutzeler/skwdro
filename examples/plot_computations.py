@@ -303,7 +303,7 @@ def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
 
 
 def parallel_compute_curves(nb_simulations, estimator, compute):
-    samples_size = np.array([3000])
+    samples_size = np.array([30])
     rho_values = np.array([10**(-i) for i in range(4,-1,-1)])
 
     filename = './examples/stored_data/parallel_portfolio_curve_data.npy'

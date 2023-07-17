@@ -134,9 +134,6 @@ class Portfolio(BaseEstimator):
         #Check that X has correct shape
         X = check_array(X)
 
-        #Check random state
-        self.random_state_ = check_random_state(self.random_state)
-
         #Store data
         self.X_ = X
 
@@ -181,6 +178,7 @@ class Portfolio(BaseEstimator):
             self.problem_.loss = DualPreSampledLoss(
                     MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.tensor(X),
                                                                 epsilon=pt.tensor(self.solver_reg_), 
+                                                                seed=self.seed,
                                                                 m=m, 
                                                                 reparam=self.reparam,
                                                                 eta=pt.as_tensor(self.eta_),
@@ -196,7 +194,7 @@ class Portfolio(BaseEstimator):
         elif self.solver == "entropic_torch_post":
             self.problem_.loss = DualPostSampledLoss(
                     MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.as_tensor(X), epsilon=pt.tensor(self.solver_reg_),
-                                                                m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta_),
+                                                                seed=self.seed, m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta_),
                                                                 alpha=pt.as_tensor(self.alpha_)),
                     cost = self.cost_,
                     n_iter=1000,
@@ -221,6 +219,7 @@ class Portfolio(BaseEstimator):
                       
             self.coef_, _, self.dual_var_ = entTorch.solve_dual(
                     wdro_problem=self.problem_,
+                    seed=self.seed,
                     sigma_=pt.tensor(self.solver_reg_)
             ) 
 
