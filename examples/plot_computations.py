@@ -187,13 +187,15 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
 
     if compute is True: 
 
+        '''
         eval_data = Parallel(n_jobs=-1, verbose=10)(
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
             for _ in range(nb_simulations)
         )
+        '''
 
         #debug mode
-        #eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
+        eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
 
         eval_data_train = [x for x, _, _, _ in eval_data]
         eval_data_test = [y for _, y, _, _ in eval_data]

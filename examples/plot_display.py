@@ -144,7 +144,7 @@ def main():
     #estimator = Weber(solver=estimator_solver, cost="t-NC-1-2", n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
+    plot_histograms(compute=True, estimator=estimator, rho_tuning=True, blanchet=True)
     #plot_curves(estimator=estimator, compute=True)
 
 
