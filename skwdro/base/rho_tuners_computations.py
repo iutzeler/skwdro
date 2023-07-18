@@ -36,9 +36,16 @@ def compute_h(xii, theta, estimator):
     
 def compute_phi_star(X, y, z, diff_loss): 
 
-    def func_call(X, y):
-        print(dict(diff_loss.named_parameters()).keys())
-        return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=dict(diff_loss.named_parameters()), args=(X, y))
+    def func_call(X, y, theta_tilde, tau):
+
+        params = dict(diff_loss.named_parameters())
+        params['loss.loss._theta_tilde'] = theta_tilde
+        params['loss._tau'] = tau
+        print(params)
+
+        return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=params, args=(X,y))
+    
+    print("Type diff loss: ", type(diff_loss))
 
     n_samples = len(X)
    
@@ -53,9 +60,26 @@ def compute_phi_star(X, y, z, diff_loss):
         Xk_conv, yk_conv = diff_loss.convert(X[k], yk)
         
         #Needs to take a float input due to autograd restrictions even if index should be int
-        hessian_loss = pt.func.hessian(func_call)(Xk_conv, yk_conv).squeeze()
+
+        print(diff_loss.loss.__class__.__name__)
+        '''
+        if "MeanRisk" in diff_loss.loss.__class__.__name__ or "Portfolio" in diff_loss.loss.__class__.__name__:
+            params = {'theta_tilde': diff_loss.get_parameter('loss.loss._theta_tilde'), 'tau':  diff_loss.get_parameter('loss._tau')}
+        elif "Logistic" in diff_loss.loss.__class__.__name__:
+            params = {'theta': diff_loss.get_parameter('loss.linear.weight')}
+        '''
+        theta_tilde = diff_loss.get_parameter('loss.loss._theta_tilde')
+        tau = diff_loss.get_parameter('loss._tau')
+
+        hessian_loss = pt.func.hessian(func_call, argnums=(0,2,3))(Xk_conv, yk_conv, theta_tilde, tau)
         #print(hessian_loss.size())
-        #print("Hessian value: ", hessian_loss)
+        print("Hessian value: ", hessian_loss)
+
+        for h in hessian_loss:
+            print(len(hessian_loss))
+            print(len(h))
+            for hh in h:
+                print(hh.size())
 
         hessian_product = (hessian_loss)**2 if one_dim is True \
             else pt.matmul((hessian_loss).T,hessian_loss)

@@ -77,14 +77,15 @@ class DiffLoss(Loss):
                 print(type(name))
 
     def convert(self, X, y):
-        if isinstance(X, (np.ndarray,np.generic)):
-            X = pt.from_numpy(X)
 
-        if isinstance(y, (np.ndarray,np.generic)):
-            y = pt.from_numpy(y)
+        print(type(X))
+        if type(X) == pt.Tensor : 
+            return X, y
 
-        return (X, y) if y is None else \
-            (X.data.float(), y.data.float().unsqueeze(-1).mean())
+        X_cv = pt.from_numpy(X).float()
+        y_cv = y if y is None else pt.from_numpy(np.array([y])).float().unsqueeze(-1).mean()
+        
+        return X_cv, y_cv
 
     def value(self, X, y):
         X_conv, y_conv = self.convert(X,y)
@@ -141,28 +142,30 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         else:
             if self.estimator.solver != "dedicated":
                 diff_loss.loss.loss.theta.retain_grad()
-                diff_loss.loss.tau.retain_grad()
             else:
                 raise NotImplementedError("No backward for CVXPy solver")
             
         #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
         output[0].backward(retain_graph=True)
-        print(diff_loss.loss.loss.theta.data)
-        print(pt.tensor([[diff_loss.loss.tau.data]]))
-        grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if class_name != "Portfolio" \
+        #print(diff_loss.loss.theta.data)
+        #print(pt.tensor([[diff_loss.loss.tau.data]]))
+        grad_theta = diff_loss.loss.theta.grad if class_name != "Portfolio" \
                     else pt.cat((diff_loss.loss.loss.theta.data, pt.tensor([[diff_loss.loss.tau.data]])),1)
         self.h_samples_ = grad_theta
 
         for i in range(1,self.n_samples_):
             output[i].backward(retain_graph=True)
+            '''
             print("Theta tilde:", diff_loss.loss.loss.theta_tilde)
             print("Theta:", diff_loss.loss.loss.theta)
             print("Tau: ", diff_loss.loss.tau)
-            print("\n")
+            print("Theta_tilde grad: ", diff_loss.loss.loss.theta.grad)
+            print("Tau grad: ", diff_loss.loss.tau.grad)
+            '''
             #assert diff_loss.loss.theta.grad is not None, "Issue with the differentiation w.r.t theta"
-            grad_theta = diff_loss.loss.theta.grad.numpy().astype(float) if class_name != "Portfolio" \
-                        else pt.cat((diff_loss.loss.loss.theta.data, pt.tensor([[diff_loss.loss.tau.data]])),1)
+            grad_theta = diff_loss.loss.theta.grad if class_name != "Portfolio" \
+                        else pt.cat((diff_loss.loss.loss.theta.grad, pt.tensor([[diff_loss.loss.tau.grad]])),1)
             self.h_samples_ = pt.vstack((self.h_samples_, grad_theta))
 
         '''
@@ -177,13 +180,18 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         print("h_samples: ", self.h_samples_)
         print(self.h_samples_.shape)
 
-        self.cov_matrix_ = pt.cov(input=self.h_samples_, correction=0) if self.h_samples_.shape[1] == 1 else pt.cov(input=self.h_samples_)
-        self.cov_matrix_ = self.cov_matrix_ + 1e-6*pt.eye(self.cov_matrix_.size()[0]) 
+        self.cov_matrix_ = pt.cov(input=self.h_samples_.T, correction=0,) if self.h_samples_.shape[1] == 1 else pt.cov(input=self.h_samples_.T)
+        print("Before adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
+        eigenvalues = pt.linalg.eigvalsh(self.cov_matrix_)
+        min_eigen = pt.min(eigenvalues)
+        print("Min value: ", min_eigen)
+        self.cov_matrix_ = self.cov_matrix_ + (pt.relu(-min_eigen) + 1e-4)*pt.eye(self.cov_matrix_.size()[0]) 
+        print("After adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
         print("PT cov_matrix: ", self.cov_matrix_) #Making the covariance matrix positive definite
         print(self.cov_matrix_.size())
 
-        mult_norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.shape[0]), covariance_matrix=self.cov_matrix_)
-        self.normal_samples_ = mult_norm.sample((self.h_samples_.shape[0],))
+        mult_norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.shape[1]), covariance_matrix=self.cov_matrix_)
+        self.normal_samples_ = mult_norm.sample((self.h_samples_.shape[1]))
         print("PT normal samples: ", self.normal_samples_)
         print("Size: ", self.normal_samples_.size())
 
