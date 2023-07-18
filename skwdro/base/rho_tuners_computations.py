@@ -71,15 +71,25 @@ def compute_phi_star(X, y, z, diff_loss):
         theta_tilde = diff_loss.get_parameter('loss.loss._theta_tilde')
         tau = diff_loss.get_parameter('loss._tau')
 
-        hessian_loss = pt.func.hessian(func_call, argnums=(0,2,3))(Xk_conv, yk_conv, theta_tilde, tau)
-        #print(hessian_loss.size())
-        print("Hessian value: ", hessian_loss)
+        hessians = pt.func.hessian(func_call, argnums=(0,2,3))(Xk_conv, yk_conv, theta_tilde, tau)
+        #print(hessians_loss.size())
+        print("Hessian value: ", hessians)
 
-        for h in hessian_loss:
-            print(len(hessian_loss))
+        for h in hessians:
+            print(len(hessians))
             print(len(h))
             for hh in h:
                 print(hh.size())
+
+        hessian_theta_tilde = hessians[0][1][0][0].squeeze(1)
+        print("Hessian theta_tilde: ", hessian_theta_tilde)
+        print(hessian_theta_tilde.size())
+
+        hessian_tau = hessians[0][2][0][0].squeeze(1)
+        print("Hessian tau: ", hessian_tau)
+        print(hessian_tau.size())
+
+        hessian_loss = pt.cat((hessian_theta_tilde, hessian_tau), 1)
 
         hessian_product = (hessian_loss)**2 if one_dim is True \
             else pt.matmul((hessian_loss).T,hessian_loss)
@@ -106,7 +116,6 @@ def compute_phi_star(X, y, z, diff_loss):
         alpha_opt = pt.matmul(pseudo_inv_A,z)
         if pt.isclose(pt.dot(A,alpha_opt), z) is False: #We consider in that case that z is not in range(A)
             return -pt.tensor([float("inf")])
-
 
     return alpha_opt.T@z - (1/2)*pt.dot(pt.matmul(alpha_opt.T,A),alpha_opt)
             
