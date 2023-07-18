@@ -114,7 +114,8 @@ def compute_phi_star(X, y, z, diff_loss):
         print(pseudo_inv_A.size())
         print(z.size())   
         alpha_opt = pt.matmul(pseudo_inv_A,z)
-        if pt.isclose(pt.dot(A,alpha_opt), z) is False: #We consider in that case that z is not in range(A)
+        print(alpha_opt.size())
+        if pt.isclose(pt.matmul(A,alpha_opt).squeeze(), z) is False: #We consider in that case that z is not in range(A)
             return -pt.tensor([float("inf")])
 
     return alpha_opt.T@z - (1/2)*pt.dot(pt.matmul(alpha_opt.T,A),alpha_opt)
