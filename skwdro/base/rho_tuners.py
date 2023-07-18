@@ -178,9 +178,9 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         #CASE OF NEWSVENDOR WITH ONLY ONE FEATURE!!
         #self.h_samples_ = np.squeeze(self.h_samples_)
         print("h_samples: ", self.h_samples_)
-        print(self.h_samples_.shape)
+        print(self.h_samples_.size())
 
-        self.cov_matrix_ = pt.cov(input=self.h_samples_.T, correction=0,) if self.h_samples_.shape[1] == 1 else pt.cov(input=self.h_samples_.T)
+        self.cov_matrix_ = pt.cov(input=self.h_samples_.T, correction=0,) if self.h_samples_.size()[1] == 1 else pt.cov(input=self.h_samples_.T)
         print("Before adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
         eigenvalues = pt.linalg.eigvalsh(self.cov_matrix_)
         min_eigen = pt.min(eigenvalues)
@@ -190,8 +190,8 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         print("PT cov_matrix: ", self.cov_matrix_) #Making the covariance matrix positive definite
         print(self.cov_matrix_.size())
 
-        mult_norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.shape[1]), covariance_matrix=self.cov_matrix_)
-        self.normal_samples_ = mult_norm.sample((self.h_samples_.shape[1]))
+        mult_norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.size()[1]), covariance_matrix=self.cov_matrix_)
+        self.normal_samples_ = mult_norm.sample((self.h_samples_.size()[1],))
         print("PT normal samples: ", self.normal_samples_)
         print("Size: ", self.normal_samples_.size())
 
