@@ -200,12 +200,24 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
             norm = pt.distributions.Normal(loc=pt.tensor([0.0]), scale=self.cov_matrix_)
 
         self.normal_samples_ = norm.sample((self.n_samples_,))
+
         print("PT normal samples: ", self.normal_samples_)
         print("Size: ", self.normal_samples_.size())
 
         print("PHASE 2: HESSIAN COMPUTATIONS")
 
-        self.conjugate_samples_ =  pt.tensor([cpt.compute_phi_star(X=X, y=y, z=self.normal_samples_[i], 
+        '''
+        If there are labels in our problem, we need one more normal-sampled component to ensure
+        the good definition of a matrix-vector product when computing phi star
+        ''' 
+        y_norm_samples = pt.tensor([norm.sample((1,)).mean() for _ in range(self.n_samples_)])
+        #print("y_norm_samples: ", y_norm_samples)
+        #print(y_norm_samples.size())
+
+        self.conjugate_samples_ =  pt.tensor([cpt.compute_phi_star(X=X, y=y, 
+                                                                  z=self.normal_samples_[i] if y is None else \
+                                                                  pt.cat((self.normal_samples_[i],
+                                                                    pt.tensor([y_norm_samples[i]])),0), 
                                                                   diff_loss=diff_loss)
                                                                 for i in range(len(self.normal_samples_))])
         
@@ -215,7 +227,7 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         print("Quantile: ", self.samples_quantile_)
 
         #Compute rho thanks to the statistical analysis and the DRO estimator
-        
+
         #Taking the square root as a transformation of rho as Blanchet uses a squared cost function
         self.estimator.rho = pt.sqrt((1/self.n_samples_)*self.samples_quantile_)
         print("Rho value: ", self.estimator.rho)
@@ -262,9 +274,9 @@ class PortfolioBlanchetRhoTunedEstimator(BaseEstimator):
         self.normal_samples_ = np.random.multivariate_normal(mean=np.array([0 for _ in range(self.n_samples_)]),
                                                             cov=self.cov_matrix_,
                                                             size=self.n_samples_)
-        
 
-        self.conjugate_samples_ =  np.array([cpt.compute_phi_star_portfolio(X=X, z=self.normal_samples_[i], 
+        self.conjugate_samples_ =  np.array([cpt.compute_phi_star_portfolio(X=X, 
+                                                                  z=self.normal_samples_[i], 
                                                                   theta=self.theta_erm_, 
                                                                   estimator=self.estimator)
                                                                 for i in range(len(self.normal_samples_))])
