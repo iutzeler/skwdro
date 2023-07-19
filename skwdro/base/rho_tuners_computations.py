@@ -36,7 +36,7 @@ def compute_h(xii, theta, estimator):
     
 def compute_phi_star(X, y, z, diff_loss): 
 
-    def func_call(X, y, theta_tilde, tau):
+    def func_call_portfolio(X, y, theta_tilde, tau):
 
         params = dict(diff_loss.named_parameters())
         params['loss.loss._theta_tilde'] = theta_tilde
@@ -45,11 +45,23 @@ def compute_phi_star(X, y, z, diff_loss):
 
         return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=params, args=(X,y))
     
-    print("Type diff loss: ", type(diff_loss))
+    def func_call_logistic(X, y, weight):
+        params = dict(diff_loss.named_parameters())
+        params['loss.linear.weight'] = weight
+        print(params)
+
+        return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=params, args=(X,y))
+
+    def func_call(X, y, theta):
+        params = dict(diff_loss.named_parameters())
+        params['loss._theta'] = theta
+        print(params)
+
+        return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=params, args=(X,y))
 
     n_samples = len(X)
-   
-    one_dim = diff_loss.value(X=X, y=y).size() == pt.Size([1])
+
+    one_dim = len(X[0]) == 1
     print("One dim value: ", one_dim)
 
     hessian_products = []
@@ -61,35 +73,57 @@ def compute_phi_star(X, y, z, diff_loss):
         
         #Needs to take a float input due to autograd restrictions even if index should be int
 
-        print(diff_loss.loss.__class__.__name__)
-        '''
-        if "MeanRisk" in diff_loss.loss.__class__.__name__ or "Portfolio" in diff_loss.loss.__class__.__name__:
-            params = {'theta_tilde': diff_loss.get_parameter('loss.loss._theta_tilde'), 'tau':  diff_loss.get_parameter('loss._tau')}
-        elif "Logistic" in diff_loss.loss.__class__.__name__:
-            params = {'theta': diff_loss.get_parameter('loss.linear.weight')}
-        '''
-        theta_tilde = diff_loss.get_parameter('loss.loss._theta_tilde')
-        tau = diff_loss.get_parameter('loss._tau')
+        class_name = diff_loss.loss.__class__.__name__
 
-        hessians = pt.func.hessian(func_call, argnums=(0,2,3))(Xk_conv, yk_conv, theta_tilde, tau)
+        if "MeanRisk" in class_name:
+            theta_tilde = diff_loss.get_parameter('loss.loss._theta_tilde')
+            tau = diff_loss.get_parameter('loss._tau')
+
+            hessians = pt.func.hessian(func_call_portfolio, argnums=(0,2,3))(Xk_conv, yk_conv, theta_tilde, tau)
+
+            hessian_theta_tilde = hessians[0][1][0][0].squeeze(1)
+            print("Hessian theta_tilde: ", hessian_theta_tilde)
+            print(hessian_theta_tilde.size())
+
+            hessian_tau = hessians[0][2][0][0].squeeze(1)
+            print("Hessian tau: ", hessian_tau)
+            print(hessian_tau.size())
+
+            hessian_loss = pt.cat((hessian_theta_tilde, hessian_tau), 1)
+
+        elif "Logistic" or "Linear" in class_name:
+            weight = diff_loss.get_parameter('loss.linear.weight')
+            print("Xk_conv: ", Xk_conv)
+            print("yk_conv: ", yk_conv)
+            hessians = pt.func.hessian(func_call_logistic, argnums=(0,1,2))(Xk_conv, yk_conv, weight)
+
+            hessian_X = hessians[0][2][0].squeeze(1)
+            print("Hessian X: ", hessian_X)
+            print("Size: ", hessian_X.size())
+
+            hessian_y = hessians[1][2][0].squeeze(1)
+            print("Hessian y: ", hessian_y)
+            print("Size: ", hessian_y.size())
+
+            #hessian_loss = pt.cat((hessian_X, hessian_y.T), 1)
+            hessian_loss = hessians[0][2][0].squeeze(1)
+        else:
+            theta = diff_loss.get_parameter('loss._theta')
+            if yk_conv is None:
+                hessians = pt.func.hessian(func_call, argnums=(0,2))(Xk_conv, yk_conv, theta)
+            else:
+                hessians = pt.func.hessian(func_call, argnums=(0,1,2))(Xk_conv, yk_conv, theta)
+            hessian_loss = hessians[0][1][0]
+
         #print(hessians_loss.size())
         print("Hessian value: ", hessians)
+        print("Hessian loss: ", hessian_loss)
 
         for h in hessians:
             print(len(hessians))
             print(len(h))
             for hh in h:
                 print(hh.size())
-
-        hessian_theta_tilde = hessians[0][1][0][0].squeeze(1)
-        print("Hessian theta_tilde: ", hessian_theta_tilde)
-        print(hessian_theta_tilde.size())
-
-        hessian_tau = hessians[0][2][0][0].squeeze(1)
-        print("Hessian tau: ", hessian_tau)
-        print(hessian_tau.size())
-
-        hessian_loss = pt.cat((hessian_theta_tilde, hessian_tau), 1)
 
         hessian_product = (hessian_loss)**2 if one_dim is True \
             else pt.matmul((hessian_loss).T,hessian_loss)
@@ -107,6 +141,7 @@ def compute_phi_star(X, y, z, diff_loss):
     if one_dim is True: #A is a scalar
         if A != 0:
             alpha_opt = z/A
+            return alpha_opt*z - (1/2)*alpha_opt*A*alpha_opt
         else:
             return -pt.tensor([float("inf")]) if z != pt.tensor([0.]) else 0
     else:
