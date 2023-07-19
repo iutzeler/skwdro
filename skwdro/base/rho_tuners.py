@@ -74,11 +74,9 @@ class DiffLoss(Loss):
         for name, param in self.named_parameters(): #Set other parameters than theta to false
             if param.requires_grad:
                 print(name)
-                print(type(name))
 
     def convert(self, X, y):
 
-        print(type(X))
         if type(X) == pt.Tensor : 
             return X, y
 
@@ -138,7 +136,10 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         print("Class_name: ", class_name)
 
         if class_name != "Portfolio":
-            diff_loss.loss.theta.retain_grad()
+            if class_name != "Logistic":
+                diff_loss.loss.theta.retain_grad()
+            else:
+                diff_loss.loss.weight.retain_grad()
         else:
             if self.estimator.solver != "dedicated":
                 diff_loss.loss.loss.theta.retain_grad()
@@ -181,17 +182,24 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         print(self.h_samples_.size())
 
         self.cov_matrix_ = pt.cov(input=self.h_samples_.T, correction=0,) if self.h_samples_.size()[1] == 1 else pt.cov(input=self.h_samples_.T)
-        print("Before adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
-        eigenvalues = pt.linalg.eigvalsh(self.cov_matrix_)
-        min_eigen = pt.min(eigenvalues)
-        print("Min value: ", min_eigen)
-        self.cov_matrix_ = self.cov_matrix_ + (pt.relu(-min_eigen) + 1e-4)*pt.eye(self.cov_matrix_.size()[0]) 
-        print("After adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
-        print("PT cov_matrix: ", self.cov_matrix_) #Making the covariance matrix positive definite
+        print("PT cov_matrix: ", self.cov_matrix_)
         print(self.cov_matrix_.size())
 
-        mult_norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.size()[1]), covariance_matrix=self.cov_matrix_)
-        self.normal_samples_ = mult_norm.sample((self.h_samples_.size()[1],))
+        #Making the covariance matrix positive definite
+        if self.cov_matrix_.size() != pt.Size([]):
+            print("Before adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
+            eigenvalues = pt.linalg.eigvalsh(self.cov_matrix_)
+            min_eigen = pt.min(eigenvalues)
+            print("Min value: ", min_eigen)
+            self.cov_matrix_ = self.cov_matrix_ + (pt.relu(-min_eigen) + 1e-4)*pt.eye(self.cov_matrix_.size()[0]) 
+            print("After adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
+
+            norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.size()[1]), covariance_matrix=self.cov_matrix_)
+
+        else:
+            norm = pt.distributions.Normal(loc=pt.tensor([0.0]), scale=self.cov_matrix_)
+
+        self.normal_samples_ = norm.sample((self.n_samples_,))
         print("PT normal samples: ", self.normal_samples_)
         print("Size: ", self.normal_samples_.size())
 
@@ -200,12 +208,17 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         self.conjugate_samples_ =  pt.tensor([cpt.compute_phi_star(X=X, y=y, z=self.normal_samples_[i], 
                                                                   diff_loss=diff_loss)
                                                                 for i in range(len(self.normal_samples_))])
+        
+        print("Conjugate samples: ", self.conjugate_samples_)
 
         self.samples_quantile_ = pt.quantile(a=self.conjugate_samples_, q=confidence_level)
+        print("Quantile: ", self.samples_quantile_)
 
         #Compute rho thanks to the statistical analysis and the DRO estimator
+        
         #Taking the square root as a transformation of rho as Blanchet uses a squared cost function
         self.estimator.rho = pt.sqrt((1/self.n_samples_)*self.samples_quantile_)
+        print("Rho value: ", self.estimator.rho)
         self.estimator.fit(X,y)
 
         self.best_estimator_ = self.estimator

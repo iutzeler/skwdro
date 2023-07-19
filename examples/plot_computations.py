@@ -67,7 +67,7 @@ def generate_data(N,m,estimator):
             X_right = np.array([[x,y] for (x,y) in zip(X_right_x, X_right_y)])
 
             X = np.concatenate((X_left, X_right))
-            y = np.random.randint(2, size=len(X))
+            y = np.random.choice([1,-1], size=len(X), p=[0.5,0.5])
 
             return X, y, class_name
 
@@ -187,13 +187,15 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
 
     if compute is True: 
         
+        '''
         eval_data = Parallel(n_jobs=-1, verbose=10)(
             delayed(parallel_for_loop_histograms)(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
             for _ in range(nb_simulations)
         )
+        '''
 
         #debug mode
-        #eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
+        eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
 
         eval_data_train = [x for x, _, _, _ in eval_data]
         eval_data_test = [y for _, y, _, _ in eval_data]
