@@ -139,7 +139,7 @@ def compute_phi_star(X, y, z, diff_loss):
             alpha_opt = z/A
             return alpha_opt*z - (1/2)*alpha_opt*A*alpha_opt
         else:
-            return -pt.tensor([float("inf")]) if z != pt.tensor([0.]) else 0
+            return pt.tensor([float("inf")]) if z != pt.tensor([0.]) else 0
     else:
         pseudo_inv_A = pt.linalg.pinv(A)        
         print("Size of pseudo-inverse: ", pseudo_inv_A.size())
@@ -147,7 +147,7 @@ def compute_phi_star(X, y, z, diff_loss):
         alpha_opt = pt.matmul(pseudo_inv_A,z)
         print(alpha_opt.size())
         if pt.isclose(pt.matmul(A,alpha_opt).squeeze(), z) is False: #We consider in that case that z is not in range(A)
-            return -pt.tensor([float("inf")])
+            return pt.tensor([float("inf")])
 
     return alpha_opt.T@z - (1/2)*pt.dot(pt.matmul(alpha_opt.T,A),alpha_opt)
             

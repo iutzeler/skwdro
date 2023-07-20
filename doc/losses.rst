@@ -27,7 +27,7 @@ The general loss function is given by
 
 
 RiskPortfolioLoss_torch thus implements the first term of the loss function
-which is purely based on the scalar product :math:`- \langle \theta, \xi \rangle`
+which is purely based on the dot product :math:`- \langle \theta, \xi \rangle`
 representing the risks associated with return on investment. The idea of implementing this term
 in a separate class stems from the fact that there are several functions which exist
 to model these financial risks. Thus, the MeanRisk_torch
