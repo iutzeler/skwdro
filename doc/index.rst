@@ -19,6 +19,7 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    user_guide
    models
    solvers
+   tuning
 
 .. toctree::
    :maxdepth: 3
@@ -26,46 +27,6 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    :caption: Custom Estimators
 
    custom
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: API
-
-   api
-   losses
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: API
-
-   api
-   losses
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: API
-
-   api
-   losses
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: API
-
-   api
-   losses
-
-.. toctree::
-   :maxdepth: 2
-   :hidden:
-   :caption: API
-
-   api
-   losses
 
 .. toctree::
    :maxdepth: 2
