@@ -32,11 +32,10 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, *, estimator,
             tuned_rho_data = np.load(f)
         f.close()
 
-        #TODO: Adapt rho_possible_values and nb_bins to rho tuning method
+        #Some adaptation rho_possible_values and nb_bins to rho tuning method is needed (to define in rho_tuners)
         rho_possible_values = [10**(-i) for i in range(4,-4,-1)]
 
         nb_bins = len(rho_possible_values)
-        #nb_bins = 20
 
         discrete = False if blanchet is True else True
 
@@ -135,25 +134,19 @@ def plot_curves(nb_simulations=200, *, estimator, compute=True):
 def main():
     N = 30 #Size of samples for Kuhn's histograms
     estimator_solver = "entropic_torch_post"
-    #estimator_solver = "dedicated"
 
-    #Define sigma for adversarial distribution pi_{0} and number of its samples
-    '''
-    sigma = 0 if estimator_solver not in \
-        {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else (rho if rho != 0 else 0.1)
-    '''
     n_zeta_samples = 0 if estimator_solver not in \
         {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
 
     #Create the estimator and solve the problem
-    estimator = Portfolio(solver=estimator_solver, cost="t-NC-1-1", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-    #estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
+    #estimator = Portfolio(solver=estimator_solver, cost="t-NC-1-1", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
     #estimator = NewsVendor(solver=estimator_solver, cost="t-NC-1-1", n_zeta_samples=n_zeta_samples)
     #estimator = LinearRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
     #estimator = Weber(solver=estimator_solver, cost="t-NC-1-1", n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
+    plot_histograms(compute=True, estimator=estimator, rho_tuning=True, blanchet=True)
     #plot_curves(estimator=estimator, compute=True)
 
 

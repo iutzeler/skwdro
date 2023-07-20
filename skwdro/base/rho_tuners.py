@@ -227,7 +227,6 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         print("Quantile: ", self.samples_quantile_)
 
         #Compute rho thanks to the statistical analysis and the DRO estimator
-
         #Taking the square root as a transformation of rho as Blanchet uses a squared cost function
         self.estimator.rho = pt.sqrt((1/self.n_samples_)*self.samples_quantile_)
         print("Rho value: ", self.estimator.rho)

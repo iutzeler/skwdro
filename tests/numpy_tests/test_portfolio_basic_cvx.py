@@ -20,7 +20,7 @@ def test_fit_low_radius():
 
     X = generate_data(10,1,0)
 
-    estimator = Portfolio(solver="dedicated", rho=1e-10)
+    estimator = Portfolio(solver="dedicated", cost="n-NC-1-1", rho=1e-10)
     estimator.fit(X)
 
     theta = estimator.coef_
@@ -42,7 +42,7 @@ def test_fit_high_radius():
 
     X = generate_data(10,1,0)
 
-    estimator = Portfolio(solver="dedicated", rho=10)
+    estimator = Portfolio(solver="dedicated", cost="n-NC-1-1", rho=10)
     estimator.fit(X)
 
     theta = estimator.coef_
@@ -67,7 +67,7 @@ def test_fit_with_polyhedron_constraints_low_radius():
     C = np.eye(2)
     d = np.array([0.2,0.5])
 
-    estimator = Portfolio(solver="dedicated", rho=1e-10, C=C, d=d)
+    estimator = Portfolio(solver="dedicated", cost="n-NC-1-1", rho=1e-10, C=C, d=d)
 
     estimator.fit(X)
 
@@ -89,7 +89,7 @@ def test_fit_with_polyhedron_constraints_high_radius():
     C = np.eye(2)
     d = np.array([0.2,0.5])
 
-    estimator = Portfolio(solver="dedicated", rho=10, C=C, d=d)
+    estimator = Portfolio(solver="dedicated", cost="n-NC-1-1", rho=10, C=C, d=d)
 
     estimator.fit(X)
 
@@ -111,6 +111,6 @@ def test_fit_no_solution():
     C = np.eye(2)
     d = np.array([0.2,0.5])
 
-    estimator = Portfolio(solver="dedicated", rho=1e-10, C=C, d=d)
+    estimator = Portfolio(solver="dedicated", cost="n-NC-1-1", rho=1e-10, C=C, d=d)
 
     np.testing.assert_raises(ValueError, estimator.fit, X)
