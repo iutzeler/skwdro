@@ -49,7 +49,10 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, *, estimator,
         sns.histplot(data=tuned_rho_data, bins=nb_bins, stat="count", discrete=discrete)
 
         #Saving the histogram
-        image_path = os.path.join(home_dir, "rho_values.png")
+        if blanchet is True:
+            image_path = os.path.join(home_dir, "rho_values_blanchet.png")
+        else:
+            image_path = os.path.join(home_dir, "rho_values_GS.png")
         plt.savefig(image_path)
     
     #Create an histogram showing the performance of the model on train, test and adversarial data
@@ -70,7 +73,13 @@ def plot_histograms(N=30, nb_simulations=10000, rho=1e-2, *, estimator,
     plt.legend()
 
     #Saving the histogram
-    image_path = os.path.join(home_dir, "plot_histograms.png")
+    if rho_tuning is True:
+        if blanchet is True:
+            image_path = os.path.join(home_dir, "plot_histograms_blanchet.png")  
+        else:
+            image_path = os.path.join(home_dir, "plot_histograms_GS.png") 
+    else:
+        image_path = os.path.join(home_dir, "plot_histograms_no_tuning.png")
     plt.savefig(image_path)
 
     #Visualization
@@ -137,14 +146,14 @@ def main():
         {"entropic", "entropic_torch", "entropic_torch_pre", "entropic_torch_post"} else 10*N
 
     #Create the estimator and solve the problem
-    #estimator = Portfolio(solver=estimator_solver, cost="t-NC-1-1", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
-    estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
+    estimator = Portfolio(solver=estimator_solver, cost="t-NC-1-1", reparam="softmax", alpha=ALPHA, eta=ETA, n_zeta_samples=n_zeta_samples)
+    #estimator = LogisticRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
     #estimator = NewsVendor(solver=estimator_solver, cost="t-NC-1-1", n_zeta_samples=n_zeta_samples)
     #estimator = LinearRegression(solver=estimator_solver, n_zeta_samples=n_zeta_samples)
     #estimator = Weber(solver=estimator_solver, cost="t-NC-1-1", n_zeta_samples=n_zeta_samples)
 
     #plot_histograms(rho=0, compute=True)
-    plot_histograms(nb_simulations=20, compute=True, estimator=estimator, rho_tuning=True, blanchet=True)
+    plot_histograms(compute=True, estimator=estimator, rho_tuning=True, blanchet=False)
     #plot_curves(estimator=estimator, compute=True)
 
 
