@@ -63,12 +63,6 @@ class Weber(BaseEstimator):
             random_state: int=0
             ):
 
-        if rho is not float:
-            try:
-                rho = float(rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -97,6 +91,12 @@ class Weber(BaseEstimator):
         """
 
         X, y = check_X_y(X, y, y_numeric=True)
+
+        if self.rho is not float:
+            try:
+                self.rho = float(self.rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
 
         m,d = np.shape(X)
 
@@ -174,3 +174,48 @@ class Weber(BaseEstimator):
 
         # `fit` should always return `self`
         return self
+    
+    def score(self, X, y=None):
+        '''
+        Score method to estimate the quality of the model.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples_test,m)
+            The testing input samples.
+        y : None
+            The prediction. Always None for a Newsvendor estimator.
+        '''
+        return -self.eval(X)
+
+    def eval(self, X):
+        '''
+        Evaluates the loss with the theta obtained from the fit function.
+
+        Parameters
+        ----------
+        X : array-like, shape (n_samples_test,m)
+            The testing input samples.
+        '''
+
+        assert self.is_fitted_ == True #We have to fit before evaluating
+
+        def entropic_case(X):
+            if isinstance(X, (np.ndarray,np.generic)):
+                X = pt.from_numpy(X)
+
+            return self.problem_.loss.primal_loss.value(xi=X).mean()
+
+        match self.solver:
+            case "dedicated":
+                return self.problem_.loss.value(theta=self.coef_, xi=X)
+            case "entropic":
+                return NotImplementedError("Entropic solver for Portfolio not implemented yet")
+            case "entropic_torch":
+                return entropic_case(X)
+            case "entropic_torch_pre":
+                return entropic_case(X)
+            case "entropic_torch_post":
+                return entropic_case(X)            
+            case _:
+                return ValueError("Solver not recognized")

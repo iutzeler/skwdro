@@ -93,12 +93,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  opt_cond: Optional[OptCond]=OptCond(2)
                  ):
 
-        if rho is not float:
-            try:
-                rho = float(rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -134,6 +128,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = np.array(X)
         y = np.array(y)
 
+        #Type checking for rho
+        if self.rho is not float:
+            try:
+                self.rho = float(self.rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+
         if len(y.shape) != 1:
             y = y.ravel()
             raise DataConversionWarning(f"Given y is {y.shape}, while expected shape is (n_sample,)")
@@ -166,9 +167,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         # Define cleanly the hyperparameters of the problem.
-        cost = cost_from_str(self.cost)
+        self.cost_ = cost_from_str(self.cost)
         self.problem_ = WDROProblem(
-                cost=cost,
+                cost=self.cost_,
                 loss=LogisticLoss(l2_reg=self.l2_reg),
                 p_hat=emp,
                 n=d,
@@ -192,7 +193,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver=="dedicated":
             # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
             # One may use it by specifying this option
-            self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLogisticSpecificSolver(
+            self.coef_ , self.intercept_, self.dual_var_, self.result_ = spS.WDROLogisticSpecificSolver(
                     rho=self.problem_.rho,
                     kappa=1000,
                     X=X,
@@ -201,7 +202,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             )
         elif "torch" in self.solver:
             custom_sampler = LabeledCostSampler(
-                    cost,
+                    self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
                     epsilon=pt.tensor(self.solver_reg),
@@ -212,8 +213,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 # Default torch implementation resamples from pi_0 at each SGD step
                 self.problem_.loss = DualLoss(
                         LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        cost,
+                        self.cost_,
                         n_samples=self.n_zeta_samples,
+                        n_iter=1000,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
                     )
@@ -222,7 +224,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
                 self.problem_.loss = DualPreSampledLoss(
                         LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        cost,
+                        self.cost_,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
@@ -236,9 +238,17 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     seed=self.random_state,
                     sigma_=self.solver_reg,
                 )
+            
+            # Stock the robust loss result 
+            if self.solver == "entropic_torch_pre":
+                #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
+                #raise NotImplementedError("Result for pre_sample not available")
+                pass
+            elif self.solver == "entropic_torch_post":
+                self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(self.X_), xi_labels=pt.from_numpy(self.y_))
+
         else:
             raise NotImplementedError()
-
         self.is_fitted_ = True
 
         # Return the classifier

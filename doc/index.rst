@@ -19,6 +19,7 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    user_guide
    models
    solvers
+   tuning
 
 .. toctree::
    :maxdepth: 3

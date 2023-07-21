@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import pytest
 
-import skwdro.solvers.hybrid_sgd as hybrid_sgd
+import skwdro.solvers.hybrid_opt as hybrid_opt
 
 class DummyModule(nn.Module):
 	def __init__(self, a, b):
@@ -26,7 +26,7 @@ lr_b = lr
 
 @pytest.fixture
 def optimizer(model, lr_a, lr_b):
-	return hybrid_sgd.HybridSGD([
+	return hybrid_opt.HybridSGD([
 		{'params': [model.a], 'lr':lr_a, 'mwu':True},
 		{'params': [model.b], 'lr':lr_b, 'non_neg':True}
 		], lr=lr_a)

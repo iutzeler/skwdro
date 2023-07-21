@@ -44,7 +44,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         l2 regularization
     fit_intercept : boolean, default=True
         Determines if an intercept is fit or not
-    cost: str, default="n-NC-1-2"
+    cost: str, default="n-NLC-1-2"
         Tiret-separated code to define the transport cost: "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic'
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
@@ -90,12 +90,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  opt_cond=None
                  ):
 
-        if rho is not float:
-            try:
-                rho = float(rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
-
         if rho < 0:
             raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
 
@@ -131,6 +125,13 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         X = np.array(X)
         y = np.array(y)
 
+        #Type checking for rho
+        if self.rho is not float:
+            try:
+                self.rho = float(self.rho)
+            except:
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+
         if len(y.shape) != 1:
             y.flatten()
             warnings.warn(f"y expects a shape (n_samples,) but receiced shape {y.shape}", DataConversionWarning)
@@ -145,10 +146,10 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         # Setup problem parameters ################
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
-        cost = cost_from_str(self.cost)
+        self.cost_ = cost_from_str(self.cost)
         self.problem_ = WDROProblem(
                 loss=QuadraticLoss(l2_reg=self.l2_reg),
-                cost=cost,
+                cost=self.cost_,
                 xi_bounds=[-1e8,1e8],
                 theta_bounds=[-1e8,1e8],
                 rho=self.rho,
@@ -170,7 +171,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
         elif "torch" in self.solver:
             custom_sampler = LabeledCostSampler(
-                    cost,
+                    self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
                     epsilon=pt.tensor(self.rho),
@@ -180,8 +181,9 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 self.problem_.loss = DualLoss(
                         QuadraticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        cost,
+                        self.cost_,
                         n_samples=10,
+                        n_iter=1000,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)
                     )
@@ -189,7 +191,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             elif self.solver == "entropic_torch_pre":
                 self.problem_.loss = DualPreSampledLoss(
                         QuadraticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
-                        cost,
+                        self.cost_,
                         n_samples=10,
                         epsilon_0=pt.tensor(self.solver_reg),
                         rho_0=pt.tensor(self.rho)

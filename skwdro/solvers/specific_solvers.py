@@ -14,7 +14,7 @@ def WDRONewsvendorSolver(pbm: WDROProblem):
     return WDRONewsvendorSpecificSolver(k=float(l.k.item()), u=float(l.u.item()), rho=pbm.rho, samples=pbm.p_hat.samples)
 
 @wrap_solver_result
-def WDRONewsvendorSpecificSolver(k: float=5, u: float=7, rho: float=1.0,samples=None):
+def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
     assert samples is not None
     z = np.sort(samples, axis=0)
     n = z.shape[0]
@@ -145,9 +145,9 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-        problem.solve(verbose=False)
+        result = problem.solve(verbose=False)
 
-        return beta.value[:d], beta.value[d+1+n] , beta.value[d]
+        return beta.value[:d], beta.value[d+1+n] , beta.value[d], result
     else:
         beta = cp.Variable(d+1+n)
 
@@ -161,9 +161,9 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-        problem.solve(verbose=False)
+        result = problem.solve(verbose=False)
 
-        return beta.value[:d], 0.0 , beta.value[d]
+        return beta.value[:d], 0.0 , beta.value[d], result
 
 
 
@@ -253,9 +253,9 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
 
     #Solving the problem
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
-    problem.solve(verbose=False)
-
-    #Getting the result of the dual objective value
     result = problem.solve()
 
-    return theta.value, fit_intercept, lam.value, result
+    if theta.value is None or np.isnan(sum(theta.value)):
+        raise ValueError("No solution exists for the Mean-Risk Portfolio problem")
+
+    return theta.value, tau.value, lam.value, result
