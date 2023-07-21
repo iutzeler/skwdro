@@ -13,7 +13,7 @@ dict_wdro_estimators = {}
 
 dict_wdro_estimators["Weber (entropic presampled)"] = Weber(solver="entropic_torch_pre")
 
-dict_wdro_estimators["Portfolio"] = Portfolio()
+dict_wdro_estimators["Portfolio"] = Portfolio(cost="n-NC-1-1")
 
 #dict_wdro_estimators["Portfolio_entropic"] = Portfolio(solver="entropic_torch")
 

@@ -10,12 +10,7 @@ import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithoutLabels
-#USELESS FOR NOW: from skwdro.base.losses import PortfolioLoss 
 from skwdro.base.losses import PortfolioLoss_torch
-from skwdro.base.losses_torch_portfolio import *
-from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
-
-from skwdro.base.cost_decoder import cost_from_str
 from skwdro.base.losses_torch_portfolio import *
 from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
 
@@ -25,6 +20,7 @@ from skwdro.base.losses_torch_portfolio import *
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
+
 import skwdro.solvers.hybrid_opt as hybrid_opt
 
 class Portfolio(BaseEstimator):

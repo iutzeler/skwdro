@@ -75,7 +75,7 @@ def compute_phi_star(X, y, z, diff_loss):
             hessian_tau = hessians[0][2][0][0].squeeze(1)
             hessian_loss = pt.cat((hessian_theta_tilde, hessian_tau), 1)
 
-        elif "Logistic" or "Linear" in class_name:
+        elif "Logistic" in class_name or "Quadratic" in class_name:
             weight = diff_loss.get_parameter('loss.linear.weight')
 
             hessians = pt.func.jacrev(pt.func.jacrev(func_call_logistic, argnums=(0,1,2)), argnums=(0,1,2))(Xk_conv, yk_conv, weight)
