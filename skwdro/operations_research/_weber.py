@@ -92,9 +92,9 @@ class Weber(BaseEstimator):
 
         X, y = check_X_y(X, y, y_numeric=True)
 
-        if rho is not float:
+        if self.rho is not float:
             try:
-                rho = float(rho)
+                self.rho = float(self.rho)
             except:
                 raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
 
