@@ -38,32 +38,24 @@ def compute_h(xii, theta, estimator):
 def compute_phi_star(X, y, z, diff_loss): 
 
     def func_call_portfolio(X, y, theta_tilde, tau):
-
         params = dict(diff_loss.named_parameters())
         params['loss.loss._theta_tilde'] = theta_tilde
         params['loss._tau'] = tau
-        print(params)
-
         return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=params, args=(X,y))
     
     def func_call_logistic(X, y, weight):
         params = dict(diff_loss.named_parameters())
         params['loss.linear.weight'] = weight
-        print(params)
-
         return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=params, args=(X,y))
 
     def func_call(X, y, theta):
         params = dict(diff_loss.named_parameters())
         params['loss._theta'] = theta
-        print(params)
-
         return pt.func.functional_call(module=diff_loss, parameter_and_buffer_dicts=params, args=(X,y))
 
     n_samples = len(X)
 
     one_dim = len(X[0]) == 1
-    print("One dim value: ", one_dim)
 
     hessian_products = []
 
@@ -78,61 +70,31 @@ def compute_phi_star(X, y, z, diff_loss):
             theta_tilde = diff_loss.get_parameter('loss.loss._theta_tilde')
             tau = diff_loss.get_parameter('loss._tau')
 
-            #hessians = pt.func.hessian(func_call_portfolio, argnums=(0,2,3))(Xk_conv, yk_conv, theta_tilde, tau)
             hessians = pt.func.jacrev(pt.func.jacrev(func_call_portfolio, argnums=(0,2,3)), argnums=(0,2,3))(Xk_conv, yk_conv, theta_tilde, tau)
-
             hessian_theta_tilde = hessians[0][1][0][0].squeeze(1)
-            print("Hessian theta_tilde: ", hessian_theta_tilde)
-            print(hessian_theta_tilde.size())
-
             hessian_tau = hessians[0][2][0][0].squeeze(1)
-            print("Hessian tau: ", hessian_tau)
-            print(hessian_tau.size())
-
             hessian_loss = pt.cat((hessian_theta_tilde, hessian_tau), 1)
 
         elif "Logistic" or "Linear" in class_name:
             weight = diff_loss.get_parameter('loss.linear.weight')
-            print("Xk_conv: ", Xk_conv)
-            print("yk_conv: ", yk_conv)
+
             hessians = pt.func.jacrev(pt.func.jacrev(func_call_logistic, argnums=(0,1,2)), argnums=(0,1,2))(Xk_conv, yk_conv, weight)
-
             hessian_X = hessians[0][2][0].squeeze(1)
-            print("Hessian X: ", hessian_X)
-            print("Size: ", hessian_X.size())
-
             hessian_y = hessians[1][2][0].squeeze(1)
-            print("Hessian y: ", hessian_y)
-            print("Size: ", hessian_y.size())
-
             hessian_loss = pt.cat((hessian_X, hessian_y.T), 1)
-            #hessian_loss = hessians[0][2][0].squeeze(1)
         else:
             theta = diff_loss.get_parameter('loss._theta')
             if yk_conv is None:
-                #hessians = pt.func.hessian(func_call, argnums=(0,2))(Xk_conv, yk_conv, theta)
                 hessians = pt.func.jacrev(pt.func.jacrev(func_call, argnums=(0,2)), argnums=(0,2))(Xk_conv, yk_conv, theta)
             else:
-                #hessians = pt.func.hessian(func_call, argnums=(0,1,2))(Xk_conv, yk_conv, theta)
                 hessians = pt.func.jacrev(pt.func.jacrev(func_call, argnums=(0,1,2)), argnums=(0,1,2))(Xk_conv, yk_conv, theta)
             hessian_loss = hessians[0][1][0]
-
-        #print(hessians_loss.size())
-        print("Hessian value: ", hessians)
-        print("Hessian loss: ", hessian_loss)
 
         hessian_product = (hessian_loss)**2 if one_dim is True \
             else pt.matmul((hessian_loss).T,hessian_loss)
         hessian_products.append(hessian_product)
 
-    print("Hessian products: ", hessian_products)
-    print("Length of hessian_products: ", len(hessian_products))
-    print("Size of one element inside hessian_products: ", hessian_products[0].size())
-
     A = (1/2*n_samples)*sum(hessian_products)
-
-    print("Value of A:", A)
-    print("Size of A: ", A.size())
 
     if one_dim is True: #A is a scalar
         if A != 0:
@@ -141,15 +103,15 @@ def compute_phi_star(X, y, z, diff_loss):
         else:
             return pt.tensor([float("inf")]) if z != pt.tensor([0.]) else 0
     else:
-        pseudo_inv_A = pt.linalg.pinv(A)        
-        print("Size of pseudo-inverse: ", pseudo_inv_A.size())
-        print("Size of z: ", z.size())   
+        pseudo_inv_A = pt.linalg.pinv(A)         
         alpha_opt = pt.matmul(pseudo_inv_A,z)
-        print(alpha_opt.size())
         if pt.isclose(pt.matmul(A,alpha_opt).squeeze(), z) is False: #We consider in that case that z is not in range(A)
             return pt.tensor([float("inf")])
 
-    return alpha_opt.T@z - (1/2)*pt.dot(pt.matmul(alpha_opt.T,A),alpha_opt)
+    #Using directly a.T will be depreciated in a future release of PyTorch so we use this technique to transpose alpha_opt
+    alpha_opt_transpose = alpha_opt.permute(*pt.arange(alpha_opt.ndim - 1, -1, -1))
+
+    return alpha_opt_transpose@z - (1/2)*pt.dot(pt.matmul(alpha_opt_transpose,A),alpha_opt)
             
 def compute_phi_star_portfolio(X, z, theta, estimator):
 

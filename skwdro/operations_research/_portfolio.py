@@ -209,6 +209,8 @@ class Portfolio(BaseEstimator):
             #Define the optimizer
 
             '''
+            Hybrid optimizer with MWU method : WIP
+            
             self.problem_.loss.optimizer = hybrid_opt.HybridAdam([
             {'params': [self.problem_.loss.loss.loss._theta_tilde], 'lr':1e-10, 'mwu_simplex':True},
             {'params': [self.problem_.loss.loss.tau]},
