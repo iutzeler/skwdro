@@ -71,10 +71,6 @@ class DiffLoss(Loss):
         super(DiffLoss, self).__init__(None)
         self.loss = loss
 
-        for name, param in self.named_parameters(): #Set other parameters than theta to false
-            if param.requires_grad:
-                print(name)
-
     def convert(self, X, y):
 
         if type(X) == pt.Tensor : 
@@ -129,11 +125,7 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
         diff_loss = DiffLoss(loss=loss)
         output = diff_loss.value(X=X, y=y)
 
-        print("Output: ", output)
-        print(output.size())
-
         class_name = self.estimator.__class__.__name__
-        print("Class_name: ", class_name)
 
         if class_name != "Portfolio":
             if class_name != "Logistic":
@@ -145,54 +137,25 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
                 diff_loss.loss.loss.theta.retain_grad()
             else:
                 raise NotImplementedError("No backward for CVXPy solver")
-            
-        #output.backward(retain_graph=True, gradient=pt.tensor([1 for _ in range(self.n_samples_)]).unsqueeze(-1))
 
         output[0].backward(retain_graph=True)
-        #print(diff_loss.loss.theta.data)
-        #print(pt.tensor([[diff_loss.loss.tau.data]]))
         grad_theta = diff_loss.loss.theta.grad if class_name != "Portfolio" \
                     else pt.cat((diff_loss.loss.loss.theta.data, pt.tensor([[diff_loss.loss.tau.data]])),1)
         self.h_samples_ = grad_theta
 
         for i in range(1,self.n_samples_):
             output[i].backward(retain_graph=True)
-            '''
-            print("Theta tilde:", diff_loss.loss.loss.theta_tilde)
-            print("Theta:", diff_loss.loss.loss.theta)
-            print("Tau: ", diff_loss.loss.tau)
-            print("Theta_tilde grad: ", diff_loss.loss.loss.theta.grad)
-            print("Tau grad: ", diff_loss.loss.tau.grad)
-            '''
-            #assert diff_loss.loss.theta.grad is not None, "Issue with the differentiation w.r.t theta"
             grad_theta = diff_loss.loss.theta.grad if class_name != "Portfolio" \
                         else pt.cat((diff_loss.loss.loss.theta.grad, pt.tensor([[diff_loss.loss.tau.grad]])),1)
             self.h_samples_ = pt.vstack((self.h_samples_, grad_theta))
 
-        '''
-        if class_name != "Portfolio":
-            self.h_samples_ = diff_loss.loss.theta.grad.numpy().astype(float)
-        else: #We need to concatenate the gradients w.r.t to theta and tau
-            self.h_samples_ = pt.cat((diff_loss.loss.loss.theta.data, diff_loss.loss.tau.data),0)
-        '''
-
-        #CASE OF NEWSVENDOR WITH ONLY ONE FEATURE!!
-        #self.h_samples_ = np.squeeze(self.h_samples_)
-        print("h_samples: ", self.h_samples_)
-        print(self.h_samples_.size())
-
         self.cov_matrix_ = pt.cov(input=self.h_samples_.T, correction=0,) if self.h_samples_.size()[1] == 1 else pt.cov(input=self.h_samples_.T)
-        print("PT cov_matrix: ", self.cov_matrix_)
-        print(self.cov_matrix_.size())
 
         #Making the covariance matrix positive definite
         if self.cov_matrix_.size() != pt.Size([]):
-            print("Before adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
             eigenvalues = pt.linalg.eigvalsh(self.cov_matrix_)
             min_eigen = pt.min(eigenvalues)
-            print("Min value: ", min_eigen)
             self.cov_matrix_ = self.cov_matrix_ + (pt.relu(-min_eigen) + 1e-4)*pt.eye(self.cov_matrix_.size()[0]) 
-            print("After adding: ", pt.linalg.eigvalsh(self.cov_matrix_))
 
             norm = pt.distributions.MultivariateNormal(loc=pt.zeros(self.h_samples_.size()[1]), covariance_matrix=self.cov_matrix_)
 
@@ -201,18 +164,11 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
 
         self.normal_samples_ = norm.sample((self.n_samples_,))
 
-        print("PT normal samples: ", self.normal_samples_)
-        print("Size: ", self.normal_samples_.size())
-
-        print("PHASE 2: HESSIAN COMPUTATIONS")
-
         '''
         If there are labels in our problem, we need one more normal-sampled component to ensure
         the good definition of a matrix-vector product when computing phi star
         ''' 
         y_norm_samples = pt.tensor([norm.sample((1,)).mean() for _ in range(self.n_samples_)])
-        #print("y_norm_samples: ", y_norm_samples)
-        #print(y_norm_samples.size())
 
         self.conjugate_samples_ =  pt.tensor([cpt.compute_phi_star(X=X, y=y, 
                                                                   z=self.normal_samples_[i] if y is None else \
@@ -220,16 +176,12 @@ class BlanchetRhoTunedEstimator(BaseEstimator):
                                                                     pt.tensor([y_norm_samples[i]])),0), 
                                                                   diff_loss=diff_loss)
                                                                 for i in range(len(self.normal_samples_))])
-        
-        print("Conjugate samples: ", self.conjugate_samples_)
 
         self.samples_quantile_ = pt.quantile(a=self.conjugate_samples_, q=confidence_level)
-        print("Quantile: ", self.samples_quantile_)
 
         #Compute rho thanks to the statistical analysis and the DRO estimator
         #Taking the square root as a transformation of rho as Blanchet uses a squared cost function
         self.estimator.rho = pt.sqrt((1/self.n_samples_)*self.samples_quantile_)
-        print("Rho value: ", self.estimator.rho)
         self.estimator.fit(X,y)
 
         self.best_estimator_ = self.estimator

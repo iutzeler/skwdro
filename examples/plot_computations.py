@@ -110,7 +110,7 @@ def stochastic_problem_approx(estimator,size=10000):
 
     return eval(estimator=estimator, class_name=class_name, X=X, y=y)
 
-#TODO: Adapt structure when entropic case will be okay
+#TODO: Adapt structure (uniformization of numpy value signatures)
 def eval(estimator, class_name, X, y):
 
     if class_name == "Portfolio":
@@ -165,7 +165,7 @@ def parallel_for_loop_histograms(N, estimator, rho_tuning, blanchet):
     print("Best decision: ", best_decision)
 
     '''
-    Visualization part for the Logistic problem
+    Visualization part for the Logistic problem: to move elsewhere
     
     if class_name == "LogisticRegression":
         plot_sim_log_reg(estimator, X_train, y_train)
@@ -196,7 +196,7 @@ def parallel_compute_histograms(N, nb_simulations, estimator, compute, rho_tunin
             for _ in range(nb_simulations)
         )
 
-        #debug mode (to use in case of issue inside parallelized code)
+        #debug mode (to use in case of issues inside parallelized code)
         #eval_train, eval_test, eval_adv_test, tuned_rho = parallel_for_loop_histograms(N=N, estimator=estimator, rho_tuning=rho_tuning, blanchet=blanchet)
 
         eval_data_train = [x for x, _, _, _ in eval_data]
@@ -273,7 +273,7 @@ def rho_parallel_for_loop_curves(N, estimator, rho_value, nb_simulations):
         for _ in range(nb_simulations)
     )
 
-    #debug mode (to use in case of issue inside parallelized code)
+    #debug mode (to use in case of issues inside parallelized code)
     #_, _ = simulations_parallel_for_loop_curves(N=N, estimator=curves_estimator)
 
     #The datatypes in the two lists are the same so we only test on one of them
@@ -295,7 +295,7 @@ def parallel_for_loop_curves(N, estimator, rho_values, nb_simulations):
     delayed(rho_parallel_for_loop_curves)(N=N, estimator=estimator, rho_value=rho_value, nb_simulations=nb_simulations)
     for rho_value in rho_values)
 
-    #debug mode (to use in case of issue inside parallelized code)
+    #debug mode (to use in case of issues inside parallelized code)
     #_, _ = rho_parallel_for_loop_curves(N=N, estimator=estimator, rho_value=1e-3, nb_simulations=nb_simulations)
 
     mean_eval_data_test = [x for x, _ in mean_eval_reliability]
@@ -320,7 +320,7 @@ def parallel_compute_curves(nb_simulations, estimator, compute):
                 delayed(parallel_for_loop_curves)(N=size, estimator=estimator, rho_values=rho_values, nb_simulations=nb_simulations)
                 for size in samples_size)
 
-            #debug mode (to use in case of issue inside parallelized code)
+            #debug mode (to use in case of issues inside parallelized code)
             _, _ = parallel_for_loop_curves(N=30, estimator=estimator, rho_values=rho_values, nb_simulations=nb_simulations)
             
             mean_eval_data_test_sizes = [x for x, _ in mean_eval_rel_sizes]
