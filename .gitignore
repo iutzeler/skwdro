@@ -74,3 +74,4 @@ target/
 # Examples data
 examples/stored_data/*
 test_post.npy
+test_pre.npy
