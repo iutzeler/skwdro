@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch as pt
 import torch.distributions as dst
@@ -79,3 +79,15 @@ class NormLabelCost(NormCost):
                     )
             else: raise NotImplementedError()
         else: raise NotImplementedError()
+
+    def solve_max_series_exp(
+            self,
+            xi: pt.Tensor,
+            xi_labels: pt.Tensor,
+            rhs: pt.Tensor,
+            rhs_labels: pt.Tensor
+            ) -> Tuple[pt.Tensor, pt.Tensor]:
+        if self.p == 2 == self.power:
+            return xi + .5 * rhs, xi_labels + .5 * rhs_labels / self.kappa
+        else:
+            raise NotImplementedError()

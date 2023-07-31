@@ -1,12 +1,12 @@
-from typing import Optional
+from typing import Optional, Tuple
 from types import NoneType
 
 import torch as pt
 import torch.distributions as dst
 
-from skwdro.base.costs import Cost
+from .base_cost import TorchCost
 
-class NormCost(Cost):
+class NormCost(TorchCost):
     """ p-norm to some power, with torch arguments
     """
     def __init__(self, p: float=1., power: float=1., name: Optional[str]=None):
@@ -53,3 +53,15 @@ class NormCost(Cost):
 
     def _sampler_labels(self, xi_labels, epsilon):
         return None
+
+    def solve_max_series_exp(
+            self,
+            xi: pt.Tensor,
+            xi_labels: NoneType,
+            rhs: pt.Tensor,
+            rhs_labels: NoneType
+            ) -> Tuple[pt.Tensor, NoneType]:
+        if self.p == 2 == self.power:
+            return xi + .5 * rhs, None
+        else:
+            raise NotImplementedError()

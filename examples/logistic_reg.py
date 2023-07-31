@@ -19,6 +19,8 @@ from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
 
 
+RHO = 1e-4
+
 # Generate the random data ##################################################
 rng = RandomState(seed=666)
 n = 100
@@ -38,7 +40,7 @@ print("Specific solver w/ LP fast solve #####")
 t = time()
 print(".", end='')
 estimator = LogisticRegression(
-        rho=1e-2,
+        rho=RHO,
         l2_reg=0.,
         fit_intercept=True,
         cost="n-NC-2-2",
@@ -59,7 +61,7 @@ print("Sinkhorn solver #####")
 t = time()
 print(".", end='')
 estimator_ent = LogisticRegression(
-        rho=1e-2,
+        rho=RHO,
         l2_reg=0.,
         fit_intercept=True,
         cost="t-NLC-2-2",
@@ -81,7 +83,7 @@ print("Sinkhorn pre-sampled solver #####")
 t = time()
 print(".", end='')
 estimator_pre = LogisticRegression(
-        rho=1e-2,
+        rho=RHO,
         l2_reg=0.,
         fit_intercept=True,
         cost="t-NLC-2-2",

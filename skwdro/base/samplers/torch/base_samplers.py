@@ -1,3 +1,4 @@
+from types import NoneType
 from typing import Dict, Optional, Union
 import random
 import torch as pt
@@ -31,6 +32,17 @@ class BaseSampler(ABC):
     def reset_mean(self, xi, xi_labels):
         raise NotImplementedError()
 
+    @abstractmethod
+    def log_prob(
+            self,
+            xi: pt.Tensor,
+            xi_labels: Optional[pt.Tensor],
+            zeta: pt.Tensor,
+            zeta_labels: Optional[pt.Tensor]
+            ) -> pt.Tensor:
+        raise NotImplementedError()
+
+
 class NoLabelsSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, seed: int):
         super(NoLabelsSampler, self).__init__(seed)
@@ -42,6 +54,15 @@ class NoLabelsSampler(BaseSampler, ABC):
     @property
     def produces_labels(self):
         return False
+
+    def log_prob(
+            self,
+            xi: pt.Tensor,
+            xi_labels: NoneType,
+            zeta: pt.Tensor,
+            zeta_labels: NoneType
+            ) -> pt.Tensor:
+        return self.data_s.log_prob(pt.abs(xi - zeta)).unsqueeze(-1)
 
 class LabeledSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution, seed: int):
@@ -64,6 +85,18 @@ class LabeledSampler(BaseSampler, ABC):
     def produces_labels(self):
         return True
 
+    def log_prob(
+            self,
+            xi: pt.Tensor,
+            xi_labels: pt.Tensor,
+            zeta: pt.Tensor,
+            zeta_labels: pt.Tensor
+            ) -> pt.Tensor:
+        lp = self.data_s.log_prob(pt.abs(xi - zeta))\
+                + self.labels_s.log_prob(pt.abs(xi_labels - zeta_labels))
+        return lp.unsqueeze(-1)
+
+# Helper class ########################
 class IsOptionalCovarianceSampler(ABC):
     def init_covar(
                 self,

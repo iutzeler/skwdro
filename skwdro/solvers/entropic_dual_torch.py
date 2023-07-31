@@ -157,7 +157,9 @@ def optim_presample(
     for _ in loss.iterations:
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
-        with pt.no_grad(): losses.append(closure(False))
+        with pt.no_grad():
+            loss.imp_samp = False
+            losses.append(closure(False))
 
     return losses
 
@@ -200,6 +202,7 @@ def optim_postsample(
         assert isinstance(objective, pt.Tensor)
 
         objective.backward()
+        #print(loss._lam.item(), loss._lam.grad.item())
         # Perform the stochastic step
         optimizer.step()
         losses.append(objective.item())

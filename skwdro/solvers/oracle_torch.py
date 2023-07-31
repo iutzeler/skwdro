@@ -1,4 +1,5 @@
 from typing import Any, Tuple, Optional
+from itertools import chain
 from abc import ABC, abstractmethod, abstractproperty
 
 import torch as pt
@@ -6,9 +7,10 @@ import torch.nn.functional as F
 import torch.nn as nn
 import torch.autograd as ptag
 
-from skwdro.base.costs import Cost
+from skwdro.base.costs_torch import Cost
 from skwdro.base.losses_torch import Loss
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
+from skwdro.solvers.utils import diff_tensor, diff_opt_tensor, maybe_unsqueeze, normalize_just_vects, normalize_maybe_vects
 
 
 
@@ -34,8 +36,10 @@ class _DualLoss(nn.Module, ABC):
         first guess for a good maximal distance between xi distribution and adversarial distribution
     n_iter : int
         number of gradient descent updates
-    gradient_hypertuning : bool
+    gradient_hypertuning : bool, default ``False``
         [WIP] set to ``True`` to tune rho and epsilon.
+    imp_samp : bool, default ``True``
+        kwarg, set to ``True`` to use importance sampling to improve the sampling
 
     Attributes
     ----------
@@ -47,6 +51,7 @@ class _DualLoss(nn.Module, ABC):
         initialized a ``rho_0``, and without requires_grad
     n_samples : int
     n_iter : int
+    imp_samp : bool
 
     Shapes
     ------
@@ -60,12 +65,14 @@ class _DualLoss(nn.Module, ABC):
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
                  n_iter: int,
-                 gradient_hypertuning: bool=False
+                 gradient_hypertuning: bool=False,
+                 *,
+                 imp_samp: bool=True,
                  ) -> None:
         super(_DualLoss, self).__init__()
         self.primal_loss = loss
         # TODO: implement __call__ for torch costs
-        self.cost = cost.value
+        self.cost = cost
 
         # epsilon and rho are parameters so that they can be printed if needed.
         # But they are not included in the autograd graph (requires_grad=False).
@@ -75,7 +82,7 @@ class _DualLoss(nn.Module, ABC):
         # Lambda is tuned during training, and it requires a proxy in its parameter form.
         # _lam is the tuned variable, and softplus(_lam) is the "proxy" that is accessed via
         # self.lam in the code (see the parameter decorated method).
-        self._lam = nn.Parameter(1e-2 / rho_0) if rho_0 > 0. else pt.tensor(0.)
+        self._lam = nn.Parameter(1e-3 / rho_0) if rho_0 > 0. else pt.tensor(0.)
 
         # Private sampler points to the loss l_theta
         self._sampler = loss._sampler
@@ -83,6 +90,7 @@ class _DualLoss(nn.Module, ABC):
         # number of zeta samples are checked at __init__, but can be dynamically changed
         self.n_samples = n_samples
         self.n_iter = n_iter
+        self.imp_samp = imp_samp
         self._opti = None
 
     @property
@@ -93,13 +101,137 @@ class _DualLoss(nn.Module, ABC):
     def forward(self, *args):
         raise NotImplementedError()
 
-    def compute_dual(self,
-                     xi: pt.Tensor,
-                     xi_labels: Optional[pt.Tensor],
-                     zeta: pt.Tensor,
-                     zeta_labels: Optional[pt.Tensor]
-                     ) -> pt.Tensor:
-        r""" Computes the forward pass for the dual loss value
+    def freeze(self, rg: bool=False, include_hyper=False):
+        """ Freeze all the primal losse's parameters for some gradients operations.
+
+        Parameters
+        ----------
+        rg : bool
+            Set to ``True`` to unfreeze, and leave to ``False`` to freeze.
+        include_hyper: bool
+            Set to ``True`` to freeze the rho and epsilon params as well.
+        """
+        frozen_params = self.parameters() if include_hyper else chain(self.primal_loss.parameters(), (self._lam,))
+        for param in frozen_params:
+            param.requires_grad = rg
+        return
+
+
+    def get_displacement_direction(
+            self,
+            xi: pt.Tensor,
+            xi_labels: Optional[pt.Tensor]
+            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        r""" Optimal displacement to maximize the adversity of the samples.
+        Yields :math:`\frac{\nabla_\xi L(\xi)}{\lambda}` with backprop algorithm.
+
+        Parameters
+        ----------
+        xi : pt.Tensor
+            original samples observed
+        xi_labels : Optional[pt.Tensor]
+            associated labels, if any
+
+        Returns
+        -------
+        disps: Tuple[pt.Tensor, Optional[pt.Tensor]]
+            displacements to maximize the series expansion
+
+        Shapes
+        ------
+        xi : (m, d)
+        xi_labels : (m, d')
+        disps: (1, m, d), (1, m, d')
+        """
+
+        # Freeze the parameters before differentiation wrt xi
+        self.freeze()
+
+        # "Dual" samples for forward pass, to get the gradients wrt them
+        diff_xi = diff_tensor(xi) # (1, m, d)
+        diff_xi_l = diff_opt_tensor(xi_labels) # (1, m, d')
+
+        # Forward pass for xi
+        out: pt.Tensor = self.primal_loss.value(
+                diff_xi,
+                diff_xi_l if diff_xi_l is not None else None
+            ).squeeze() / self._lam # (m,)
+
+        # Backward pass, at all output loss per sample,
+        # i.e. one gradient per xi sample, m total
+        out.backward(pt.ones(xi.size(0))) # xi.size = m
+
+        # Unfreeze the parameters to allow training
+        self.freeze(rg=True)
+
+        # Assert type of results and get them returned
+        assert diff_xi.grad is not None
+        if diff_xi_l is not None:
+            assert diff_xi_l.grad is not None
+            #print(diff_xi.grad.mean(0).mean(0), diff_xi_l.grad.mean(0).mean(0))
+            return normalize_just_vects(diff_xi.grad, dim=-1), normalize_maybe_vects(diff_xi_l.grad, dim=-1)
+        else:
+            return normalize_just_vects(diff_xi.grad), None
+
+    def displace_samples(
+            self,
+            xi: pt.Tensor,
+            xi_labels: Optional[pt.Tensor],
+            zeta: pt.Tensor,
+            zeta_labels: Optional[pt.Tensor]
+            ) -> Tuple[
+                    pt.Tensor,
+                    Optional[pt.Tensor],
+                    pt.Tensor,
+                    Optional[pt.Tensor]
+                ]:
+        r""" Optimal displacement to maximize the adversity of the samples.
+        Yields :math:`\frac{\nabla_\xi L(\xi)}{\lambda}` with backprop algorithm.
+
+        Parameters
+        ----------
+        xi : pt.Tensor
+            original samples observed
+        xi_labels : Optional[pt.Tensor]
+            associated labels, if any
+        zeta : pt.Tensor
+            adversarial samples
+        zeta_labels : Optional[pt.Tensor]
+            associated adversarial labels, if any
+
+        Returns
+        -------
+        disps: Tuple[pt.Tensor, Optional[pt.Tensor]]
+            displacements to maximize the series expansion
+
+        Shapes
+        ------
+        xi : (m, d)
+        xi_labels : (m, d')
+        zeta : (n_s, m, d)
+        zeta_labels : (n_s, m, d')
+        """
+        disp, disp_labels = self.get_displacement_direction(
+                xi,
+                xi_labels
+            )
+        displaced_xi, displaced_xi_labels = self.cost.solve_max_series_exp(
+                xi.unsqueeze(0),
+                maybe_unsqueeze(xi_labels, dim=0),
+                disp,
+                disp_labels
+            )
+        displaced_zeta, displaced_zeta_labels = self.cost.solve_max_series_exp(zeta, zeta_labels, disp, disp_labels)
+        return displaced_xi, displaced_xi_labels, displaced_zeta, displaced_zeta_labels
+
+    def compute_dual(
+            self,
+            xi: pt.Tensor,
+            xi_labels: Optional[pt.Tensor],
+            zeta: pt.Tensor,
+            zeta_labels: Optional[pt.Tensor]
+            ) -> pt.Tensor:
+        r""" Computes the forward pass for the dual loss value.
 
         Parameters
         ----------
@@ -128,25 +260,67 @@ class _DualLoss(nn.Module, ABC):
         if self.rho > 0.:
             first_term = self.lam * self.rho # (1,)
 
-            # NOTE: Beware of the shape of the loss, we need a trailing dim
-            l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
-            c = self.cost(
-                    xi.unsqueeze(0), # (1, m, d)
-                    zeta, # (n_samples, m, d)
-                    xi_labels.unsqueeze(0) if xi_labels is not None else None, # (1, m, d') or None
-                    zeta_labels # (n_samples, m, d') or None
-                ) # -> (n_samples, m, 1)
-            integrand = l - self.lam * c # -> (n_samples, m, 1)
-            integrand /= self.epsilon # -> (n_samples, m, 1)
+            if self.imp_samp:
+                # For importance sampling, we displace all the samples.
+                # They are now sampled around xi*, the displaced xi values.
+                xi_star, xi_labels_star, zeta, zeta_labels = self.displace_samples(xi, xi_labels, zeta, zeta_labels)
 
-            # Expectation on the zeta samples (collapse 1st dim)
-            second_term = pt.logsumexp(integrand, 0).mean(dim=0) # -> (m, 1)
-            second_term -= pt.log(pt.tensor(zeta.size(0))) # -> (m, 1)
-            return first_term + self.epsilon*second_term.mean() # (1,)
+                # The dual loss contains the sampled terms (in the exponential) and the importance sampling part
+                # ##############################################################################################
+
+                # Main terms:
+                # -----------
+                # L(zeta) - lambda*V(zeta|xi)
+                # NOTE: Beware of the shape of the loss, we need a trailing dim
+                l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
+                c = self.cost(
+                        xi.unsqueeze(0), # (1, m, d)
+                        zeta, # (n_samples, m, d)
+                        maybe_unsqueeze(xi_labels, dim=0), # (1, m, d') or None
+                        zeta_labels # (n_samples, m, d') or None
+                    ) # -> (n_samples, m, 1)
+                integrand = l - self.lam * c # -> (n_samples, m, 1)
+                integrand /= self.epsilon # -> (n_samples, m, 1)
+
+                # Importance sampling terms:
+                # --------------------------
+                # - [ V(zeta|xi)
+                #   - V(zeta|xi*) ]
+                correction = self.sampler.log_prob(
+                        xi.unsqueeze(0),
+                        maybe_unsqueeze(xi_labels, dim=0),
+                        zeta,
+                        zeta_labels
+                    ) - self.sampler.log_prob(
+                        xi_star,
+                        xi_labels_star,
+                        zeta,
+                        zeta_labels
+                        )
+                #print("Corr mean: ", correction.mean().item())
+                #print("Integ mean: ", integrand.mean().item())
+                integrand -= correction # (n_samples, m, 1)
+                #print("Integ-corr mean: ", integrand.mean().item())
+            else:
+                l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
+                c = self.cost(
+                        xi.unsqueeze(0), # (1, m, d)
+                        zeta, # (n_samples, m, d)
+                        maybe_unsqueeze(xi_labels, dim=0), # (1, m, d') or None
+                        zeta_labels # (n_samples, m, d') or None
+                    ) # -> (n_samples, m, 1)
+                integrand = l - self.lam * c # -> (n_samples, m, 1)
+                integrand /= self.epsilon # -> (n_samples, m, 1)
+
+
+                # Expectation on the zeta samples (collapse 1st dim)
+                second_term = pt.logsumexp(integrand, 0).mean(dim=0) # -> (m, 1)
+                second_term -= pt.log(pt.tensor(zeta.size(0))) # -> (m, 1)
+                return first_term + self.epsilon*second_term.mean() # (1,)
         elif self.rho == 0.:
             return self.rho * self.lam + self.primal_loss(
                     xi.unsqueeze(0), # (1, m, d)
-                    xi_labels.unsqueeze(0) if xi_labels is not None else None # (1, m, d') or None
+                    maybe_unsqueeze(xi_labels, dim=0), # (1, m, d') or None
                 ).mean() # (1,)
         elif self.rho.isnan().any():
             return pt.tensor(pt.nan, requires_grad=True)
@@ -245,6 +419,7 @@ class _DualLoss(nn.Module, ABC):
             \lambda := \mbox{soft}^+(\tilde{\lambda}})
         """
         return F.softplus(self._lam)
+        #return self._lam
 
     @property
     def optimizer(self) -> pt.optim.Optimizer:
@@ -289,9 +464,11 @@ class DualPostSampledLoss(_DualLoss):
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
                  n_iter: int=10000,
-                 gradient_hypertuning: bool=False
+                 gradient_hypertuning: bool=False,
+                 *,
+                 imp_samp: bool=False
                  ) -> None:
-        super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning)
+        super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
 
         self._opti = pt.optim.AdamW(
                 self.parameters(),
@@ -375,9 +552,11 @@ class DualPreSampledLoss(_DualLoss):
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
                  n_iter: int=50,
-                 gradient_hypertuning: bool=False
+                 gradient_hypertuning: bool=False,
+                 *,
+                 imp_samp: bool=False
                  ) -> None:
-        super(DualPreSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning)
+        super(DualPreSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
 
         self._opti = pt.optim.LBFGS(
                 self.parameters(),
@@ -390,6 +569,7 @@ class DualPreSampledLoss(_DualLoss):
 
         self.zeta        = None
         self.zeta_labels = None
+        self.imp_samp = False
 
     def forward(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None, zeta: Optional[pt.Tensor]=None, zeta_labels: Optional[pt.Tensor]=None):
         r""" Forward pass for the dual loss, wrt the already sampled :math:`\zeta` values

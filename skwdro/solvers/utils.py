@@ -1,4 +1,6 @@
+from typing import Optional
 import numpy as np
+import torch as pt
 
 
 def weightedExpAverage(a,b):
@@ -82,6 +84,28 @@ def sample_pi_0(epsilon, n_samples, xi):
     return zeta
 # ##############################################################
 
-def detach_tensor(tensor):
+def detach_tensor(tensor: pt.Tensor) -> np.ndarray:
     out = tensor.detach().cpu().numpy().flatten()
     return out # float(out) if len(out) == 1 else out
+
+def diff_opt_tensor(tensor: Optional[pt.Tensor], us_dim: Optional[int]=0) -> Optional[pt.Tensor]:
+    if tensor is None:
+        return None
+    else:
+        return diff_tensor(tensor, us_dim)
+
+def diff_tensor(tensor: pt.Tensor, us_dim: Optional[int]=0) -> pt.Tensor:
+    if us_dim is not None:
+        return tensor.clone().detach().unsqueeze(us_dim).requires_grad_(True)
+    else:
+        return tensor.clone().detach().requires_grad_(True)
+
+def maybe_unsqueeze(tensor: Optional[pt.Tensor], dim: int=0) -> Optional[pt.Tensor]:
+    return None if tensor is None else tensor.unsqueeze(dim)
+
+def normalize_maybe_vects(tensor: Optional[pt.Tensor], dim: int=0) -> Optional[pt.Tensor]:
+    return None if tensor is None else normalize_just_vects(tensor, dim)
+
+def normalize_just_vects(tensor: pt.Tensor, dim: int=0) -> pt.Tensor:
+    n = pt.linalg.norm(tensor, dim=dim, keepdims=True)
+    return tensor / pt.max(pt.tensor(1.), n)

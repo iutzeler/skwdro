@@ -7,6 +7,13 @@ from .base_loss import Loss
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 
+class BiDiffSoftMarginLoss(nn.Module):
+    def __init__(self, *args, **kwargs) -> None:
+        super(BiDiffSoftMarginLoss, self).__init__()
+
+    def forward(self, input, target):
+        return pt.log(1. + pt.exp(-target * input))
+
 class LogisticLoss(Loss):
     r""" Logisic regression with classes :math:`\{-1, 1\}`
 
@@ -38,7 +45,7 @@ class LogisticLoss(Loss):
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         self.classif = nn.Tanh()
-        self.L = nn.LogSigmoid()
+        self.L = BiDiffSoftMarginLoss(reduction='none')
 
     def predict(self, X: pt.Tensor) -> pt.Tensor:
         """ Predict the label of the argument tensor
@@ -69,7 +76,7 @@ class LogisticLoss(Loss):
             labels
         """
         coefs = self.linear(xi)
-        return - self.L(coefs * xi_labels)
+        return self.L(coefs, xi_labels)
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int):

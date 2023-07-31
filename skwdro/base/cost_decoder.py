@@ -1,7 +1,9 @@
-from .costs import Cost, NormCost as npNormCost, NormLabelCost as npNormLabelCost
-from .costs_torch import NormCost as ptNormCost, NormLabelCost as ptNormLabelCost
+from typing import Union
 
-def cost_from_str(code: str) -> Cost:
+from .costs import Cost, NormCost as npNormCost, NormLabelCost as npNormLabelCost
+from .costs_torch import Cost as TorchCost, NormCost as ptNormCost, NormLabelCost as ptNormLabelCost
+
+def cost_from_str(code: str) -> Union[Cost, TorchCost]:
     engine_, id_, power_, type_ = code.split('-')
     if engine_ == 't':
         if id_ == "NC":
