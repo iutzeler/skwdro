@@ -313,10 +313,10 @@ class _DualLoss(nn.Module, ABC):
                 integrand /= self.epsilon # -> (n_samples, m, 1)
 
 
-                # Expectation on the zeta samples (collapse 1st dim)
-                second_term = pt.logsumexp(integrand, 0).mean(dim=0) # -> (m, 1)
-                second_term -= pt.log(pt.tensor(zeta.size(0))) # -> (m, 1)
-                return first_term + self.epsilon*second_term.mean() # (1,)
+            # Expectation on the zeta samples (collapse 1st dim)
+            second_term = pt.logsumexp(integrand, 0).mean(dim=0) # -> (m, 1)
+            second_term -= pt.log(pt.tensor(zeta.size(0))) # -> (m, 1)
+            return first_term + self.epsilon*second_term.mean() # (1,)
         elif self.rho == 0.:
             return self.rho * self.lam + self.primal_loss(
                     xi.unsqueeze(0), # (1, m, d)
