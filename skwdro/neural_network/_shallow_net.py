@@ -40,6 +40,10 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
         Solver to be used: 'entropic' or 'dedicated'
     solver_reg: float, default=1.0
         regularization value for the entropic solver
+    ly1: pytorch tensor, default=None
+        Optional, if specific values are needed instead of random initialization
+    ly2: pytorch tensor, default=None
+        Optional, if specific values are needed instead of random initialization
 
     Attributes
     ----------
@@ -47,12 +51,6 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
         parameter vector (:math:`w` in the cost function formula)
     intercept_ : float
         constant term in decision function.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> TODO
-    """
 
     def __init__(self,
                  rho=1e-2,

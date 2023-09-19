@@ -93,4 +93,18 @@ where :math:`\mathrm{VaR}_{\alpha}` is the Value at Risk of order :math:`\alpha`
 ..    Weber
 
 
+(Deep) learning
+=============
 
+
+ReLU shallow network
+-------------------
+
+.. currentmodule:: skwdro.neural_network
+
+.. autosummary::
+   :toctree: generated/
+   :template: class.rst
+
+
+   ShallowNet
