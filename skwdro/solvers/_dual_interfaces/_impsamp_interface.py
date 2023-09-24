@@ -3,11 +3,49 @@ from typing import Optional, Tuple
 import torch as pt
 
 from ._misc_dual_interfaces import _SampledDualLoss
-from ..utils import diff_opt_tensor, diff_tensor, normalize_just_vects, normalize_maybe_vects
+from ..utils import diff_opt_tensor, diff_tensor, normalize_just_vects, normalize_maybe_vects, maybe_unsqueeze
 
 
 class _SampleDisplacer(_SampledDualLoss):
     def get_displacement_direction(
+            self,
+            xi: pt.Tensor,
+            xi_labels: Optional[pt.Tensor],
+            threshold: float=1.
+            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        r"""
+        Thresholds the displacement of the samples to avoid numerical instabilities.
+        See :py:method:`~_SampleDisplacer.get_optimal_displacement`.
+        Yields :math:`\frac{\nabla_\xi L(\xi)}{\lambda}` with backprop algorithm.
+
+        Parameters
+        ----------
+        xi : pt.Tensor
+            original samples observed
+        xi_labels : Optional[pt.Tensor]
+            associated labels, if any
+
+        Returns
+        -------
+        disps: Tuple[pt.Tensor, Optional[pt.Tensor]]
+            displacements to maximize the series expansion
+
+        Shapes
+        ------
+        xi : (m, d)
+        xi_labels : (m, d')
+        disps: (1, m, d), (1, m, d')
+        """
+        diff_xi, diff_xi_l = self.get_optimal_displacement(xi, xi_labels)
+        # Assert type of results and get them returned
+        assert diff_xi.grad is not None
+        if diff_xi_l is not None:
+            assert diff_xi_l.grad is not None
+            return normalize_just_vects(diff_xi.grad, threshold, dim=-1), normalize_maybe_vects(diff_xi_l.grad, threshold, dim=-1)
+        else:
+            return normalize_just_vects(diff_xi.grad, threshold, dim=-1), None
+
+    def get_optimal_displacement(
             self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor]
@@ -45,7 +83,7 @@ class _SampleDisplacer(_SampledDualLoss):
         out: pt.Tensor = self.primal_loss.value(
                 diff_xi,
                 diff_xi_l if diff_xi_l is not None else None
-            ).squeeze() / self._lam # (m,)
+            ).squeeze((0, 2)) / self._lam # (m,)
 
         # Backward pass, at all output loss per sample,
         # i.e. one gradient per xi sample, m total
@@ -54,14 +92,7 @@ class _SampleDisplacer(_SampledDualLoss):
         # Unfreeze the parameters to allow training
         self.freeze(rg=True)
 
-        # Assert type of results and get them returned
-        assert diff_xi.grad is not None
-        if diff_xi_l is not None:
-            assert diff_xi_l.grad is not None
-            #print(diff_xi.grad.mean(0).mean(0), diff_xi_l.grad.mean(0).mean(0))
-            return normalize_just_vects(diff_xi.grad, dim=-1), normalize_maybe_vects(diff_xi_l.grad, dim=-1)
-        else:
-            return normalize_just_vects(diff_xi.grad), None
+        return diff_xi, diff_xi_l
 
     def displace_samples(
             self,
