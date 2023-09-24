@@ -5,6 +5,7 @@ import torch.nn.functional as F
 
 from ._impsamp_interface import _SampleDisplacer
 from skwdro.solvers.utils import maybe_unsqueeze
+from skwdro.base.costs_torch import NormCost
 
 
 class _DualFormulation(_SampleDisplacer):
@@ -110,6 +111,35 @@ class _DualFormulation(_SampleDisplacer):
             return pt.tensor(pt.nan, requires_grad=True)
         else:
             raise ValueError("Rho < 0 detected: -> " + str(self.rho.item()) + ", please provide a positive rho value")
+
+    def get_initial_guess_at_dual(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]):
+        c = self.cost
+        rho_N = xi.size(0) * self.rho # (1,)
+        if issubclass(type(c), NormCost):
+            p = pt.tensor(c.power)
+            q: pt.Tensor = p / (p - 1)
+
+            grads, grads_labels = self.get_optimal_displacement(xi, xi_labels) # (1, m, d), (1, m, d')
+            with pt.no_grad():
+                grads_norms = \
+                        c.value(
+                                grads,
+                                pt.zeros_like(grads),
+                                grads_labels,
+                                pt.zeros_like(grads_labels) if grads_labels is not None else None
+                                )\
+                        * self._lam # (1, m, 1)
+
+                lam0 = ((grads_norms * rho_N)
+                        .pow(q - 1)
+                        .sum()
+                        .pow(1. / q)
+                       ) / (p * rho_N)
+                print(lam0)
+                self._lam.data.mul(0.).add(lam0)
+            return lam0
+        else: raise
+
 
 class _DualLoss(_DualFormulation):
 
