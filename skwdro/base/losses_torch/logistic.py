@@ -12,7 +12,8 @@ class BiDiffSoftMarginLoss(nn.Module):
         super(BiDiffSoftMarginLoss, self).__init__()
 
     def forward(self, input, target):
-        return pt.log(1. + pt.exp(-target * input))
+        target = pt.reshape(target, input.shape)
+        return - nn.functional.logsigmoid(target * input).mean()
 
 class LogisticLoss(Loss):
     r""" Logisic regression with classes :math:`\{-1, 1\}`
