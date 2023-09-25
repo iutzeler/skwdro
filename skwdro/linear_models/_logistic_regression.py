@@ -233,7 +233,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 raise NotImplementedError()
 
             # The problem is solved with the new "dual loss"
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual(
                     self.problem_,
                     seed=self.random_state,
                     sigma_=self.solver_reg,
