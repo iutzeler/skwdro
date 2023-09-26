@@ -238,8 +238,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     seed=self.random_state,
                     sigma_=self.solver_reg,
                 )
-            
-            # Stock the robust loss result 
+
+            # Stock the robust loss result
             if self.solver == "entropic_torch_pre":
                 #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
                 #raise NotImplementedError("Result for pre_sample not available")
