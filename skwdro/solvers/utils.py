@@ -103,9 +103,9 @@ def diff_tensor(tensor: pt.Tensor, us_dim: Optional[int]=0) -> pt.Tensor:
 def maybe_unsqueeze(tensor: Optional[pt.Tensor], dim: int=0) -> Optional[pt.Tensor]:
     return None if tensor is None else tensor.unsqueeze(dim)
 
-def normalize_maybe_vects(tensor: Optional[pt.Tensor], dim: int=0) -> Optional[pt.Tensor]:
-    return None if tensor is None else normalize_just_vects(tensor, dim)
+def normalize_maybe_vects(tensor: Optional[pt.Tensor], threshold: float=1., dim: int=0) -> Optional[pt.Tensor]:
+    return None if tensor is None else normalize_just_vects(tensor, threshold, dim)
 
-def normalize_just_vects(tensor: pt.Tensor, dim: int=0) -> pt.Tensor:
+def normalize_just_vects(tensor: pt.Tensor, threshold: float=1., dim: int=0) -> pt.Tensor:
     n = pt.linalg.norm(tensor, dim=dim, keepdims=True)
-    return tensor / pt.max(pt.tensor(1.), n)
+    return tensor / pt.min(pt.tensor(threshold), n)

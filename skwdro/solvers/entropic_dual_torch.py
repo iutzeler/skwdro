@@ -81,6 +81,9 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
     assert loss is not None
     assert isinstance(loss, _DualLoss)
 
+    # Init lambda
+    loss.get_initial_guess_at_dual(xi, xi_labels)
+
     # Initialize sampler.
     if loss._sampler is None:
         loss.sampler = loss.default_sampler(xi, xi_labels, sigma, seed)
