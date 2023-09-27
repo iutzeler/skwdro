@@ -145,8 +145,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.le_ = LabelEncoder()
         y = self.le_.fit_transform(y)
         if y is None: raise ValueError("Problem with labels, none out of label encoder")
-        else: y = np.array(y)
-        y[y==0] = -1
+        else: y = np.array(y, dtype=X.dtype)
+        y[y==0.] = -1.
 
         if len(self.classes_)>2:
             raise NotImplementedError(f"Multiclass classificaion is not implemented. ({len(self.classes_)} classes were found : {self.classes_})")
@@ -239,13 +239,17 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     sigma_=self.solver_reg,
                 )
 
+            # Problems w/ dtypes (f32->f64 for some reason)
+            # To be fixed later
+            # =============================================
             # Stock the robust loss result
-            if self.solver == "entropic_torch_pre":
-                #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
-                #raise NotImplementedError("Result for pre_sample not available")
-                pass
-            elif self.solver == "entropic_torch_post":
-                self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(self.X_), xi_labels=pt.from_numpy(self.y_))
+            # if self.solver == "entropic_torch_pre":
+            #     #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
+            #     #raise NotImplementedError("Result for pre_sample not available")
+            #     pass
+            # elif self.solver in {"entropic_torch_post", "entropic_torch"}:
+            #     # self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(self.X_), xi_labels=pt.from_numpy(self.y_))
+            #     pass
 
         else:
             raise NotImplementedError()
