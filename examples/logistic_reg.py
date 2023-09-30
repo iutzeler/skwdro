@@ -109,7 +109,7 @@ estimator_erm = LogisticRegression(
         fit_intercept=True,
         cost="t-NLC-2-2",
         n_zeta_samples=0,
-        solver="entropic_torch"
+        solver="entropic_torch_pre"
         )
 
 
@@ -118,7 +118,7 @@ estimator_erm.fit(X, y)
 print(".")
 
 print("Lambda: ", estimator_erm.dual_var_)
-print("Theta: ", estimator_erm.coef_, estimator_ent.intercept_)
+print("Theta: ", estimator_erm.coef_, estimator_erm.intercept_)
 print("Elapsed time: ", time()-t)
 def plot_line(est, x):
     c0, c1 = est.coef_

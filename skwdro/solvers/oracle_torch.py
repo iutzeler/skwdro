@@ -1,12 +1,13 @@
-from typing import Any, Tuple, Optional
+from typing import Tuple, Optional
 
 import torch as pt
-# import torch.autograd as ptag
 
 from skwdro.base.costs_torch import Cost
 from skwdro.base.losses_torch import Loss
 from skwdro.solvers._dual_interfaces import _DualLoss
+from skwdro.solvers.utils import Steps
 
+IMP_SAMP = True
 
 class DualPostSampledLoss(_DualLoss):
     r""" Dual loss implementing a sampling of the :math:`\zeta` vectors at each forward pass.
@@ -26,10 +27,10 @@ class DualPostSampledLoss(_DualLoss):
                  n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
-                 n_iter: int=10000,
+                 n_iter: Steps=10000,
                  gradient_hypertuning: bool=False,
                  *,
-                 imp_samp: bool=False
+                 imp_samp: bool=IMP_SAMP
                  ) -> None:
         super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
 
@@ -117,7 +118,7 @@ class DualPreSampledLoss(_DualLoss):
                  n_iter: int=50,
                  gradient_hypertuning: bool=False,
                  *,
-                 imp_samp: bool=False
+                 imp_samp: bool=IMP_SAMP
                  ) -> None:
         super(DualPreSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
 
@@ -132,7 +133,6 @@ class DualPreSampledLoss(_DualLoss):
 
         self.zeta        = None
         self.zeta_labels = None
-        self.imp_samp = False
 
     def forward(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None, zeta: Optional[pt.Tensor]=None, zeta_labels: Optional[pt.Tensor]=None):
         r""" Forward pass for the dual loss, wrt the already sampled :math:`\zeta` values
