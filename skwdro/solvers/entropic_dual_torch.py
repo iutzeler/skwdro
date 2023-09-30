@@ -6,7 +6,7 @@ import torch as pt
 from skwdro.solvers.oracle_torch import _DualLoss
 
 from skwdro.solvers.result import wrap_solver_result
-from skwdro.solvers.utils import detach_tensor
+from skwdro.solvers.utils import detach_tensor, interpret_steps_struct
 from skwdro.base.problems import Distribution, WDROProblem
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
@@ -80,9 +80,6 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
     # If user provides a numpy loss, fail.
     assert loss is not None
     assert isinstance(loss, _DualLoss)
-
-    # Init lambda
-    loss.get_initial_guess_at_dual(xi, xi_labels)
 
     # Initialize sampler.
     if loss._sampler is None:
@@ -159,12 +156,27 @@ def optim_presample(
         return objective.item()
 
     losses = []
-    for _ in loss.iterations:
+    pretrain_iters, train_iters = interpret_steps_struct(loss.n_iter)
+
+    # Pretrain ERM
+    loss.erm_mode = True
+    for _ in range(pretrain_iters):
+        optimizer.step(closure)
+
+    # Init lambda
+    print(loss.get_initial_guess_at_dual(xi, xi_labels))
+    loss.erm_mode = False
+
+    # Train WDRO
+    for _ in range(train_iters):
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
         with pt.no_grad():
-            loss.imp_samp = False
+            _is = loss.imp_samp
+            loss.imp_samp = not _is
             losses.append(closure(False))
+            loss.imp_samp = _is
+            del _is
 
     return losses
 
@@ -199,7 +211,11 @@ def optim_postsample(
     """
     losses = []
 
-    for _ in loss.iterations:
+    pretrain_iters, train_iters = interpret_steps_struct(loss.n_iter)
+
+    # Pretrain ERM
+    loss.erm_mode = True
+    for _ in range(pretrain_iters):
         optimizer.zero_grad()
 
         # Resamples zetas at forward pass
@@ -207,7 +223,23 @@ def optim_postsample(
         assert isinstance(objective, pt.Tensor)
 
         objective.backward()
-        #print(loss._lam.item(), loss._lam.grad.item())
+        # Perform the stochastic step
+        optimizer.step()
+        losses.append(objective.item())
+
+    # Init lambda
+    print(loss.get_initial_guess_at_dual(xi, xi_labels))
+    loss.erm_mode = False
+
+    # Train WDRO
+    for _ in range(train_iters):
+        optimizer.zero_grad()
+
+        # Resamples zetas at forward pass
+        objective = loss(xi, xi_labels)
+        assert isinstance(objective, pt.Tensor)
+
+        objective.backward()
         # Perform the stochastic step
         optimizer.step()
         losses.append(objective.item())

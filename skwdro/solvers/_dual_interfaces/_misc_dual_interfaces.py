@@ -8,6 +8,7 @@ import torch.nn as nn
 from skwdro.base.costs_torch import Cost
 from skwdro.base.losses_torch import Loss
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
+from skwdro.solvers.utils import Steps
 
 class _DualLossBase(nn.Module, ABC):
     r""" Base class to register parameters for a dual loss:
@@ -58,7 +59,7 @@ class _DualLossBase(nn.Module, ABC):
                  n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
-                 n_iter: int,
+                 n_iter: Steps,
                  gradient_hypertuning: bool=False,
                  *,
                  imp_samp: bool=True,
@@ -86,10 +87,14 @@ class _DualLossBase(nn.Module, ABC):
         self.n_iter = n_iter
         self.imp_samp = imp_samp
         self._opti = None
+        self.erm_mode: bool = False
 
     @property
     def iterations(self):
-        return range(self.n_iter)
+        if isinstance(self.n_iter, int):
+            return range(self.n_iter)
+        else:
+            return range(self.n_iter[1])
 
     @abstractmethod
     def forward(self, *args):
