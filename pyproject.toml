@@ -71,24 +71,25 @@ include = [
 [tool.hatch.envs.default]
 python = "3.11"
 
-[tool.hatch.envs.test]
+[tool.hatch.envs.env-test]
 features = ["test"]
-[tool.hatch.envs.test.scripts]
+
+[tool.hatch.envs.env-test.scripts]
 test-custom = "pytest -v ./tests/torch_tests"
 test-sklearn = "pytest -v ./skwdro/tests"
 test-misc = "sh ./tests/misc/launchall.sh"
 
-[tool.hatch.envs.examples]
+[tool.hatch.envs.env-examples]
 pre-install-commands = [
   "pip3 install --editable ../skwdro"
 ]
 features = ["examples"]
 
-[tool.hatch.envs.docs]
+[tool.hatch.envs.env-docs]
 # Could add a hook to build the doc here...
 features = ["docs"]
 
-[tool.hatch.envs.dev]
+[tool.hatch.envs.env-dev]
 pre-install-commands = [
   "pip3 install --editable ../skwdro"
 ]
@@ -97,7 +98,7 @@ features = [
     "examples",
     "docs"
 ]
-[tool.hatch.envs.dev.scripts]
+[tool.hatch.envs.env-dev.scripts]
 test = "pytest -s -vv . "
 
 [tool.hatch.envs.static]
