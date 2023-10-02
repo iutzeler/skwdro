@@ -136,11 +136,15 @@ class _SampleDisplacer(_SampledDualLoss):
                 xi,
                 xi_labels
             )
-        displaced_xi, displaced_xi_labels = self.cost.solve_max_series_exp(
-                xi.unsqueeze(0),
-                maybe_unsqueeze(xi_labels, dim=0),
-                disp,
-                disp_labels
-            )
-        displaced_zeta, displaced_zeta_labels = self.cost.solve_max_series_exp(zeta, zeta_labels, disp, disp_labels)
-        return displaced_xi, displaced_xi_labels, displaced_zeta, displaced_zeta_labels
+        if disp.isfinite().logical_not().any() or (disp_labels is not None and disp_labels.isfinite().logical_not().any()):
+            # Safeguard against NaNs mainly, as well as divergences
+            return xi.unsqueeze(0), maybe_unsqueeze(xi_labels, dim=0), zeta, zeta_labels
+        else:
+            displaced_xi, displaced_xi_labels = self.cost.solve_max_series_exp(
+                    xi.unsqueeze(0),
+                    maybe_unsqueeze(xi_labels, dim=0),
+                    disp,
+                    disp_labels
+                )
+            displaced_zeta, displaced_zeta_labels = self.cost.solve_max_series_exp(zeta, zeta_labels, disp, disp_labels)
+            return displaced_xi, displaced_xi_labels, displaced_zeta, displaced_zeta_labels
