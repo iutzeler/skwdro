@@ -88,6 +88,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  cost: str="t-NLC-2-2",
                  solver="entropic_torch",
                  solver_reg=0.01,
+                 sampler_reg=None,
                  n_zeta_samples: int=10,
                  random_state: int=0,
                  opt_cond: Optional[OptCond]=OptCond(2)
@@ -102,6 +103,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.fit_intercept  = fit_intercept
         self.solver         = solver
         self.solver_reg     = solver_reg
+        # Temporary default
+        self.sampler_reg    = sampler_reg
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.random_state   = random_state
@@ -179,6 +182,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 theta_bounds=[-1e8,1e8],
                 rho=self.rho
             )
+        sigma = self.sampler_reg if self.sampler_reg is not None else self.solver_reg
         # #########################################
 
         if self.solver=="entropic":
@@ -205,7 +209,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(self.solver_reg),
+                    epsilon=pt.tensor(sigma),
                     seed=self.random_state
                 )
             # The problem loss is changed to a more suitable "dual loss"

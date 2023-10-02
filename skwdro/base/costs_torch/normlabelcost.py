@@ -5,6 +5,15 @@ import torch.distributions as dst
 
 from .normcost import NormCost
 
+class Constant(dst.Distribution):
+    def __init__(self, cst: pt.Tensor):
+        super().__init__()
+        self.cst = cst
+    def sample(self, sample_shape = pt.Size()):
+        return self.cst.expand(*(sample_shape + self.cst.shape))
+    def rsample(self, sample_shape = pt.Size()):
+        return self.sample(sample_shape=sample_shape)
+
 class NormLabelCost(NormCost):
     """ p-norm of the ground metric to change data + label
     """
@@ -65,6 +74,8 @@ class NormLabelCost(NormCost):
             return distance**self.power
 
     def _sampler_labels(self, xi_labels, epsilon):
+        if self.kappa == float('inf'):
+            return Constant(xi_labels)
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
