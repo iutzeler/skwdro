@@ -32,7 +32,7 @@ def decode(filename):
     splitted = root.split('_')
     d, n = int(splitted[3]), int(splitted[4])
     rho, eps, sigma = [float(v) for v in splitted[6:]]
-    res = np.load(os.path.join(dirpath, filename))
+    res = np.load(os.path.join(dirpath, filename), allow_pickle=True)
     X, y, theta, robust_loss = res['X'], res['y'], res['theta'], res['robust_loss']
     res.close()
     return (rho, eps, sigma, X, y, theta, robust_loss)
