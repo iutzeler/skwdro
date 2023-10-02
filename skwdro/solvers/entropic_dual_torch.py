@@ -164,7 +164,7 @@ def optim_presample(
         optimizer.step(closure)
 
     # Init lambda
-    print(loss.get_initial_guess_at_dual(xi, xi_labels))
+    loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
 
     # Train WDRO
@@ -228,7 +228,7 @@ def optim_postsample(
         losses.append(objective.item())
 
     # Init lambda
-    print(loss.get_initial_guess_at_dual(xi, xi_labels))
+    loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
 
     # Train WDRO
