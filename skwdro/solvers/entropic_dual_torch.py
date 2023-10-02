@@ -95,22 +95,24 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
 
     # _DualLoss.presample determines the way the optimization is performed
     if loss.presample:
+        losses = optim_presample(optimizer, xi, xi_labels, loss)
         np.save(
                 "test_pre.npy",
-                optim_presample(optimizer, xi, xi_labels, loss)
+                losses
             )
     else:
+        losses = optim_postsample(optimizer, xi, xi_labels, loss)
         np.save(
                 "test_post.npy",
-                optim_postsample(optimizer, xi, xi_labels, loss)
+                losses
             )
-
     theta = detach_tensor(loss.theta)
     intercept = loss.intercept
     if intercept is not None:
         intercept = detach_tensor(intercept)
     lambd = detach_tensor(loss.lam) if loss.rho > 0. else [0.]
-    return theta, intercept, lambd
+    robust_loss = losses[-1]
+    return theta, intercept, lambd, robust_loss
 
 def optim_presample(
         optimizer: pt.optim.Optimizer,
