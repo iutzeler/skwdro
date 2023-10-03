@@ -11,6 +11,7 @@ test: test_gen test_sk test_misc
 
 test_gen:
 	@echo "General tests:"
+	@git lfs pull
 	@hatch -e $(TEST_ENV) run env-test:test-custom
 
 test_sk:
