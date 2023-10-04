@@ -7,7 +7,7 @@ from .normcost import NormCost
 
 class Constant(dst.Distribution):
     def __init__(self, cst: pt.Tensor):
-        super().__init__()
+        super().__init__(validate_args=False)
         self.cst = cst
     def sample(self, sample_shape = pt.Size()):
         return self.cst.expand(*(sample_shape + self.cst.shape))
