@@ -214,7 +214,7 @@ class Portfolio(BaseEstimator):
             ], lr=1e-5, betas=(.99, .999), weight_decay=0., amsgrad=True, foreach=True)
             '''
                       
-            self.coef_, _, self.dual_var_ = entTorch.solve_dual(
+            self.coef_, _, self.dual_var_, _ = entTorch.solve_dual(
                     wdro_problem=self.problem_,
                     seed=self.seed,
                     sigma_=pt.tensor(self.solver_reg_)
