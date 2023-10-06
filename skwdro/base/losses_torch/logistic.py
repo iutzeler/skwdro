@@ -46,7 +46,7 @@ class LogisticLoss(Loss):
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         nn.init.zeros_(self.linear.weight)
-        nn.init.zeros_(self.linear.bias)
+        if fit_intercept: nn.init.zeros_(self.linear.bias)
         self.classif = nn.Tanh()
         self.L = BiDiffSoftMarginLoss(reduction='none')
 
