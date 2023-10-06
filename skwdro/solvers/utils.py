@@ -110,7 +110,7 @@ def normalize_maybe_vects(tensor: Optional[pt.Tensor], threshold: float=1., dim:
 
 def normalize_just_vects(tensor: pt.Tensor, threshold: float=1., dim: int=0) -> pt.Tensor:
     n = pt.linalg.norm(tensor, dim=dim, keepdims=True)
-    return tensor / n #pt.min(pt.tensor(threshold), n)
+    return tensor / n * pt.min(pt.tensor(threshold), n)
 
 def interpret_steps_struct(steps_spec: Steps, default_split: float=.3) -> Tuple[int, int]:
     if isinstance(steps_spec, int):
