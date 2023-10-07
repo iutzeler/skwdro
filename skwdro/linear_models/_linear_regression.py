@@ -85,7 +85,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  fit_intercept=True,
                  cost="t-NLC-2-2",
                  solver="entropic_torch",
-                 solver_reg=1.0,
+                 solver_reg=1e-2,
                  n_zeta_samples: int=10,
                  random_state: int=0,
                  opt_cond=None
