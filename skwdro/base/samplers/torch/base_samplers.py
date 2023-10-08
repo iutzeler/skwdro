@@ -1,9 +1,11 @@
 from types import NoneType
 from typing import Dict, Optional, Union
+from abc import ABC, abstractmethod, abstractproperty
+
 import random
 import torch as pt
-import torch.distributions as dst
-from abc import ABC, abstractmethod, abstractproperty
+
+import skwdro.distributions as dst
 
 class BaseSampler(ABC):
     seed: int

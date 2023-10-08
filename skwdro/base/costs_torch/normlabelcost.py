@@ -1,8 +1,8 @@
 from typing import Optional, Tuple
 
 import torch as pt
-import torch.distributions as dst
 
+import skwdro.distributions as dst
 from .normcost import NormCost
 
 class Constant(dst.Distribution):

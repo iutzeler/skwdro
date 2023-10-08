@@ -1,7 +1,7 @@
 from typing import Optional, Union
 import torch as pt
-import torch.distributions as dst
 
+import skwdro.distributions as dst
 from .base_samplers import IsOptionalCovarianceSampler, LabeledSampler
 
 class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSampler):
@@ -40,6 +40,43 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
                 self.seed,
                 tril=self.data_s._unbroadcasted_scale_tril,
                 l_tril=self.labels_s._unbroadcasted_scale_tril
+                )
+
+class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler):
+    data_s: dst.MultivariateNormal
+    labels_s: dst.MultivariateNormal # Just a placeholder to remember the mean. Dirac does not exist in torch...
+    def __init__(self, xi: pt.Tensor, xi_labels: pt.Tensor, seed: int, *,
+                 sigma: Optional[Union[float, pt.Tensor]]=None,
+                 tril: Optional[pt.Tensor]=None,
+                 prec: Optional[pt.Tensor]=None,
+                 cov: Optional[pt.Tensor]=None
+                 ):
+        covar = self.init_covar(xi.size(-1), sigma, tril, prec, cov)
+        super(ClassificationNormalIdSampler, self).__init__(
+                dst.MultivariateNormal(
+                    loc=xi,
+                    **covar
+                ),
+                Dirac(
+                    loc=xi_labels,
+                    n_batch_dims=1,
+                    validate_args=True
+                ),
+                seed
+            )
+
+    def sample_labels(self, n_sample: int):
+        """
+        Just get as many labels as data points (n_sample).
+        """
+        return self.data_s.mean.unsqueeze(0).expand(n_sample, -1, -1)
+
+    def reset_mean(self, xi, xi_labels):
+        self.__init__(
+                xi,
+                xi_labels,
+                self.seed,
+                tril=self.data_s._unbroadcasted_scale_tril,
                 )
 
 class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovarianceSampler):
