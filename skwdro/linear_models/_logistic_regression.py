@@ -243,14 +243,14 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     sigma_=self.solver_reg,
                 )
             
-            # TODO: deprecate ?
-            # Stock the robust loss result
-            if self.solver == "entropic_torch_pre":
-                #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
-                #raise NotImplementedError("Result for pre_sample not available")
-                pass
-            elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-                self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(emp.samples_x), xi_labels=pt.from_numpy(emp.samples_y)).item()
+            # # TODO: deprecate ?
+            # # Stock the robust loss result
+            # if self.solver == "entropic_torch_pre":
+            #     #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
+            #     #raise NotImplementedError("Result for pre_sample not available")
+            #     pass
+            # elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
+            #     self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(emp.samples_x), xi_labels=pt.from_numpy(emp.samples_y)).item()
 
         else:
             raise NotImplementedError()

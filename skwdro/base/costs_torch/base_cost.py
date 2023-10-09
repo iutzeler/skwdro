@@ -1,8 +1,8 @@
 from typing import Optional, Tuple
 import torch as pt
 import torch.nn as nn
-import torch.distributions as dst
 
+import skwdro.distributions as dst
 from skwdro.base.costs import ENGINES_NAMES
 
 class TorchCost(nn.Module):

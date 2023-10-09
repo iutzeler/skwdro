@@ -2,9 +2,9 @@ from typing import Optional, Tuple
 from types import NoneType
 
 import torch as pt
-import torch.distributions as dst
 
 from .base_cost import TorchCost
+import skwdro.distributions as dst
 
 class NormCost(TorchCost):
     """ p-norm to some power, with torch arguments
@@ -52,7 +52,10 @@ class NormCost(TorchCost):
         else: raise NotImplementedError()
 
     def _sampler_labels(self, xi_labels, epsilon):
-        return None
+        if xi_labels is None:
+            return None
+        else:
+            return dst.Dirac(xi_labels, 1, True)
 
     def solve_max_series_exp(
             self,
