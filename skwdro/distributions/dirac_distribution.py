@@ -23,9 +23,9 @@ class Dirac(dst.ExponentialFamily):
         locshape = loc.size()
         batch_shape = locshape[:n_batch_dims]
         event_shape = locshape[n_batch_dims:]
+        self.loc: pt.Tensor = loc
         super().__init__(batch_shape, event_shape, validate_args)
 
-        self.loc: pt.Tensor = loc
 
     def expand(self, batch_shape: pt.Size, _instance=None):
         new: Dirac = self._get_checked_instance(Dirac, _instance)
@@ -48,7 +48,7 @@ class Dirac(dst.ExponentialFamily):
     def variance(self) -> pt.Tensor:
         return pt.zeros_like(self.loc)
 
-    def r_sample(self, sample_shape: pt.Size) -> pt.Tensor:
+    def rsample(self, sample_shape: pt.Size) -> pt.Tensor:
         return self.loc.expand(self._extended_shape(sample_shape))
 
     def log_prob(self, value: pt.Tensor) -> pt.Tensor:
