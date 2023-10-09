@@ -97,8 +97,11 @@ class NormLabelCost(NormCost):
             xi_labels: pt.Tensor,
             rhs: pt.Tensor,
             rhs_labels: pt.Tensor
-            ) -> Tuple[pt.Tensor, pt.Tensor]:
-        if self.p == 2 == self.power:
-            return xi + .5 * rhs, xi_labels + .5 * rhs_labels / self.kappa
+            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        if xi_labels is not None and rhs_labels is not None:
+            if self.p == 2 == self.power:
+                return xi + .5 * rhs, xi_labels + .5 * rhs_labels / self.kappa
+            else:
+                raise NotImplementedError()
         else:
-            raise NotImplementedError()
+            return super().solve_max_series_exp(xi, xi_labels, rhs, rhs_labels)

@@ -60,11 +60,17 @@ class NormCost(TorchCost):
     def solve_max_series_exp(
             self,
             xi: pt.Tensor,
-            xi_labels: NoneType,
+            xi_labels: Optional[pt.Tensor],
             rhs: pt.Tensor,
-            rhs_labels: NoneType
-            ) -> Tuple[pt.Tensor, NoneType]:
-        if self.p == 2 == self.power:
-            return xi + .5 * rhs, None
+            rhs_labels: Optional[pt.Tensor]
+            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        if xi_labels is not None and rhs_labels is not None:
+            if self.p == 2 == self.power:
+                return xi + .5 * rhs, xi_labels + .5 * rhs_labels
+            else:
+                raise NotImplementedError()
         else:
-            raise NotImplementedError()
+            if self.p == 2 == self.power:
+                return xi + .5 * rhs, None
+            else:
+                raise NotImplementedError()
