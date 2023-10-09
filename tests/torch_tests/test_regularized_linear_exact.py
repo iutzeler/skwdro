@@ -15,7 +15,7 @@ def fit_estimator(my_rho_norm, reg, sigma, X, y):
     estimator = LogisticRegression(
             rho=rho_cost,
             l2_reg=L2_REG,
-            cost="t-NLC-2-2-inf",
+            cost="t-NC-2-2",
             fit_intercept=False,
             solver="entropic_torch",
             solver_reg=reg,
