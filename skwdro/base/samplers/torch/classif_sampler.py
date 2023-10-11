@@ -57,7 +57,7 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
                     loc=xi,
                     **covar
                 ),
-                Dirac(
+                dst.Dirac(
                     loc=xi_labels,
                     n_batch_dims=1,
                     validate_args=True
