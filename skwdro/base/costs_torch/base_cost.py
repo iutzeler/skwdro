@@ -11,6 +11,7 @@ class TorchCost(nn.Module):
         super(TorchCost, self).__init__()
         self.name = name
         self.engine = engine
+        self.power: float = 1. # Default power, needs to be overwritten
 
     def forward(
             self,
