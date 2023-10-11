@@ -41,13 +41,15 @@ class LogisticLoss(Loss):
             sampler: LabeledSampler,
             *,
             d: int=0,
+            l2reg: Optional[float]=None,
             fit_intercept: bool=False) -> None:
-        super(LogisticLoss, self).__init__(sampler)
+        super(LogisticLoss, self).__init__(sampler, l2reg=l2reg)
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         nn.init.zeros_(self.linear.weight)
         if fit_intercept: nn.init.zeros_(self.linear.bias)
         self.classif = nn.Tanh()
+        self.l2reg = None if l2reg is None or l2reg <= 0. else pt.tensor(l2reg)
         self.L = BiDiffSoftMarginLoss(reduction='none')
 
     def predict(self, X: pt.Tensor) -> pt.Tensor:
@@ -79,7 +81,7 @@ class LogisticLoss(Loss):
             labels
         """
         coefs = self.linear(xi)
-        return self.L(coefs, xi_labels)
+        return self.regularize(self.L(coefs, xi_labels))
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int):

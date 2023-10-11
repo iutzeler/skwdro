@@ -182,7 +182,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 self.problem_.loss = DualLoss(
-                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
                         self.cost_,
                         n_samples=10,
                         n_iter=1000,
@@ -192,7 +192,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             elif self.solver == "entropic_torch_pre":
                 self.problem_.loss = DualPreSampledLoss(
-                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
                         self.cost_,
                         n_samples=10,
                         epsilon_0=pt.tensor(self.solver_reg),

@@ -9,9 +9,25 @@ from skwdro.base.samplers.torch.base_samplers import BaseSampler
 class Loss(nn.Module):
     """ Base class for loss functions """
     _sampler: BaseSampler
-    def __init__(self, sampler: BaseSampler):
+    def __init__(
+            self,
+            sampler: BaseSampler,
+            *,
+            l2reg: Optional[float]=None
+            ):
         super(Loss, self).__init__()
         self._sampler = sampler
+        self.l2reg = None if l2reg is None or l2reg <= 0. else pt.tensor(l2reg)
+
+    def regularize(self, loss: pt.Tensor):
+        r"""
+        Returns the regularized loss, used in the value function.
+        Adds a new term :math:`\frac{1}{2}\|\theta\|_2^2
+        """
+        if self.l2reg is None:
+            return loss
+        else:
+            return loss + .5 * self.l2reg * (self.theta*self.theta).sum()
 
     def value_old(self,theta,xi):
         """

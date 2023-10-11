@@ -216,7 +216,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 # Default torch implementation resamples from pi_0 at each SGD step
                 self.problem_.loss = DualLoss(
-                        LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
                         self.cost_,
                         n_samples=self.n_zeta_samples,
                         n_iter=1000,
@@ -227,7 +227,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             elif self.solver == "entropic_torch_pre":
                 # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
                 self.problem_.loss = DualPreSampledLoss(
-                        LogisticLossTorch(custom_sampler, d=self.problem_.d, fit_intercept=self.fit_intercept),
+                        LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
                         self.cost_,
                         n_samples=self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
