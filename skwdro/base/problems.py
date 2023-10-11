@@ -2,6 +2,7 @@ from typing import List, Optional, Union
 import numpy as np
 
 from skwdro.base.costs import Cost
+from skwdro.base.costs_torch import Cost as TorchCost
 from skwdro.base.losses import Loss as LossNumpy
 from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
 
@@ -66,7 +67,7 @@ class WDROProblem:
 
     def __init__(
             self,
-            cost: Cost,
+            cost: Cost|TorchCost,
             loss: LossType,
             p_hat: Distribution,
             n: int=0,

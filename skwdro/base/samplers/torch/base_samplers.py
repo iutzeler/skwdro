@@ -64,7 +64,7 @@ class NoLabelsSampler(BaseSampler, ABC):
             zeta: pt.Tensor,
             zeta_labels: NoneType
             ) -> pt.Tensor:
-        return self.data_s.log_prob(pt.abs(xi - zeta)).unsqueeze(-1)
+        return self.data_s.log_prob(zeta).unsqueeze(-1)
 
 class LabeledSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution, seed: int):
@@ -94,8 +94,8 @@ class LabeledSampler(BaseSampler, ABC):
             zeta: pt.Tensor,
             zeta_labels: pt.Tensor
             ) -> pt.Tensor:
-        lp = self.data_s.log_prob(pt.abs(xi - zeta))\
-                + self.labels_s.log_prob(pt.abs(xi_labels - zeta_labels))
+        lp = self.data_s.log_prob(zeta)\
+                + self.labels_s.log_prob(zeta_labels)
         return lp.unsqueeze(-1)
 
 # Helper class ########################

@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Union, Optional, Tuple
 import numpy as np
 import torch as pt
 
@@ -84,6 +84,8 @@ def sample_pi_0(epsilon, n_samples, xi):
     return zeta
 # ##############################################################
 
+Steps = Union[int, Tuple[int, int]]
+
 def detach_tensor(tensor: pt.Tensor) -> np.ndarray:
     out = tensor.detach().cpu().numpy().flatten()
     return out # float(out) if len(out) == 1 else out
@@ -108,4 +110,12 @@ def normalize_maybe_vects(tensor: Optional[pt.Tensor], threshold: float=1., dim:
 
 def normalize_just_vects(tensor: pt.Tensor, threshold: float=1., dim: int=0) -> pt.Tensor:
     n = pt.linalg.norm(tensor, dim=dim, keepdims=True)
-    return tensor / pt.min(pt.tensor(threshold), n)
+    return tensor / n * pt.min(pt.tensor(threshold), n)
+
+def interpret_steps_struct(steps_spec: Steps, default_split: float=.3) -> Tuple[int, int]:
+    if isinstance(steps_spec, int):
+        assert 0 <= default_split <= 1.
+        pretrain_iters = int(steps_spec * default_split)
+        return pretrain_iters, steps_spec
+    else: # already tuple
+        return steps_spec

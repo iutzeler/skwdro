@@ -8,28 +8,32 @@ An example of logistic regression for binary classification.
 
 from time import time
 
-from sklearn.datasets import make_blobs
+from sklearn.model_selection import train_test_split
 from numpy.random import RandomState
 import matplotlib.pyplot as plt
 import numpy as np
 import torch as pt
 
-from skwdro.linear_models import LogisticRegression
+from skwdro.linear_models import LinearRegression
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
 
 
 RHO = 1e-4
+EPSILON = 1e-3
 
 # Generate the random data ##################################################
 rng = RandomState(seed=666)
 n = 100
-d = 2
-X, y, centers = make_blobs(n, d, centers=2, shuffle=True, random_state=rng, return_centers=True) # type: ignore
-y = 2 * y - 1 # type: ignore
+
+X = np.random.uniform(-1., 1., (n, 1))
+alpha = rng.randn()
+beta = rng.rand()
+y = alpha * X.squeeze() + beta + 2e-1 * rng.randn(n)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=.3, random_state=rng)
 
 # Center data to avoid learning intercept
-#X -= centers.mean(axis=0, keepdims=True) # type : ignore
 # ###########################################################################
 cost=NormLabelCost(2., 1., 100., "Kappa-cost (w/ kappa=100)")
 #cost=NormCost(2., 1., "=")
@@ -39,15 +43,16 @@ cost=NormLabelCost(2., 1., 100., "Kappa-cost (w/ kappa=100)")
 print("Specific solver w/ LP fast solve #####")
 t = time()
 print(".", end='')
-estimator = LogisticRegression(
+estimator = LinearRegression(
         rho=RHO,
         l2_reg=0.,
+        solver_reg=EPSILON,
         fit_intercept=True,
         cost="n-NC-2-2",
         solver="dedicated"
         )
 print(".", end='')
-estimator.fit(X, y)
+estimator.fit(X_train, y_train)
 print(".")
 
 print("Lambda: ", estimator.dual_var_)
@@ -60,8 +65,9 @@ print("#######")
 print("Sinkhorn solver #####")
 t = time()
 print(".", end='')
-estimator_ent = LogisticRegression(
+estimator_ent = LinearRegression(
         rho=RHO,
+        solver_reg=EPSILON,
         l2_reg=0.,
         fit_intercept=True,
         cost="t-NLC-2-2",
@@ -71,7 +77,7 @@ estimator_ent = LogisticRegression(
 
 
 print(".", end='')
-estimator_ent.fit(X, y)
+estimator_ent.fit(X_train, y_train)
 print(".")
 
 print("Lambda: ", estimator_ent.dual_var_)
@@ -82,8 +88,9 @@ print("Elapsed time: ", time()-t)
 print("Sinkhorn pre-sampled solver #####")
 t = time()
 print(".", end='')
-estimator_pre = LogisticRegression(
+estimator_pre = LinearRegression(
         rho=RHO,
+        solver_reg=EPSILON,
         l2_reg=0.,
         fit_intercept=True,
         cost="t-NLC-2-2",
@@ -93,7 +100,7 @@ estimator_pre = LogisticRegression(
 
 
 print(".", end='')
-estimator_pre.fit(X, y)
+estimator_pre.fit(X_train, y_train)
 print(".")
 
 print("Lambda: ", estimator_pre.dual_var_)
@@ -103,7 +110,7 @@ print("Elapsed time: ", time()-t)
 print("ERM (rho=0) solver #####")
 t = time()
 print(".", end='')
-estimator_erm = LogisticRegression(
+estimator_erm = LinearRegression(
         rho=0.,
         l2_reg=0.,
         fit_intercept=True,
@@ -114,32 +121,29 @@ estimator_erm = LogisticRegression(
 
 
 print(".", end='')
-estimator_erm.fit(X, y)
+estimator_erm.fit(X_train, y_train)
 print(".")
 
 print("Lambda: ", estimator_erm.dual_var_)
 print("Theta: ", estimator_erm.coef_, estimator_erm.intercept_)
 print("Elapsed time: ", time()-t)
-def plot_line(est, x):
-    c0, c1 = est.coef_
-    return -(x*c0 + est.intercept_) / c1
 
-line_plot = [X[:, 0].min(), X[:, 0].max()] # type: ignore
+def plot_line(est, x):
+    c0, c1 = est.coef_, est.intercept_
+    return c0 * x + c1
+
+line_plot = [X.min(), X.max()] # type: ignore
 fig, axes = plt.subplots(2, 2)
 for ax, name, est in zip(
         axes.flatten(),
         ("cvx", "BFGS", "Adam", "Adam-ERM"),
         (estimator, estimator_pre, estimator_ent, estimator_erm)
          ):
-    ax.scatter(X[y==-1, 0], X[y==-1, 1], color="r") # type: ignore
-    ax.scatter(X[y==1, 0], X[y==1, 1], color="b") # type: ignore
+    ax.scatter(X_train.flatten(), y_train, color="r") # type: ignore
+    ax.scatter(X_test.flatten(), y_test, color="b") # type: ignore
     ax.plot(line_plot, [plot_line(estimator, line_plot[0]), plot_line(estimator, line_plot[1])], 'k:', label=f"cvx (baseline)")
-    ax.plot(line_plot, [plot_line(est, line_plot[0]), plot_line(est, line_plot[1])], 'g--', label=name+f": {est.score(X, y)}")
+    ax.plot(line_plot, [plot_line(est, line_plot[0]), plot_line(est, line_plot[1])], 'g-.', label=name+f": {est.score(X_test, y_test):.5f}/{est.score(X_train, y_train):.5f}")
     ax.legend()
-# plt.plot(line_plot, [plot_line(estimator, line_plot[0]), plot_line(estimator, line_plot[1])], 'k--', label=f"cvx: {estimator.score(X, y)}")
-# plt.plot(line_plot, [plot_line(estimator_ent, line_plot[0]), plot_line(estimator_ent, line_plot[1])], 'k:', label=f"Adam: {estimator_ent.score(X, y)}")
-# plt.plot(line_plot, [plot_line(estimator_pre, line_plot[0]), plot_line(estimator_pre, line_plot[1])], 'k-', label=f"BFGS: {estimator_pre.score(X, y)}")
-# plt.plot(line_plot, [plot_line(estimator_erm, line_plot[0]), plot_line(estimator_erm, line_plot[1])], 'k-', label=f"Adam - ERM: {estimator_erm.score(X, y)}")
 
 plt.show()
 

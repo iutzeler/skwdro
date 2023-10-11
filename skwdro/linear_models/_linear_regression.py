@@ -14,6 +14,7 @@ import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
+from skwdro.base.costs_torch import Cost as TorchCost
 from skwdro.base.losses import QuadraticLoss
 from skwdro.base.losses_torch import QuadraticLoss as QuadraticLossTorch
 from skwdro.base.samplers.torch import LabeledCostSampler
@@ -84,7 +85,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  fit_intercept=True,
                  cost="t-NLC-2-2",
                  solver="entropic_torch",
-                 solver_reg=1.0,
+                 solver_reg=1e-2,
                  n_zeta_samples: int=10,
                  random_state: int=0,
                  opt_cond=None
@@ -170,11 +171,12 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
         elif "torch" in self.solver:
+            assert isinstance(self.cost_, TorchCost)
             custom_sampler = LabeledCostSampler(
                     self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(self.rho),
+                    epsilon=pt.tensor(self.solver_reg),
                     seed=self.random_state
                 )
 
