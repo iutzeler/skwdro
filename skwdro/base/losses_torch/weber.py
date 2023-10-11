@@ -17,8 +17,9 @@ class WeberLoss(Loss):
             sampler: LabeledSampler,
             *,
             d: int=2,
+            l2reg: Optional[float]=None
             ):
-        super(WeberLoss, self).__init__(sampler)
+        super(WeberLoss, self).__init__(sampler, l2reg=l2reg)
         self.pos = nn.Parameter(pt.zeros(d))
 
     def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):

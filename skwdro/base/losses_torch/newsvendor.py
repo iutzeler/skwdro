@@ -39,8 +39,9 @@ class NewsVendorLoss_torch(Loss):
             *,
             k: float=5,
             u: float=7,
+            l2reg: Optional[float]=None,
             name: Optional[str]="NewsVendor loss"):
-        super(NewsVendorLoss_torch, self).__init__(sampler)
+        super(NewsVendorLoss_torch, self).__init__(sampler, l2reg=l2reg)
         self.k = nn.Parameter(pt.tensor(float(k)), requires_grad=False)
         self.u = nn.Parameter(pt.tensor(float(u)), requires_grad=False)
         self.name = name
