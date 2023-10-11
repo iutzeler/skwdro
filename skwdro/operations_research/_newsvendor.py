@@ -66,6 +66,7 @@ class NewsVendor(BaseEstimator):
             k: float=5,
             u: float=7,
             cost: str="n-NC-1-2",
+            l2_reg: float=0.,
             solver_reg: float=.01,
             n_zeta_samples: int=10,
             solver: str="entropic",
@@ -79,6 +80,7 @@ class NewsVendor(BaseEstimator):
         self.k      = k
         self.u      = u
         self.cost   = cost
+        self.l2_reg = l2_reg
         self.solver = solver
         self.solver_reg = solver_reg
         self.n_zeta_samples = n_zeta_samples
@@ -138,7 +140,7 @@ class NewsVendor(BaseEstimator):
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
                 # Default is to sample once the zetas
                 self.problem_.loss = DualPreSampledLoss(
-                        NewsVendorLoss_torch(custom_sampler, k=self.k,u=self.u),
+                        NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
                         self.cost_,
                         self.n_zeta_samples,
                         epsilon_0=pt.tensor(self.solver_reg),
@@ -147,7 +149,7 @@ class NewsVendor(BaseEstimator):
             elif self.solver == "entropic_torch_post":
                 # Use this option to resample the zetas at each gradient step
                 self.problem_.loss = DualLoss(
-                        NewsVendorLoss_torch(custom_sampler, k=self.k,u=self.u),
+                        NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
                         self.cost_,
                         self.n_zeta_samples,
                         n_iter=1000,

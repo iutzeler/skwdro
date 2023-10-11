@@ -57,6 +57,7 @@ class Weber(BaseEstimator):
             rho: float=1e-1,
             kappa: float=10.0,
             solver_reg: float=1e-2,
+            l2_reg: float=0.,
             n_zeta_samples: int=10,
             cost: str="t-NLC-2-2",
             solver="entropic_torch",
@@ -70,6 +71,7 @@ class Weber(BaseEstimator):
         self.kappa  = kappa
         self.solver = solver
         self.solver_reg = solver_reg
+        self.l2_reg = l2_reg
         self.n_zeta_samples = n_zeta_samples
         self.random_state = random_state
         self.cost = cost
@@ -96,7 +98,7 @@ class Weber(BaseEstimator):
             try:
                 self.rho = float(self.rho)
             except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
+                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
         m,d = np.shape(X)
 
@@ -120,7 +122,7 @@ class Weber(BaseEstimator):
             if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
                 self.problem_ = WDROProblem(
                                     loss=DualLoss(
-                                        WeberLoss(custom_sampler,d=d),
+                                        WeberLoss(custom_sampler, d=d, l2reg=self.l2_reg),
                                         cost,
                                         n_samples=self.n_zeta_samples,
                                         epsilon_0=pt.tensor(self.solver_reg),
@@ -138,7 +140,7 @@ class Weber(BaseEstimator):
             elif self.solver == "entropic_torch_pre":
                 self.problem_ = WDROProblem(
                                     loss=DualPreSampledLoss(
-                                        WeberLoss(custom_sampler,d=d),
+                                        WeberLoss(custom_sampler, d=d, l2reg=self.l2_reg),
                                         cost,
                                         n_samples=self.n_zeta_samples,
                                         epsilon_0=pt.tensor(self.solver_reg),
