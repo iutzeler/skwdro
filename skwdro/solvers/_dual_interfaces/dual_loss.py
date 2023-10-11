@@ -48,7 +48,8 @@ class _DualFormulation(_SampleDisplacer):
                     maybe_unsqueeze(xi_labels, dim=0), # (1, m, d') or None
                 ).mean() # (1,)
         elif self.rho > 0.:
-            first_term = self.lam * self.rho # (1,)
+            p = pt.tensor(self.cost.power)
+            first_term = self.lam * self.rho.pow(p) # (1,)
 
             if self.imp_samp:
                 # For importance sampling, we displace all the samples.
@@ -112,9 +113,9 @@ class _DualFormulation(_SampleDisplacer):
     def get_initial_guess_at_dual(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]):
         if self.rho > 0.:
             c = self.cost
-            rho_N = xi.size(0) * self.rho # (1,)
             if issubclass(type(c), NormCost):
                 p = pt.tensor(c.power)
+                rho_N = xi.size(0) * self.rho.pow(p) # (1,)
                 q: pt.Tensor = p / (p - 1.) if p != 1. else pt.tensor(pt.inf)
 
                 grads, grads_labels = self.get_optimal_displacement(xi, xi_labels) # (1, m, d), (1, m, d')
