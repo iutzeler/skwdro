@@ -11,7 +11,7 @@ import os
 L2_REG = 1e-5 #Don't change
 
 def fit_estimator(my_rho_norm, reg, sigma, X, y):
-    rho_cost = 2 * my_rho_norm ** 2 # because no 0.5 in cost
+    rho_cost = 2 * my_rho_norm# ** 2 # because no 0.5 in cost
     estimator = LogisticRegression(
             rho=rho_cost,
             l2_reg=L2_REG,
