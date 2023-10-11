@@ -66,7 +66,7 @@ class NormCost(TorchCost):
             ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         if xi_labels is not None and rhs_labels is not None:
             if self.p == 2 == self.power:
-                return xi + .5 * rhs, xi_labels + .5 * rhs_labels
+                return xi + .5 * rhs, xi_labels # NO adding + .5 * rhs_labels
             else:
                 raise NotImplementedError()
         else:
