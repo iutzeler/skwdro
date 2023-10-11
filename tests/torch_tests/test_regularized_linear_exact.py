@@ -39,7 +39,7 @@ def decode(filename):
 
 files = os.listdir(dirpath)
 
-ATOL = RTOL = 1e-1
+ATOL = RTOL = 5e-2
 #@pytest.mark.xfail()
 @pytest.mark.parametrize("rho, eps, sigma, X, y, theta, robust_loss", [decode(filename) for filename in files])
 def test_log_reg_reg(rho, eps, sigma, X, y, theta, robust_loss):
