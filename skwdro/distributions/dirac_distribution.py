@@ -52,11 +52,11 @@ class Dirac(dst.ExponentialFamily):
         return self.loc.expand(self._extended_shape(sample_shape))
 
     def log_prob(self, value: pt.Tensor) -> pt.Tensor:
-        return pt.tensor(pt.inf) if (value - self.loc).abs().sum() == 0. else pt.tensor(-pt.inf)
+        return pt.tensor(0.) if (value - self.loc).abs().sum() == 0. else pt.tensor(-pt.inf)
 
     def enumerate_support(self, expand: bool=True) -> pt.Tensor:
         if expand:
-            return self.r_sample(pt.Size((1,)))
+            return self.rsample(pt.Size((1,)))
         else:
             raise NotImplementedError
 
