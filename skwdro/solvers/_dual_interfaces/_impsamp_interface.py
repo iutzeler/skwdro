@@ -11,7 +11,7 @@ class _SampleDisplacer(_SampledDualLoss):
             self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor],
-            threshold: float=1.
+            threshold: float=1e10
             ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         r"""
         Thresholds the displacement of the samples to avoid numerical instabilities.
