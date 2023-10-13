@@ -2,12 +2,16 @@ from typing import Tuple, Optional
 
 import torch as pt
 
+from prodigyopt import Prodigy
+from dadaptation import DAdaptAdam
+
 from skwdro.base.costs_torch import Cost
 from skwdro.base.losses_torch import Loss
 from skwdro.solvers._dual_interfaces import _DualLoss
 from skwdro.solvers.utils import Steps
 
 IMP_SAMP = True
+ADAPT = True
 
 class DualPostSampledLoss(_DualLoss):
     r""" Dual loss implementing a sampling of the :math:`\zeta` vectors at each forward pass.
@@ -34,13 +38,27 @@ class DualPostSampledLoss(_DualLoss):
                  ) -> None:
         super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
 
-        self._opti = pt.optim.AdamW(
-                self.parameters(),
-                lr=5e-2,
-                betas=(.99, .999),
-                weight_decay=0.,
-                amsgrad=True,
-                foreach=True)
+        if ADAPT:
+            self._opti = Prodigy(
+                    self.parameters(),
+                    lr=5e-2,
+                    betas=(.9, .999),
+                    safeguard_warmup=True,
+                    weight_decay=0.)
+            self._opti = DAdaptAdam(
+                    self.parameters(),
+                    lr=1.0,
+                    betas=(.9, .999),
+                    weight_decay=0.)
+
+        else:
+            self._opti = pt.optim.AdamW(
+                    self.parameters(),
+                    lr=5e-2,
+                    betas=(.99, .999),
+                    weight_decay=0.,
+                    amsgrad=True,
+                    foreach=True)
 
     def reset_sampler_mean(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None):
         """ Prepare the sampler for a new batch of :math:`xi` data.

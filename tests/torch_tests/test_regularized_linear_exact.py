@@ -44,5 +44,6 @@ ATOL = RTOL = 5e-2
 @pytest.mark.parametrize("rho, eps, sigma, X, y, theta, robust_loss", [decode(filename) for filename in files])
 def test_log_reg_reg(rho, eps, sigma, X, y, theta, robust_loss):
     est_theta, est_robust_loss = fit_estimator(rho, eps, sigma, X, y)
+    print(np.linalg.norm(est_theta - theta))
     assert np.isclose(est_theta, theta, atol=ATOL, rtol=RTOL).all()
     assert np.isclose(est_robust_loss, robust_loss, atol=ATOL, rtol=RTOL).all()
