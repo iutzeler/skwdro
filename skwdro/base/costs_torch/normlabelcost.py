@@ -74,6 +74,8 @@ class NormLabelCost(NormCost):
             return distance**self.power
 
     def _sampler_labels(self, xi_labels, epsilon):
+        if epsilon is None:
+            epsilon = 1e-3
         if self.kappa == float('inf'):
             return Constant(xi_labels)
         if self.power == 1:

@@ -36,6 +36,8 @@ class NormCost(TorchCost):
         return pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
 
     def _sampler_data(self, xi, epsilon):
+        if epsilon is None:
+            epsilon = 1e-3
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(

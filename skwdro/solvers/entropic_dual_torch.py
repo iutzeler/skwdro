@@ -70,6 +70,8 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
     """
     if isinstance(sigma_, float): sigma = pt.tensor(sigma_)
     elif isinstance(sigma_, pt.Tensor): sigma = sigma_
+    elif sigma_ is None:
+        sigma = wdro_problem.rho / 2
     else: raise ValueError("Please provide a valid type for sigma_ parameter in solve_dual.")
 
     # Cast our raw data into tensors
