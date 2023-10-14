@@ -7,6 +7,7 @@ from skwdro.solvers.oracle_torch import _DualLoss
 
 from skwdro.solvers.result import wrap_solver_result
 from skwdro.solvers.utils import detach_tensor, interpret_steps_struct
+from skwdro.solvers.optim_cond import OptCondTorch as OptCond
 from skwdro.base.problems import Distribution, WDROProblem
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
@@ -157,10 +158,13 @@ def optim_presample(
     loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
 
+    opt_cond = OptCond('inf')
+
     # Train WDRO
-    for _ in range(train_iters):
+    for iteration in range(train_iters):
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
+        if opt_cond(loss, iteration): break
         with pt.no_grad():
             _is = loss.imp_samp
             loss.imp_samp = not _is
@@ -221,8 +225,10 @@ def optim_postsample(
     loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
 
+    opt_cond = OptCond('inf')
+
     # Train WDRO
-    for _ in range(train_iters):
+    for iteration in range(train_iters):
         optimizer.zero_grad()
 
         # Resamples zetas at forward pass
@@ -232,6 +238,7 @@ def optim_postsample(
         objective.backward()
         # Perform the stochastic step
         optimizer.step()
+        if opt_cond(loss, iteration): break
         losses.append(objective.item())
 
     return losses
