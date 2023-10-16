@@ -3,15 +3,58 @@ from typing import Tuple, Optional
 import torch as pt
 
 from prodigyopt import Prodigy
-from dadaptation import DAdaptAdam
+from mechanic_pytorch import mechanize
 
 from skwdro.base.costs_torch import Cost
 from skwdro.base.losses_torch import Loss
 from skwdro.solvers._dual_interfaces import _DualLoss
-from skwdro.solvers.utils import Steps
+from skwdro.solvers.utils import Steps, interpret_steps_struct
 
 IMP_SAMP = True
-ADAPT = True
+
+class CompositeOptimizer(pt.optim.Optimizer):
+    def __init__(self, params, lbd, n_iter, optimizer):
+        self.lbd = lbd
+        if optimizer == 'mechanic':
+            make_optim = lambda params : mechanize(pt.optim.Adam)(params, lr=1.0, weight_decay=0.)
+            self.opts = {
+                    'params': make_optim(params),
+                    'lbd': make_optim([lbd])
+                    }
+            self.schedulers = {}
+        elif optimizer == 'prodigy':
+            make_optim = lambda params : Prodigy(params, lr=1.0, weight_decay=0., safeguard_warmup=True, use_bias_correction=True)
+            self.opts = {
+                    'params': make_optim(params),
+                    'lbd': make_optim([lbd])
+                    }
+            pretrain_iters, train_iters = interpret_steps_struct(n_iter)
+            T = {'params': pretrain_iters + train_iters, 'lbd': train_iters}
+            self.schedulers = {k:pt.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=T[k]) for (k, opt) in self.opts.items()}
+
+        self.init_state_lbd = self.opts['lbd'].state_dict()
+    def step(self):
+        for opt in self.opts.values():
+            opt.step()
+        for scheduler in self.schedulers.values():
+            scheduler.step()
+        with pt.no_grad():
+            self.lbd.clamp_(0., None)
+     
+    def zero_grad(self):
+        for opt in self.opts.values():
+            opt.zero_grad()
+
+    def state_dict(self):
+        return {k:opt.state_dict() for (k, opt) in self.opts.items()}
+
+    def load_state_dict(self, d):
+        for (k, opt) in self.opts.items():
+            opt.load_state_dict(d[k])
+
+    def reset_lbd_state(self):
+        self.opts['lbd'].load_state_dict(self.init_state_lbd)
+
 
 class DualPostSampledLoss(_DualLoss):
     r""" Dual loss implementing a sampling of the :math:`\zeta` vectors at each forward pass.
@@ -34,23 +77,14 @@ class DualPostSampledLoss(_DualLoss):
                  n_iter: Steps=10000,
                  gradient_hypertuning: bool=False,
                  *,
-                 imp_samp: bool=IMP_SAMP
+                 imp_samp: bool=IMP_SAMP,
+                 adapt="prodigy",
                  ) -> None:
         super(DualPostSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
-
-        if ADAPT:
-            self._opti = Prodigy(
-                    self.parameters(),
-                    lr=5e-2,
-                    betas=(.9, .999),
-                    safeguard_warmup=True,
-                    weight_decay=0.)
-            self._opti = DAdaptAdam(
-                    self.parameters(),
-                    lr=1.0,
-                    betas=(.9, .999),
-                    weight_decay=0.)
-
+        if adapt:
+            assert adapt in ("mechanic", "prodigy")
+            self._opti = CompositeOptimizer(self.primal_loss.parameters(), self.lam, n_iter, adapt)
+       
         else:
             self._opti = pt.optim.AdamW(
                     self.parameters(),

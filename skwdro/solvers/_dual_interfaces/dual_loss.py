@@ -160,5 +160,5 @@ class _DualLoss(_DualFormulation):
         ..math::
             \lambda := \mbox{soft}^+(\tilde{\lambda}})
         """
-        return F.softplus(self._lam)
-        #return self._lam
+        # return F.softplus(self._lam)
+        return self._lam

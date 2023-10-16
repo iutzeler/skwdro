@@ -62,10 +62,10 @@ class HybridOpt(object):
 				for p in group['params']:
 					with torch.no_grad():
 						rules[key](p)
-	def step(self):
+	def step(self, *args, **kwargs):
 		self._apply_rules(PRERULES)
 
-		super(HybridOpt, self).step()
+		super(HybridOpt, self).step(*args, **kwargs)
 
 		self._apply_rules(POSTRULES)
 

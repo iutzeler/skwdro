@@ -89,6 +89,7 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
     # If user wants to specify a custom optimizer, they need to register an instance
     # of a subclass of torch optimizers in the relevant attribute.
     optimizer: pt.optim.Optimizer = loss.optimizer
+        
 
     # _DualLoss.presample determines the way the optimization is performed
     optim_ = optim_presample if loss.presample else optim_postsample
@@ -157,6 +158,9 @@ def optim_presample(
     loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
 
+    if hasattr(optimizer, "reset_lbd_state"):
+        optimizer.reset_lbd_state()
+
     # Train WDRO
     for _ in range(train_iters):
         # Do not resample, only step according to BFGS-style algo
@@ -220,6 +224,9 @@ def optim_postsample(
     # Init lambda
     loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
+
+    if hasattr(optimizer, "reset_lbd_state"):
+        optimizer.reset_lbd_state()
 
     # Train WDRO
     for _ in range(train_iters):
