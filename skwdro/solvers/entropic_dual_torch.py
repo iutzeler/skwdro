@@ -93,7 +93,10 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
 
     # _DualLoss.presample determines the way the optimization is performed
     optim_ = optim_presample if loss.presample else optim_postsample
-    losses = optim_(optimizer, xi, xi_labels, loss)
+
+    opt_cond: OptCond = wdro_problem.opt_cond
+
+    losses = optim_(optimizer, xi, xi_labels, loss, opt_cond)
     theta = detach_tensor(loss.theta)
     intercept = loss.intercept
     if intercept is not None:
@@ -106,7 +109,9 @@ def optim_presample(
         optimizer: pt.optim.Optimizer,
         xi: pt.Tensor,
         xi_labels: Optional[pt.Tensor],
-        loss: _DualLoss) -> List[float]:
+        loss: _DualLoss,
+        opt_cond: OptCond
+        ) -> List[float]:
     r""" Optimize the dual loss by sampling the :math:`zeta` values once at the begining of
     the optimization, the performing a deterministic gradient descent (e.g. BFGS style algorithm).
 
@@ -158,8 +163,6 @@ def optim_presample(
     loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
 
-    opt_cond = OptCond('inf')
-
     # Train WDRO
     for iteration in range(train_iters):
         # Do not resample, only step according to BFGS-style algo
@@ -178,7 +181,9 @@ def optim_postsample(
         optimizer: pt.optim.Optimizer,
         xi: pt.Tensor,
         xi_labels: Optional[pt.Tensor],
-        loss: _DualLoss) -> List[pt.Tensor]:
+        loss: _DualLoss,
+        opt_cond: OptCond
+        ) -> List[pt.Tensor]:
     r""" Optimize the dual loss by resampling the :math:`\zeta` values at each gradient descent step.
 
     Parameters
@@ -224,8 +229,6 @@ def optim_postsample(
     # Init lambda
     loss.get_initial_guess_at_dual(xi, xi_labels)
     loss.erm_mode = False
-
-    opt_cond = OptCond('inf')
 
     # Train WDRO
     for iteration in range(train_iters):

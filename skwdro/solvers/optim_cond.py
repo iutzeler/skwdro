@@ -51,13 +51,12 @@ class OptCondTorch:
     r""" Callable object representing some optimality conditions
 
     May track two different expression of the error:
-    * the relative error: :math:`\|u-u_{ref}\| < tol \|u_{ref}\|`
-    * the absolute error: :math:`\|u-u_{ref}\| < tol`
+    * the relative error: :math:`\|u_n\| < tol \|u_0\|`
+    * the absolute error: :math:`\|u_n\| < tol`
 
-    Those equations are evaluated for three possible metrics:
-    * the progress in the gradient of the dual loss with respect to the parameter of interest :math:`\nabla_{\theta ,\lambda} J(\zeta)`
-    * the progress of the parameters themselves :math:`(\theta , \lambda)`
-    * the raw value of the gradient (when it goes to :math:`0` the algorithm must have converged), which is the above formula applied to :math:`u_{ref}=0` in absolute tolerance
+    Those equations are evaluated for three possible metrics :math:`u_n`:
+    * the progress in the gradient of the dual loss with respect to the parameter of interest :math:`\nabla_{\theta ,\lambda} J_{\theta_n}(\zeta_n)`
+    * the progress of the parameters themselves :math:`(\theta_n-\theta_{n-1} , \lambda_n-\lambda_{n-1})`
 
     To evaluate the above metrics, one may chose to monitor the convergence in:
     * only :math:`\theta`
@@ -79,7 +78,7 @@ class OptCondTorch:
     mode: str
         either ``"rel"`` for relative progress or ``"abs"`` for absolute progress. Not checked if the metric is the gradient value
     metric:
-        either ``"grad"`` for gradient improvement/change over time, ``"param"`` for parameter-space improvement/change over time, or ``"grad_value"`` for raw absolute parameter-gradient value.
+        either ``"grad"`` for gradient improvement/change over time, or ``"param"`` for parameter-space improvement/change over time
     """
     def __init__(
             self,
@@ -98,13 +97,17 @@ class OptCondTorch:
         self.tol_lambda = tol_lambda
         self.monitoring = monitoring
         self.mode = mode
-        self.metric = set(metric.split('&'))
+        self.metric = metric
         self.max_iter: int = 0
 
         self.l_mem: Optional[pt.Tensor] = None
         self.t_mem: Optional[pt.Tensor] = None
-        self.l_grad_mem: Optional[pt.Tensor] = None
-        self.t_grad_mem: Optional[pt.Tensor] = None
+        self.l_0: Optional[pt.Tensor] = None
+        self.t_0: Optional[pt.Tensor] = None
+        self.l_grad_0: Optional[pt.Tensor] = None
+        self.t_grad_0: Optional[pt.Tensor] = None
+        self.delta_l_1: Optional[pt.Tensor] = None
+        self.delta_t_1: Optional[pt.Tensor] = None
 
     def __call__(self, dual_loss: BaseDualLoss, it_number: int) -> bool:
         r"""
@@ -188,23 +191,35 @@ class OptCondTorch:
         if self.tol_theta <= 0.:
             return cond
         else:
-            if "grad" in self.metric:
-                mem = self.t_grad_mem
-                self.t_grad_mem = new = pt.linalg.norm(flat_theta_grad(), self.order)
+            if "grad" == self.metric:
+                mem = self.t_grad_0
                 if mem is None:
-                    cond = cond or False
+                    self.t_grad_0 = pt.linalg.norm(flat_theta_grad(), self.order)
+                    return False
                 else:
-                    cond = cond or self.check_metric(new, mem, self.tol_theta)
-            if "param" in self.metric:
-                mem = self.t_mem
-                self.t_mem = new = pt.linalg.norm(flat_theta(), self.order)
-                if mem is None:
-                    cond = cond or False
+                    new = pt.linalg.norm(flat_theta_grad(), self.order)
+                    return self.check_metric(new, mem, self.tol_theta)
+            elif "param" == self.metric:
+                mem0 = self.t_0
+                mem1 = self.delta_t_1
+                if mem0 is None:
+                    self.t_0 = flat_theta()
+                    return False
+                elif mem1 is None:
+                    assert mem0 is not None
+                    self.t_mem = flat_theta()
+                    self.delta_t_1 = pt.linalg.norm(self.t_mem - mem0, self.order)
+                    return False
                 else:
-                    cond = cond or self.check_metric(new, mem, self.tol_theta)
-            if "grad_value" in self.metric:
-                cond = cond or pt.linalg.norm(flat_theta_grad(), self.order) < self.tol_theta
-            return cond
+                    mem = self.t_mem
+                    assert mem is not None
+                    new = flat_theta()
+                    self.t_mem = new
+                    delta = pt.linalg.norm(new - mem, self.order)
+                    assert self.delta_t_1 is not None
+                    return self.check_metric(delta, self.delta_t_1, self.tol_theta)
+            else:
+                return False
 
     def check_l(self, lam: LazyTensor, lam_grad: LazyTensor) -> bool:
         r"""
@@ -223,27 +238,38 @@ class OptCondTorch:
         cond: bool
             green light to stop algorithm
         """
-        if self.tol_theta <= 0.:
+        if self.tol_lambda <= 0.:
             return False
         else:
-            if self.metric == "grad":
-                mem = self.l_grad_mem
-                self.l_grad_mem = new = lam_grad().sum()
+            if "grad" == self.metric:
+                mem = self.l_grad_0
                 if mem is None:
+                    self.l_grad_0 = pt.abs(lam_grad())
                     return False
                 else:
-                    return self.check_metric(new, mem, self.tol_lambda)
-            elif self.metric == "param":
-                mem = self.l_mem
-                self.l_mem = new = lam().sum()
-                if mem is None:
+                    new = pt.abs(lam_grad())
+                    return self.check_metric(new, mem, self.tol_theta)
+            elif "param" == self.metric:
+                mem0 = self.t_0
+                mem1 = self.delta_l_1
+                if mem0 is None:
+                    self.t_0 = lam()
+                    return False
+                elif mem1 is None:
+                    assert mem0 is not None
+                    self.l_mem = lam()
+                    self.delta_l_1 = pt.abs(self.l_mem - mem0)
                     return False
                 else:
-                    return self.check_metric(new, mem, self.tol_lambda)
-            elif self.metric == "grad_value":
-                return lam_grad().item() < self.tol_lambda
+                    mem = self.l_mem
+                    assert mem is not None
+                    new = lam()
+                    self.l_mem = new
+                    delta = pt.abs(new - mem)
+                    assert self.delta_l_1 is not None
+                    return self.check_metric(delta, self.delta_l_1, self.tol_lambda)
             else:
-                raise ValueError("Please provide a valid value for the metric monitored")
+                return False
 
     def check_metric(self, new_obs: pt.Tensor, memory: pt.Tensor, tol: float) -> bool:
         r"""
@@ -265,9 +291,9 @@ class OptCondTorch:
         """
         assert tol > 0.
         if self.mode == "rel":
-            return pt.abs(memory - new_obs).sum().item() < tol * memory.sum().item()
+            return new_obs.sum().item() < tol * memory.sum().item()
         elif self.mode == "abs":
-            return pt.abs(memory - new_obs).sum().item() < tol
+            return new_obs.sum().item() < tol
         else:
             raise ValueError("Please set the optcond mode to either 'rel' for relative tolerance or 'abs'")
 

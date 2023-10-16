@@ -5,6 +5,7 @@ from skwdro.base.costs import Cost
 from skwdro.base.costs_torch import Cost as TorchCost
 from skwdro.base.losses import Loss as LossNumpy
 from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
+from skwdro.solvers.optim_cond import OptCondTorch as OptCond
 
 Bounds = Optional[List[float]]
 LossType = Union[LossNumpy, LossTorch]
@@ -77,6 +78,13 @@ class WDROProblem:
             xi_bounds: Bounds=None,
             xi_labels_bounds: Bounds=None,
             rho: float=0.,
+            *,
+            order_stop: int=2,
+            tol_theta_stop: float=1e-6,
+            tol_lambda_stop: float=1e-10,
+            monitoring_stop: str="t&l",
+            mode_stop: str="rel",
+            metric_stop: str="param",
             name="WDRO Problem"):
 
         ## Optimization variable
@@ -106,6 +114,15 @@ class WDROProblem:
         ## Problem name
         self.name = name
 
+        ## Optimality conditions
+        self.opt_cond = OptCond(
+                order_stop,
+                tol_theta_stop,
+                tol_lambda_stop,
+                monitoring=monitoring_stop,
+                mode=mode_stop,
+                metric=metric_stop
+            )
 
 
 class EmpiricalDistributionWithoutLabels(Distribution):
