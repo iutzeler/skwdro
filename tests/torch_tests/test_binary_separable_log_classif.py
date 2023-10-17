@@ -29,15 +29,7 @@ def fit_estimator(fi=True):
     return estimator
 
 def angle_to_northeast(coefs):
-    r"""
-    Angle between theta and [1,1]^T.
-
-    .. math::
-        \cos\alpha = \frac{\|\vec{1}\vec{1}^T\theta\|}{\|\vec{1}\|^2\|\theta\|}\\
-            = \frac{\sqrt{2}|\theta_1+\theta_2|}{2\|\theta\|}\\
-            = \frac{|\theta_1+\theta_2|}{\sqrt{2}\|\theta\|}
-    """
-    return np.arccos(abs(coefs.sum())/np.linalg.norm(coefs)/np.sqrt(2))
+    return np.abs(1. - abs(coefs.sum())/np.linalg.norm(coefs)/np.sqrt(2))
 
 def test_fit_enthropic_fi():
     estimator = fit_estimator()
