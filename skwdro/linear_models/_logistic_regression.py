@@ -87,7 +87,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  fit_intercept: bool=True,
                  cost: str="t-NLC-2-2",
                  solver="entropic_torch",
-                 solver_reg=0.01,
+                 solver_reg=None,
                  sampler_reg=None,
                  n_zeta_samples: int=10,
                  random_state: int=0,
@@ -182,7 +182,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 theta_bounds=[-1e8,1e8],
                 rho=self.rho
             )
-        sigma = self.sampler_reg if self.sampler_reg is not None else self.solver_reg
         # #########################################
 
         if self.solver=="entropic":
@@ -209,7 +208,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     self.cost_,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(sigma),
+                    epsilon=self.sampler_reg,
                     seed=self.random_state
                 )
             # The problem loss is changed to a more suitable "dual loss"
@@ -220,7 +219,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                         self.cost_,
                         n_samples=self.n_zeta_samples,
                         n_iter=1000,
-                        epsilon_0=pt.tensor(self.solver_reg),
+                        epsilon_0=self.solver_reg,
                         rho_0=pt.tensor(self.rho)
                     )
 
@@ -230,7 +229,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                         LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
                         self.cost_,
                         n_samples=self.n_zeta_samples,
-                        epsilon_0=pt.tensor(self.solver_reg),
+                        epsilon_0=self.solver_reg,
                         rho_0=pt.tensor(self.rho)
                     )
             else:

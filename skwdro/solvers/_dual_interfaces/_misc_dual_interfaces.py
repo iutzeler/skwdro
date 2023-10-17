@@ -25,12 +25,12 @@ class _DualLossBase(nn.Module, ABC):
         transport (ground) cost :math:`c(\xi, \zeta)`
     n_samples : int
         number of :math:`zeta` samples to draw from :math:`\pi_0`
-    epsilon_0 : pt.Tensor
-        first guess for a good regularization value :math:`\epsilon` for Sinkhorn
     rho_0 : pt.Tensor
         first guess for a good maximal distance between xi distribution and adversarial distribution
     n_iter : int
         number of gradient descent updates
+    epsilon_0 : Optional[pt.tensor], default ``None``
+        first guess for a good regularization value :math:`\epsilon` for Sinkhorn
     gradient_hypertuning : bool, default ``False``
         [WIP] set to ``True`` to tune rho and epsilon.
     imp_samp : bool, default ``True``
@@ -71,8 +71,9 @@ class _DualLossBase(nn.Module, ABC):
 
         # epsilon and rho are parameters so that they can be printed if needed.
         # But they are not included in the autograd graph (requires_grad=False).
-        self.epsilon = nn.Parameter(epsilon_0, requires_grad=gradient_hypertuning)
-        self.rho = nn.Parameter(rho_0, requires_grad=gradient_hypertuning)
+        self.rho = nn.Parameter(pt.as_tensor(rho_0), requires_grad=gradient_hypertuning)
+        self.epsilon = nn.Parameter(pt.as_tensor(epsilon_0), requires_grad=gradient_hypertuning) \
+                       if epsilon_0 is not None else max(1e-2 * self.rho, 1e-7)
 
         # Lambda is tuned during training, and it requires a proxy in its parameter form.
         # _lam is the tuned variable, and softplus(_lam) is the "proxy" that is accessed via
