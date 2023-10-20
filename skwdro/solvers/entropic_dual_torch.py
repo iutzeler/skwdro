@@ -7,6 +7,7 @@ from skwdro.solvers.oracle_torch import _DualLoss
 
 from skwdro.solvers.result import wrap_solver_result
 from skwdro.solvers.utils import detach_tensor, interpret_steps_struct
+from skwdro.solvers.optim_cond import OptCondTorch as OptCond
 from skwdro.base.problems import Distribution, WDROProblem
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
@@ -94,7 +95,10 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
 
     # _DualLoss.presample determines the way the optimization is performed
     optim_ = optim_presample if loss.presample else optim_postsample
-    losses = optim_(optimizer, xi, xi_labels, loss)
+
+    opt_cond: OptCond = wdro_problem.opt_cond
+
+    losses = optim_(optimizer, xi, xi_labels, loss, opt_cond)
     theta = detach_tensor(loss.theta)
     intercept = loss.intercept
     if intercept is not None:
@@ -107,7 +111,9 @@ def optim_presample(
         optimizer: pt.optim.Optimizer,
         xi: pt.Tensor,
         xi_labels: Optional[pt.Tensor],
-        loss: _DualLoss) -> List[float]:
+        loss: _DualLoss,
+        opt_cond: OptCond
+        ) -> List[float]:
     r""" Optimize the dual loss by sampling the :math:`zeta` values once at the begining of
     the optimization, the performing a deterministic gradient descent (e.g. BFGS style algorithm).
 
@@ -160,9 +166,10 @@ def optim_presample(
     loss.erm_mode = False
 
     # Train WDRO
-    for _ in range(train_iters):
+    for iteration in range(train_iters):
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
+        if opt_cond(loss, iteration): break
         with pt.no_grad():
             _is = loss.imp_samp
             loss.imp_samp = not _is
@@ -176,7 +183,9 @@ def optim_postsample(
         optimizer: pt.optim.Optimizer,
         xi: pt.Tensor,
         xi_labels: Optional[pt.Tensor],
-        loss: _DualLoss) -> List[pt.Tensor]:
+        loss: _DualLoss,
+        opt_cond: OptCond
+        ) -> List[pt.Tensor]:
     r""" Optimize the dual loss by resampling the :math:`\zeta` values at each gradient descent step.
 
     Parameters
@@ -224,7 +233,7 @@ def optim_postsample(
     loss.erm_mode = False
 
     # Train WDRO
-    for _ in range(train_iters):
+    for iteration in range(train_iters):
         optimizer.zero_grad()
 
         # Resamples zetas at forward pass
@@ -234,6 +243,7 @@ def optim_postsample(
         objective.backward()
         # Perform the stochastic step
         optimizer.step()
+        if opt_cond(loss, iteration): break
         losses.append(objective.item())
 
     return losses

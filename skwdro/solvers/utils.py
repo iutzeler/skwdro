@@ -112,6 +112,14 @@ def normalize_just_vects(tensor: pt.Tensor, threshold: float=1., dim: int=0) -> 
     n = pt.linalg.norm(tensor, dim=dim, keepdims=True)
     return tensor / n * pt.min(pt.tensor(threshold), n)
 
+class NoneGradError(ValueError): pass
+
+def maybe_flatten_grad_else_raise(tensor: pt.Tensor) -> pt.Tensor:
+    if tensor.grad is None:
+        raise NoneGradError(tensor.shape)
+    else:
+        return tensor.grad.flatten()
+
 def interpret_steps_struct(steps_spec: Steps, default_split: float=.3) -> Tuple[int, int]:
     if isinstance(steps_spec, int):
         assert 0 <= default_split <= 1.
