@@ -11,9 +11,9 @@ import os
 L2_REG = 1e-5 #Don't change
 
 def fit_estimator(my_rho_norm, reg, sigma, X, y):
-    rho_cost = 2 * my_rho_norm# ** 2 # because no 0.5 in cost
+    rho_norm = np.sqrt(2) * my_rho_norm# ** 2 # because no 0.5 in cost
     estimator = LogisticRegression(
-            rho=rho_cost,
+            rho=rho_norm,
             l2_reg=L2_REG,
             cost="t-NC-2-2",
             fit_intercept=False,
@@ -44,5 +44,6 @@ ATOL = RTOL = 5e-2
 @pytest.mark.parametrize("rho, eps, sigma, X, y, theta, robust_loss", [decode(filename) for filename in files])
 def test_log_reg_reg(rho, eps, sigma, X, y, theta, robust_loss):
     est_theta, est_robust_loss = fit_estimator(rho, eps, sigma, X, y)
+    print(np.linalg.norm(est_theta - theta))
     assert np.isclose(est_theta, theta, atol=ATOL, rtol=RTOL).all()
     assert np.isclose(est_robust_loss, robust_loss, atol=ATOL, rtol=RTOL).all()
