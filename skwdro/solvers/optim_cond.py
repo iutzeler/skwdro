@@ -191,32 +191,43 @@ class OptCondTorch:
         if self.tol_theta <= 0.:
             return cond
         else:
-            if "grad" == self.metric:
-                mem = self.t_grad_0
+            if self.metric == "grad":
+                mem = self.t_grad_0 # nabla_theta first iteration
                 if mem is None:
+                    # Compute nabla_theta because we are at nabla theta right now
+                    # Wait for next iteration to verify convergence.
                     self.t_grad_0 = pt.linalg.norm(flat_theta_grad(), self.order)
                     return False
                 else:
+                    # Compute nabla_theta at current iteration and compare it to first iterate
                     new = pt.linalg.norm(flat_theta_grad(), self.order)
                     return self.check_metric(new, mem, self.tol_theta)
-            elif "param" == self.metric:
-                mem0 = self.t_0
-                mem1 = self.delta_t_1
+            elif self.metric == "param":
+                mem0 = self.t_0 # first param vector theta_0
+                mem1 = self.delta_t_1 # |theta_1 - theta_0|
                 if mem0 is None:
+                    # Define theta_0
                     self.t_0 = flat_theta()
                     return False
                 elif mem1 is None:
                     assert mem0 is not None
+                    # Define theta_1 (=theta_k)
                     self.t_mem = flat_theta()
+                    # |theta_1 - theta_0|
                     self.delta_t_1 = pt.linalg.norm(self.t_mem - mem0, self.order)
                     return False
                 else:
+                    # theta_k
                     mem = self.t_mem
                     assert mem is not None
+                    # theta_{k+1}
                     new = flat_theta()
+                    # make memory advance one step of k
                     self.t_mem = new
+                    # |theta_{k+1} - theta_k|
                     delta = pt.linalg.norm(new - mem, self.order)
                     assert self.delta_t_1 is not None
+                    # Check current diff wrt first iterate diff
                     return self.check_metric(delta, self.delta_t_1, self.tol_theta)
             else:
                 return False
@@ -241,30 +252,39 @@ class OptCondTorch:
         if self.tol_lambda <= 0.:
             return False
         else:
-            if "grad" == self.metric:
+            if self.metric == "grad":
                 mem = self.l_grad_0
                 if mem is None:
+                    # nabla_lambda at first iterate
                     self.l_grad_0 = pt.abs(lam_grad())
                     return False
                 else:
+                    # New nabla_lambda
                     new = pt.abs(lam_grad())
                     return self.check_metric(new, mem, self.tol_theta)
-            elif "param" == self.metric:
-                mem0 = self.t_0
+            elif self.metric == "param":
+                mem0 = self.l_0
                 mem1 = self.delta_l_1
                 if mem0 is None:
-                    self.t_0 = lam()
+                    # first lambda
+                    self.l_0 = lam()
                     return False
                 elif mem1 is None:
                     assert mem0 is not None
+                    # lambda_1 (=lambda_k)
                     self.l_mem = lam()
+                    # first diff in lambda
                     self.delta_l_1 = pt.abs(self.l_mem - mem0)
                     return False
                 else:
+                    # lambda_k
                     mem = self.l_mem
                     assert mem is not None
+                    # lambda_{k+1}
                     new = lam()
+                    # Memory advances one step
                     self.l_mem = new
+                    # |lambda_{k+1} - lambda_k|
                     delta = pt.abs(new - mem)
                     assert self.delta_l_1 is not None
                     return self.check_metric(delta, self.delta_l_1, self.tol_lambda)
