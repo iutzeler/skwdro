@@ -11,11 +11,8 @@ from time import time
 from sklearn.datasets import make_blobs
 from numpy.random import RandomState
 import matplotlib.pyplot as plt
-import numpy as np
-import torch as pt
 
 from skwdro.linear_models import LogisticRegression
-from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
 
 
@@ -31,8 +28,6 @@ y = 2 * y - 1 # type: ignore
 # Center data to avoid learning intercept
 #X -= centers.mean(axis=0, keepdims=True) # type : ignore
 # ###########################################################################
-cost=NormLabelCost(2., 1., 100., "Kappa-cost (w/ kappa=100)")
-#cost=NormCost(2., 1., "=")
 
 
 # SPECIFIC SOLVER
@@ -64,7 +59,7 @@ estimator_ent = LogisticRegression(
         rho=RHO,
         l2_reg=0.,
         fit_intercept=True,
-        cost="t-NLC-2-2",
+        cost="t-NC-2-2",
         n_zeta_samples=20,
         solver="entropic_torch"
         )
