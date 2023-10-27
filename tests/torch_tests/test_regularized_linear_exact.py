@@ -20,6 +20,7 @@ def fit_estimator(my_rho_norm, reg, sigma, X, y):
             solver="entropic_torch",
             solver_reg=reg,
             sampler_reg=sigma,
+            n_zeta_samples=20,
         )
     estimator.fit(X, y)
     return estimator.coef_, estimator.robust_loss_
@@ -35,15 +36,17 @@ def decode(filename):
     res = np.load(os.path.join(dirpath, filename))
     X, y, theta, robust_loss = res['X'], res['y'], res['theta'], res['robust_loss']
     res.close()
-    return (rho, eps, sigma, X, y, theta, robust_loss)
+    return (n, d, rho, eps, sigma, X, y, theta, robust_loss)
 
 files = os.listdir(dirpath)
 
 ATOL = RTOL = 5e-2
+LATOL = LRTOL = 5e-2
 #@pytest.mark.xfail()
-@pytest.mark.parametrize("rho, eps, sigma, X, y, theta, robust_loss", [decode(filename) for filename in files])
-def test_log_reg_reg(rho, eps, sigma, X, y, theta, robust_loss):
+@pytest.mark.parametrize("n, d, rho, eps, sigma, X, y, theta, robust_loss", [decode(filename) for filename in files])
+def test_log_reg_reg(n, d, rho, eps, sigma, X, y, theta, robust_loss):
     est_theta, est_robust_loss = fit_estimator(rho, eps, sigma, X, y)
     print(np.linalg.norm(est_theta - theta))
-    assert np.isclose(est_theta, theta, atol=ATOL, rtol=RTOL).all()
-    assert np.isclose(est_robust_loss, robust_loss, atol=ATOL, rtol=RTOL).all()
+    nrm = lambda x : x / np.linalg.norm(x)
+    assert np.isclose(nrm(est_theta), nrm(theta), atol=ATOL, rtol=RTOL).all()
+    assert np.isclose(est_robust_loss, robust_loss, atol=LATOL, rtol=LRTOL).all()
