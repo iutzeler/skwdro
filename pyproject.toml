@@ -77,9 +77,9 @@ python = "3.11"
 features = ["test"]
 
 [tool.hatch.envs.env-test.scripts]
-test-custom = "pytest -v ./tests/torch_tests"
-test-sklearn = "pytest -v ./skwdro/tests"
-test-misc = "sh ./tests/misc/launchall.sh"
+test-custom = "pytest -v ./tests/torch_tests -W ignore::FutureWarning"
+test-sklearn = "pytest -v ./skwdro/tests -W ignore::FutureWarning"
+test-misc = "sh ./tests/misc/launchall.sh -W ignore::FutureWarning"
 
 [tool.hatch.envs.env-examples]
 pre-install-commands = [
