@@ -42,8 +42,8 @@ class NewsVendorLoss_torch(Loss):
             l2reg: Optional[float]=None,
             name: Optional[str]="NewsVendor loss"):
         super(NewsVendorLoss_torch, self).__init__(sampler, l2reg=l2reg)
-        self.k = nn.Parameter(pt.tensor(float(k)), requires_grad=False)
-        self.u = nn.Parameter(pt.tensor(float(u)), requires_grad=False)
+        self.k = pt.tensor(float(k))
+        self.u = pt.tensor(float(u))
         self.name = name
         self._theta = nn.Parameter(pt.rand(1))
 
@@ -60,7 +60,7 @@ class NewsVendorLoss_torch(Loss):
         xi_labels : NoneType
             placeholder, do not touch
         """
-        return self.k*self.theta - self.u*pt.minimum(self.theta, xi)
+        return self.k * self.theta - self.u * pt.minimum(self.theta, xi).mean(dim=-1, keepdim=True)
 
     @property
     def theta(self) -> pt.Tensor:

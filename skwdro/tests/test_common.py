@@ -10,6 +10,14 @@ from skwdro.neural_network import ShallowNet
 
 dict_wdro_estimators = {}
 
+dict_wdro_estimators["Logistic (entropic presampled)"] = LogisticRegression(solver="entropic_torch_pre")
+
+dict_wdro_estimators["Logistic"] = LogisticRegression(solver="dedicated")
+
+dict_wdro_estimators["LinearReg"] = LinearRegression(solver="dedicated")
+
+dict_wdro_estimators["LinearReg (entropic presampled)"] = LinearRegression(solver="entropic_torch_pre")
+
 
 dict_wdro_estimators["Weber (entropic presampled)"] = Weber(solver="entropic_torch_pre")
 
@@ -19,13 +27,8 @@ dict_wdro_estimators["Portfolio"] = Portfolio(cost="n-NC-1-1")
 
 dict_wdro_estimators["NewsVendor"] = NewsVendor(solver="dedicated")
 
-dict_wdro_estimators["Logistic"] = LogisticRegression(solver="dedicated")
+dict_wdro_estimators["NewsVendor (entropic presampled)"] = NewsVendor(solver="entropic_torch_pre", cost="t-NC-2-2")
 
-dict_wdro_estimators["Logistic (entropic presampled)"] = LogisticRegression(solver="entropic_torch_pre")
-
-dict_wdro_estimators["LinearReg"] = LinearRegression(solver="dedicated")
-
-dict_wdro_estimators["LinearReg (entropic presampled)"] = LinearRegression(solver="entropic_torch_pre")
 
 dict_wdro_estimators["ShallowNet (entropic presampled)"] = ShallowNet(solver="entropic_torch_pre")
 
@@ -35,8 +38,8 @@ dict_wdro_estimators["ShallowNet (entropic presampled)"] = ShallowNet(solver="en
 )
 def test_all_estimators(estimator_name):
 
-    if estimator_name == "NewsVendor":
-        pytest.xfail("NewsVendor is 1D so not for check in sklearn")
+    # if estimator_name == "NewsVendor":
+    #     pytest.xfail("NewsVendor is 1D so not for check in sklearn")
 
     if estimator_name == "Weber (entropic presampled)":
         pytest.xfail("TODO: Investigate Weber")

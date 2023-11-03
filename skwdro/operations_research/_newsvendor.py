@@ -3,6 +3,7 @@ WDRO Estimators
 """
 import numpy as np
 import torch as pt
+import torch.nn as nn
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
@@ -17,10 +18,21 @@ from skwdro.base.samplers.torch import NoLabelsCostSampler
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 from skwdro.base.cost_decoder import cost_from_str
+from skwdro.wrap_problem import dualize_primal_loss
+from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
 
+class CustomNewsvendorLoss(nn.Module):
+    def __init__(self, k: float, u: float):
+        super().__init__()
+        self.k = pt.tensor(k)
+        self.u = pt.tensor(u)
+        self.theta_ = nn.Parameter(pt.rand(1))
 
+    def forward(self, x):
+        gains = self.k * self.theta_
+        losses = self.u * pt.minimum(self.theta_, x)
+        return (gains - losses).mean(dim=-1, keepdim=True)
 
 class NewsVendor(BaseEstimator):
     r""" A NewsVendor Wasserstein Distributionally Robust Estimator.
@@ -113,8 +125,10 @@ class NewsVendor(BaseEstimator):
 
         m,d = np.shape(X)
 
-        if d>1:
-            raise ValueError(f"The input X should be one-dimensional, got {d}")
+        # if d>1:
+        #     raise ValueError(f"The input X should be one-dimensional, got {d}")
+        X = X.mean(axis=1, keepdims=True)
+        self.n_features_in_ = d
 
         self.cost_ = cost_from_str(self.cost)
         # Define problem w/ hyperparameters
@@ -130,43 +144,57 @@ class NewsVendor(BaseEstimator):
         # #################################
 
         if "torch" in self.solver:
-            custom_sampler = NoLabelsCostSampler(
-                    self.cost_,
-                    pt.Tensor(self.problem_.p_hat.samples),
-                    epsilon=pt.tensor(self.rho),
-                    seed=self.random_state
-                )
+            self.problem_.loss = dualize_primal_loss(
+                    CustomNewsvendorLoss(self.k, self.u),
+                    None,
+                    pt.tensor(self.rho),
+                    has_labels=False,
+                    xi_batchinit=pt.Tensor(self.problem_.p_hat.samples),
+                    xi_labels_batchinit=None,
+                    post_sample=self.solver == "entropic_torch_post",
+                    cost_spec=self.cost,
+                    n_samples=self.n_zeta_samples,
+                    seed=self.random_state,
+                    epsilon=self.solver_reg,
+            )
+            # custom_sampler = NoLabelsCostSampler(
+            #         self.cost_,
+            #         pt.Tensor(self.problem_.p_hat.samples),
+            #         epsilon=pt.tensor(self.rho),
+            #         seed=self.random_state
+            #     )
             # Use torch backend to solve the entropy-regularized version
-            if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
-                # Default is to sample once the zetas
-                self.problem_.loss = DualPreSampledLoss(
-                        NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
-                        self.cost_,
-                        self.n_zeta_samples,
-                        epsilon_0=pt.tensor(self.solver_reg),
-                        rho_0=pt.tensor(self.rho),
-                        )
-            elif self.solver == "entropic_torch_post":
-                # Use this option to resample the zetas at each gradient step
-                self.problem_.loss = DualLoss(
-                        NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
-                        self.cost_,
-                        self.n_zeta_samples,
-                        n_iter=1000,
-                        epsilon_0=pt.tensor(self.solver_reg),
-                        rho_0=pt.tensor(self.rho),
-                        )
-            else:
-                raise NotImplementedError()
+            # if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
+            #     # Default is to sample once the zetas
+            #     self.problem_.loss = DualPreSampledLoss(
+            #             NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
+            #             self.cost_,
+            #             self.n_zeta_samples,
+            #             epsilon_0=pt.tensor(self.solver_reg),
+            #             rho_0=pt.tensor(self.rho),
+            #             )
+            # elif self.solver == "entropic_torch_post":
+            #     # Use this option to resample the zetas at each gradient step
+            #     self.problem_.loss = DualLoss(
+            #             NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
+            #             self.cost_,
+            #             self.n_zeta_samples,
+            #             n_iter=1000,
+            #             epsilon_0=pt.tensor(self.solver_reg),
+            #             rho_0=pt.tensor(self.rho),
+            #             )
+            # else:
+            #     raise NotImplementedError()
             # Solve dual problem
-            self.coef_ , self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    self.random_state,
-                    sigma_=self.solver_reg)
+            self.coef_ , _, self.dual_var_, _ = entTorch.solve_dual(self.problem_)
+            self.coef_ = detach_tensor(self.problem_.loss.primal_loss.loss.theta_)
+            self.dual_var_ = detach_tensor(self.problem_.loss.lam)
+            print(self.coef_, self.dual_var_)
 
         elif self.solver=="dedicated":
             # Use cvx solver to solve Kuhn MP formulation
-            self.coef_ = spS.WDRONewsvendorSolver(self.problem_)
+            # self.problem_.p_hat.samples = self.problem_.p_hat.samples.flatten()[:, None]
+            self.coef_, self.dual_var_ = spS.WDRONewsvendorSolver(self.problem_)
             if self.coef_ == 0.0:
                 # If theta is 0, so is lambda (constraint non-active)
                 self.dual_var_ = 0.0
@@ -183,11 +211,10 @@ class NewsVendor(BaseEstimator):
 
         self.is_fitted_ = True
 
-        self.coef_ = float(self.coef_)
 
         # `fit` should always return `self`
         return self
-    
+
     def score(self, X, y=None):
         '''
         Score method to estimate the quality of the model.
@@ -217,7 +244,7 @@ class NewsVendor(BaseEstimator):
             if isinstance(X, (np.ndarray,np.generic)):
                 X = pt.from_numpy(X)
 
-            return self.problem_.loss.primal_loss.value(xi=X).mean()
+            return self.problem_.loss.primal_loss.value(xi=X).mean().item()
 
         match self.solver:
             case "dedicated":
@@ -229,7 +256,7 @@ class NewsVendor(BaseEstimator):
             case "entropic_torch_pre":
                 return entropic_case(X)
             case "entropic_torch_post":
-                return entropic_case(X)            
+                return entropic_case(X)
             case _:
                 return ValueError("Solver not recognized")
 
