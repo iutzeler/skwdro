@@ -2,7 +2,7 @@ import numpy as np
 from cvxopt import matrix, solvers
 import cvxpy as cp
 
-from skwdro.base.losses_torch import NewsVendorLoss
+from skwdro.base.losses.newsvendor import NewsVendorLoss
 from skwdro.solvers.result import wrap_solver_result
 from skwdro.base.costs import NormCost
 from skwdro.base.problems import WDROProblem
@@ -11,7 +11,7 @@ from skwdro.base.problems import WDROProblem
 def WDRONewsvendorSolver(pbm: WDROProblem):
     l = pbm.loss
     assert isinstance(l, NewsVendorLoss)
-    return WDRONewsvendorSpecificSolver(k=float(l.k.item()), u=float(l.u.item()), rho=pbm.rho, samples=pbm.p_hat.samples)
+    return WDRONewsvendorSpecificSolver(k=float(l.k), u=float(l.u), rho=pbm.rho, samples=pbm.p_hat.samples)
 
 @wrap_solver_result
 def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
@@ -27,10 +27,10 @@ def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
 
     if not lower_bound.any():
         lambda_star = u
-        return SAANewsvendorSpecificSolver(k=k,u=u,samples=samples)
+        return SAANewsvendorSpecificSolver2(k=k,u=u,samples=samples)
     elif not upper_bound.any():
         lambda_star = 0
-        return 0
+        return 0, lambda_star
     else:
         condition = [upper_bound[i] and lower_bound[i] for i in range(n-1)]
         i_star = condition.index(True)+1
@@ -40,9 +40,9 @@ def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
     T = u * rho / z[i_star, 0] + k - u * np.mean(s)
 
     if T>=0:
-        return 0.0
+        return 0.0, 0.
     else:
-        return SAANewsvendorSpecificSolver(k=k,u=u,samples=samples)
+        return SAANewsvendorSpecificSolver2(k=k,u=u,samples=samples)
 
 
 
@@ -96,7 +96,7 @@ def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
     s        = np.array(solution['x'])[1:n]
     dual_fun = np.array(solution['primal objective'])
 
-    return theta
+    return theta, dual_fun
 
 @wrap_solver_result
 def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
@@ -122,7 +122,7 @@ def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
 
 
 
-    return beta.value[n]
+    return beta.value[n], 0.
 
 
 

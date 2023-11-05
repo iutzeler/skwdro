@@ -4,6 +4,7 @@ Logistic Regression
 from typing import Optional
 import numpy as np
 import torch as pt
+import torch.nn as nn
 from sklearn.base import BaseEstimator, ClassifierMixin, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
@@ -15,15 +16,15 @@ from scipy.special import expit
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.losses import LogisticLoss
-from skwdro.base.losses_torch import LogisticLoss as LogisticLossTorch
-from skwdro.base.samplers.torch import LabeledCostSampler
+from skwdro.base.losses_torch.logistic import BiDiffSoftMarginLoss
 from skwdro.solvers.optim_cond import OptCond
 from skwdro.base.cost_decoder import cost_from_str
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
+from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
+from skwdro.wrap_problem import dualize_primal_loss
 
 class LogisticRegression(BaseEstimator, ClassifierMixin):
     r""" A Wasserstein Distributionally Robust logistic regression classifier.
@@ -87,8 +88,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  fit_intercept: bool=True,
                  cost: str="t-NLC-2-2",
                  solver="entropic_torch",
-                 solver_reg=None,
-                 sampler_reg=None,
+                 solver_reg: Optional[float]=None,
+                 sampler_reg: Optional[float]=None,
                  n_zeta_samples: int=10,
                  random_state: int=0,
                  opt_cond: Optional[OptCond]=OptCond(2)
@@ -104,7 +105,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver         = solver
         self.solver_reg     = solver_reg
         # Temporary default
-        self.sampler_reg    = sampler_reg
+        self.sampler_reg    = sampler_reg # sigma
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.random_state   = random_state
@@ -204,44 +205,60 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     fit_intercept=self.fit_intercept
             )
         elif "torch" in self.solver:
-            custom_sampler = LabeledCostSampler(
-                    self.cost_,
+            _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
+            self.problem_.loss = dualize_primal_loss(
+                    BiDiffSoftMarginLoss(reduction='none'),
+                    nn.Linear(self.problem_.d, 1, bias=self.fit_intercept),
+                    pt.tensor(self.rho),
+                    True,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=self.sampler_reg,
-                    seed=self.random_state
+                    _post_sample,
+                    self.cost,
+                    self.n_zeta_samples,
+                    self.random_state,
+                    sigma=self.sampler_reg,
+                    epsilon=self.solver_reg,
+                    l2reg=self.l2_reg
                 )
-            # The problem loss is changed to a more suitable "dual loss"
-            if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-                # Default torch implementation resamples from pi_0 at each SGD step
-                self.problem_.loss = DualLoss(
-                        LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-                        self.cost_,
-                        n_samples=self.n_zeta_samples,
-                        n_iter=1000,
-                        epsilon_0=self.solver_reg,
-                        rho_0=pt.tensor(self.rho)
-                    )
+            # custom_sampler = LabeledCostSampler(
+            #         self.cost_,
+            #         pt.Tensor(self.problem_.p_hat.samples_x),
+            #         pt.Tensor(self.problem_.p_hat.samples_y),
+            #         epsilon=self.sampler_reg,
+            #         seed=self.random_state
+            #     )
+            # # The problem loss is changed to a more suitable "dual loss"
+            # if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
+            #     # Default torch implementation resamples from pi_0 at each SGD step
+            #     self.problem_.loss = DualLoss(
+            #             LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
+            #             self.cost_,
+            #             n_samples=self.n_zeta_samples,
+            #             n_iter=1000,
+            #             epsilon_0=self.solver_reg,
+            #             rho_0=pt.tensor(self.rho)
+            #         )
 
-            elif self.solver == "entropic_torch_pre":
-                # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
-                self.problem_.loss = DualPreSampledLoss(
-                        LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-                        self.cost_,
-                        n_samples=self.n_zeta_samples,
-                        epsilon_0=self.solver_reg,
-                        rho_0=pt.tensor(self.rho)
-                    )
-            else:
-                raise NotImplementedError()
+            # elif self.solver == "entropic_torch_pre":
+            #     # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
+            #     self.problem_.loss = DualPreSampledLoss(
+            #             LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
+            #             self.cost_,
+            #             n_samples=self.n_zeta_samples,
+            #             epsilon_0=self.solver_reg,
+            #             rho_0=pt.tensor(self.rho)
+            #         )
+            # else:
+            #     raise NotImplementedError()
 
             # The problem is solved with the new "dual loss"
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual(
                     self.problem_,
-                    seed=self.random_state,
-                    sigma_=self.solver_reg,
                 )
-            
+
+            self.coef_ = detach_tensor(self.problem_.loss.primal_loss.transform.weight).flatten() # type: ignore
+            self.intercept_ = maybe_detach_tensor(self.problem_.loss.primal_loss.transform.bias) # type: ignore
             # # TODO: deprecate ?
             # # Stock the robust loss result
             # Problems w/ dtypes (f32->f64 for some reason)

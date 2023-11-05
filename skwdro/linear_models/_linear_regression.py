@@ -5,6 +5,7 @@ import warnings
 
 import numpy as np
 import torch as pt
+import torch.nn as nn
 
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
@@ -13,6 +14,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
+from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.costs_torch import Cost as TorchCost
 from skwdro.base.losses import QuadraticLoss
@@ -21,6 +23,7 @@ from skwdro.base.samplers.torch import LabeledCostSampler
 from skwdro.solvers.optim_cond import OptCond
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 from skwdro.base.cost_decoder import cost_from_str
+from skwdro.wrap_problem import dualize_primal_loss
 
 class LinearRegression(BaseEstimator, RegressorMixin):
     r""" A Wasserstein Distributionally Robust linear regression.
@@ -173,41 +176,50 @@ class LinearRegression(BaseEstimator, RegressorMixin):
             if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
                 raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
         elif "torch" in self.solver:
-            assert isinstance(self.cost_, TorchCost)
-            custom_sampler = LabeledCostSampler(
-                    self.cost_,
+            # assert isinstance(self.cost_, TorchCost)
+            # custom_sampler = LabeledCostSampler(
+            #         self.cost_,
+            #         pt.Tensor(self.problem_.p_hat.samples_x),
+            #         pt.Tensor(self.problem_.p_hat.samples_y),
+            #         sigma=self.sampler_reg,
+            #         seed=self.random_state
+            #     )
+
+            _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
+            self.problem_.loss = dualize_primal_loss(
+                    nn.MSELoss(reduction="none"),
+                    nn.Linear(d, 1),
+                    pt.tensor(self.rho),
+                    True,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=self.sampler_reg,
-                    seed=self.random_state
+                    _post_sample,
+                    self.cost,
+                    self.n_zeta_samples,
+                    self.random_state,
+                    l2reg=self.l2_reg
                 )
-
-            if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-                self.problem_.loss = DualLoss(
-                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-                        self.cost_,
-                        n_samples=10,
-                        n_iter=1000,
-                        epsilon_0=self.solver_reg,
-                        rho_0=pt.tensor(self.rho)
-                    )
-
-            elif self.solver == "entropic_torch_pre":
-                self.problem_.loss = DualPreSampledLoss(
-                        QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-                        self.cost_,
-                        n_samples=10,
-                        epsilon_0=self.solver_reg,
-                        rho_0=pt.tensor(self.rho)
-                    )
-            else:
-                raise NotImplementedError
+                # self.problem_.loss = DualLoss(
+                #         QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
+                #         self.cost_,
+                #         n_samples=10,
+                #         n_iter=1000,
+                #         epsilon_0=self.solver_reg,
+                #         rho_0=pt.tensor(self.rho)
+                #     )
+                # self.problem_.loss = DualPreSampledLoss(
+                #         QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
+                #         self.cost_,
+                #         n_samples=10,
+                #         epsilon_0=self.solver_reg,
+                #         rho_0=pt.tensor(self.rho)
+                #     )
 
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual(
                     self.problem_,
-                    seed=self.random_state,
-                    sigma_=self.solver_reg,
                 )
+            self.coef_ = detach_tensor(self.problem_.loss.primal_loss.transform.weight) # type: ignore
+            self.intercept_ = maybe_detach_tensor(self.problem_.loss.primal_loss.transform.bias) # type: ignore
         elif self.solver=="dedicated":
             self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(
                     rho=self.problem_.rho,

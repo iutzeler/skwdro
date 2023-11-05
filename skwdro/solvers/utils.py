@@ -90,6 +90,9 @@ def detach_tensor(tensor: pt.Tensor) -> np.ndarray:
     out = tensor.detach().cpu().numpy().flatten()
     return out # float(out) if len(out) == 1 else out
 
+def maybe_detach_tensor(tensor: Optional[pt.Tensor]) -> Optional[np.ndarray]:
+    return None if tensor is None else detach_tensor(tensor)
+
 def diff_opt_tensor(tensor: Optional[pt.Tensor], us_dim: Optional[int]=0) -> Optional[pt.Tensor]:
     if tensor is None:
         return None

@@ -42,7 +42,7 @@ def extract_data(dist: Distribution):
 
 
 @wrap_solver_result
-def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Tensor]=pt.tensor(.1)):
+def solve_dual(wdro_problem: WDROProblem):
     r""" Solve the dual problem with the loss-dependant grandient descent algorithm.
 
     Parameters
@@ -69,11 +69,6 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
     intercept: (n_intercepts,) or None
     lambd: (1,)
     """
-    if isinstance(sigma_, float): sigma = pt.tensor(sigma_)
-    elif isinstance(sigma_, pt.Tensor): sigma = sigma_
-    elif sigma_ is None:
-        sigma = wdro_problem.rho / 2
-    else: raise ValueError("Please provide a valid type for sigma_ parameter in solve_dual.")
 
     # Cast our raw data into tensors
     xi, xi_labels = extract_data(wdro_problem.p_hat)
@@ -85,14 +80,12 @@ def solve_dual(wdro_problem: WDROProblem, seed: int, sigma_: Union[float, pt.Ten
     assert isinstance(loss, _DualLoss)
 
     # Initialize sampler.
-    if loss._sampler is None:
-        loss.sampler = loss.default_sampler(xi, xi_labels, sigma, seed)
     assert isinstance(loss.sampler, BaseSampler)
 
     # If user wants to specify a custom optimizer, they need to register an instance
     # of a subclass of torch optimizers in the relevant attribute.
     optimizer: pt.optim.Optimizer = loss.optimizer
-        
+
 
     # _DualLoss.presample determines the way the optimization is performed
     optim_ = optim_presample if loss.presample else optim_postsample
@@ -167,7 +160,7 @@ def optim_presample(
     loss.erm_mode = False
 
     if hasattr(optimizer, "reset_lbd_state"):
-        optimizer.reset_lbd_state()
+        optimizer.reset_lbd_state() # type: ignore
 
     # Train WDRO
     for iteration in range(train_iters):
@@ -237,7 +230,7 @@ def optim_postsample(
     loss.erm_mode = False
 
     if hasattr(optimizer, "reset_lbd_state"):
-        optimizer.reset_lbd_state()
+        optimizer.reset_lbd_state() # type: ignore
 
     # Train WDRO
     for iteration in range(train_iters):
