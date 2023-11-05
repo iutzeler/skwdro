@@ -212,7 +212,7 @@ def optim_postsample(
     pretrain_iters, train_iters = interpret_steps_struct(loss.n_iter)
 
     # Pretrain ERM
-    loss.erm_mode = True
+    loss.erm_mode = False
     for _ in range(pretrain_iters):
         optimizer.zero_grad()
 
@@ -227,12 +227,12 @@ def optim_postsample(
 
     # Init lambda
     loss.get_initial_guess_at_dual(xi, xi_labels)
-    loss.erm_mode = False
 
-    if hasattr(optimizer, "reset_lbd_state"):
-        optimizer.reset_lbd_state() # type: ignore
+    if hasattr(optimizer, "reset_lbd_state") and loss.erm_mode:
+        optimizer.reset_lbd_state()
 
     # Train WDRO
+    loss.erm_mode = False
     for iteration in range(train_iters):
         optimizer.zero_grad()
 
