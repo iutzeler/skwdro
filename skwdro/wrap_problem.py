@@ -25,6 +25,24 @@ def expert_hyperparams(
         sigma: Optional[float],
         sigma_factor: float,
         ) -> Tuple[pt.Tensor, pt.Tensor]:
+    r"""
+    Tuning of the hyperparameters for the dual loss.
+
+    Parameters
+    ----------
+    rho: Tensor, shape (n_samples,)
+        Wasserstein radius
+    p: float
+        power of norm
+    epsilon: float
+        Epsilon if hard coded, ``None`` to let the algo find it.
+    epsilon_sigma_factor: float
+        Estimated ratio :math:`\frac{\epsilon}{\sigma}`
+    sigma: float
+        Sigma if hard coded, ``None`` to let the algo find it.
+    sigma_factor: float
+        Estimated ratio :math:`\frac{\sigma}{\rho}`
+    """
     expert_sigma: pt.Tensor
     expert_epsilon: pt.Tensor
 
@@ -59,7 +77,6 @@ def dualize_primal_loss(
         loss_: nn.Module,
         transform_: Optional[nn.Module],
         rho: pt.Tensor,
-        has_labels: bool,
         xi_batchinit: pt.Tensor,
         xi_labels_batchinit: Optional[pt.Tensor],
         post_sample: bool=True,
@@ -73,8 +90,46 @@ def dualize_primal_loss(
         adapt: str="prodigy",
         imp_samp: bool=True
         ) -> _DualLoss:
+    r"""
+    Provide the wrapped version of the primal loss.
+
+    Parameters
+    ----------
+    loss_: nn.Module
+        the primal loss
+    transform_: nn.Module
+        the transformation to apply to the data before feeding it to the loss
+    rho: Tensor, shape (n_samples,)
+        Wasserstein radius
+    xi_batchinit: Tensor, shape (n_samples, n_features)
+        Data points to initialize the samplers and :math:`\lambda_0`
+    xi_labels_batchinit: Optional[Tensor], shape (n_samples, n_features)
+        Labels to initialize the samplers and :math:`\lambda_0`
+    post_sample: bool
+        whether to use a post-sampled dual loss
+    cost_spec: str
+        the cost specification in the format ``(k, p)`` for a sample k-norm
+        and p-power. ``None`` to use the default ``(2, 2)``.
+    n_samples: int
+        number of :math:`\zeta` samples to draw before the gradient descent begins (can be changed if needed between inferences)
+    seed: int
+        the seed for the samplers
+    epsilon: float
+        Epsilon if hard coded, ``None`` to let the algo find it.
+    sigma: float
+        Sigma if hard coded, ``None`` to let the algo find it.
+    l2reg: float
+        L2 regularization if needed
+    adapt: str
+        the adaptative step to use between `"prodigy"` and `"mechanic"`.
+    imp_samp: bool
+        whether to use importance sampling (will work only for ``(2, 2)`` costs).
+    """
     sampler: BaseSampler
     cost: Cost
+
+    has_labels = xi_labels_batchinit is not None
+    assert isinstance(xi_labels_batchinit, pt.Tensor), "Please provide a starting (mini/full)batch of labels to initialize the samplers"
 
     parsed_cost = parse_code_torch(cost_spec, has_labels)
     expert_sigma, expert_epsilon = expert_hyperparams(rho, power_from_parsed_spec(parsed_cost), epsilon, EPSILON_SIGMA_FACTOR, sigma, SIGMA_FACTOR)
@@ -82,7 +137,6 @@ def dualize_primal_loss(
     cost = cost_from_parse_torch(parsed_cost)
 
     if has_labels:
-        assert xi_labels_batchinit is not None, "Please provide a starting (mini/full)batch of labels to initialize the samplers"
         sampler = LabeledCostSampler(cost, xi_batchinit, xi_labels_batchinit, expert_sigma, seed)
     else:
         sampler = NoLabelsCostSampler(cost, xi_batchinit, expert_sigma, seed)

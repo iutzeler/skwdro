@@ -190,7 +190,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                     nn.MSELoss(reduction="none"),
                     nn.Linear(d, 1),
                     pt.tensor(self.rho),
-                    True,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
                     _post_sample,

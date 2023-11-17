@@ -148,7 +148,6 @@ class NewsVendor(BaseEstimator):
                     CustomNewsvendorLoss(self.k, self.u),
                     None,
                     pt.tensor(self.rho),
-                    has_labels=False,
                     xi_batchinit=pt.Tensor(self.problem_.p_hat.samples),
                     xi_labels_batchinit=None,
                     post_sample=self.solver == "entropic_torch_post",

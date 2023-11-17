@@ -210,7 +210,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     BiDiffSoftMarginLoss(reduction='none'),
                     nn.Linear(self.problem_.d, 1, bias=self.fit_intercept),
                     pt.tensor(self.rho),
-                    True,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
                     _post_sample,
