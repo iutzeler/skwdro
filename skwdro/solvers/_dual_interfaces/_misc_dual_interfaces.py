@@ -72,8 +72,7 @@ class _DualLossBase(nn.Module, ABC):
         # epsilon and rho are parameters so that they can be printed if needed.
         # But they are not included in the autograd graph (requires_grad=False).
         self.rho = nn.Parameter(pt.as_tensor(rho_0), requires_grad=gradient_hypertuning)
-        self.epsilon = nn.Parameter(pt.as_tensor(epsilon_0), requires_grad=gradient_hypertuning) \
-                       if epsilon_0 is not None else max(1e-2 * self.rho, 1e-7)
+        self.epsilon = nn.Parameter(pt.as_tensor(epsilon_0), requires_grad=gradient_hypertuning)
 
         # Lambda is tuned during training, and it requires a proxy in its parameter form.
         # _lam is the tuned variable, and softplus(_lam) is the "proxy" that is accessed via

@@ -1,4 +1,5 @@
 from typing import Tuple, Optional
+from itertools import chain
 
 import torch as pt
 
@@ -23,7 +24,7 @@ class CompositeOptimizer(pt.optim.Optimizer):
                     }
             self.schedulers = {}
         elif optimizer == 'prodigy':
-            make_optim = lambda params : Prodigy(params, lr=1.0, weight_decay=0., safeguard_warmup=True, use_bias_correction=True)
+            make_optim = lambda params : Prodigy(params, lr=1.0, weight_decay=0, safeguard_warmup=True, use_bias_correction=True)
             self.opts = {
                     'params': make_optim(params),
                     'lbd': make_optim([lbd])
@@ -33,6 +34,14 @@ class CompositeOptimizer(pt.optim.Optimizer):
             self.schedulers = {k:pt.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=T[k]) for (k, opt) in self.opts.items()}
 
         self.init_state_lbd = self.opts['lbd'].state_dict()
+        super(CompositeOptimizer, self).__init__(chain(params, [lbd]), {})
+
+    def __getstate__(self) -> object:
+        s = {key:val.__getstate__() for key, val in self.opts.items()}
+        s['init_state_lbd'] = self.init_state_lbd
+        s["defaults"] = {}
+        return s
+
     def step(self):
         for opt in self.opts.values():
             opt.step()
@@ -40,7 +49,7 @@ class CompositeOptimizer(pt.optim.Optimizer):
             scheduler.step()
         with pt.no_grad():
             self.lbd.clamp_(0., None)
-     
+
     def zero_grad(self):
         for opt in self.opts.values():
             opt.zero_grad()
@@ -84,7 +93,7 @@ class DualPostSampledLoss(_DualLoss):
         if adapt:
             assert adapt in ("mechanic", "prodigy")
             self._opti = CompositeOptimizer(self.primal_loss.parameters(), self.lam, n_iter, adapt)
-       
+
         else:
             self._opti = pt.optim.AdamW(
                     self.parameters(),
@@ -167,10 +176,11 @@ class DualPreSampledLoss(_DualLoss):
                  n_samples: int,
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
-                 n_iter: int=50,
+                 n_iter: Steps=50,
                  gradient_hypertuning: bool=False,
                  *,
-                 imp_samp: bool=IMP_SAMP
+                 imp_samp: bool=IMP_SAMP,
+                 adapt="prodigy",
                  ) -> None:
         super(DualPreSampledLoss, self).__init__(loss, cost, n_samples, epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
 

@@ -15,7 +15,7 @@ X = np.random.exponential(scale=2.0,size=(20,1))
 
 
 print("Torch")
-estimator = NewsVendor(solver="entropic_torch", cost=NormCost(2, 1))
+estimator = NewsVendor(solver="entropic_torch", cost="t-NC-2-2")
 estimator.fit(X)
 
 print(estimator.coef_,estimator.dual_var_)

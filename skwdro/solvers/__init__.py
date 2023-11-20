@@ -8,6 +8,7 @@ __all__ = [
         "DualLoss",
         "DualPreSampledLoss",
         "DualPostSampledLoss",
+        "dualize_primal_loss",
         "detach_tensor",
         "diff_opt_tensor",
         "diff_tensor",
