@@ -7,8 +7,8 @@ ANGLE_TOL = 1e-1 * np.pi
 def generate_points():
     opposites = np.array([[1., 1.], [-1., -1.]])
     data = np.concatenate([
-        opposites[0, :] + np.random.normal(0, 0.1, size=(100, 1)) * np.array([[-1, 1]]),
-        opposites[1, :] + np.random.normal(0, 0.1, size=(100, 1)) * np.array([[-1, 1]])
+        opposites[0, :] + np.random.normal(0, 2, size=(100, 1)) * np.array([[-1, 1]]),
+        opposites[1, :] + np.random.normal(0, 2, size=(100, 1)) * np.array([[-1, 1]])
     ], axis=0)
     labels = np.array([1.] * 100 + [-1.] * 100)
     return data, labels
