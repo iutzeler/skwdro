@@ -1,11 +1,11 @@
 import torch as pt
 import torch.nn as nn
+from math import isqrt
 
 class TestAlexnet(nn.Module):
-    def __init__(self, net: nn.Module, upscale: int=255):
+    def __init__(self, net: nn.Module):
         super().__init__()
         self.net = net
-        self.upscale = upscale
         nn.init.kaiming_normal_(self.net.classifier[6].weight.data, nonlinearity='relu') # type: ignore
         self.classif = nn.Sequential(
             nn.BatchNorm1d(1000),
@@ -14,10 +14,12 @@ class TestAlexnet(nn.Module):
         )
 
     def forward(self, x):
-        B, N = x.shape
-        assert B > 0, "Please provide non-empty batches"
-        end_wh = (self.upscale // 8) * 8
-        image = nn.functional.interpolate(x.reshape(B, 3, 8, 8), size=(end_wh, end_wh), mode='nearest')
+        *batch_dims, d = x.shape
+        assert d % 3 == 0 and d > 3
+        hw = d // 3
+        h = w = isqrt(hw)
+        assert h * w == hw
+        image = x.view(*batch_dims, 3, h, w)
         return self.classif(self.net(image))
 
 def make_alexnet():
