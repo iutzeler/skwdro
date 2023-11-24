@@ -37,8 +37,6 @@ class BaseSampler(ABC):
     @abstractmethod
     def log_prob(
             self,
-            xi: pt.Tensor,
-            xi_labels: Optional[pt.Tensor],
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
             ) -> pt.Tensor:
@@ -59,8 +57,6 @@ class NoLabelsSampler(BaseSampler, ABC):
 
     def log_prob(
             self,
-            xi: pt.Tensor,
-            xi_labels: NoneType,
             zeta: pt.Tensor,
             zeta_labels: NoneType
             ) -> pt.Tensor:
@@ -89,14 +85,13 @@ class LabeledSampler(BaseSampler, ABC):
 
     def log_prob(
             self,
-            xi: pt.Tensor,
-            xi_labels: pt.Tensor,
             zeta: pt.Tensor,
             zeta_labels: pt.Tensor
             ) -> pt.Tensor:
-        lp = self.data_s.log_prob(zeta)\
-                + self.labels_s.log_prob(zeta_labels)
-        return lp.unsqueeze(-1)
+        lp = self.data_s.log_prob(zeta)
+        lpl = self.labels_s.log_prob(zeta_labels)
+        print(lp.shape, lpl.shape)
+        return (lp + lpl).unsqueeze(-1)
 
 # Helper class ########################
 class IsOptionalCovarianceSampler(ABC):

@@ -4,7 +4,7 @@ import torch as pt
 import torch.nn.functional as F
 
 from ._impsamp_interface import _SampleDisplacer
-from skwdro.solvers.utils import maybe_unsqueeze
+from skwdro.solvers.utils import maybe_unsqueeze, maybe_relocate
 from skwdro.base.costs_torch import NormCost
 
 
@@ -78,15 +78,15 @@ class _DualFormulation(_SampleDisplacer):
                 # - [ V(zeta|xi)
                 #   - V(zeta|xi*) ]
                 correction = self.sampler.log_prob(
-                        xi.unsqueeze(0),
-                        maybe_unsqueeze(xi_labels, dim=0),
+                        #xi.unsqueeze(0),
+                        #maybe_unsqueeze(xi_labels, dim=0),
                         zeta,
                         zeta_labels
                     ) - self.sampler.log_prob(
-                        xi_star,
-                        xi_labels_star,
-                        zeta,
-                        zeta_labels
+                        # xi_star,
+                        # xi_labels_star,
+                        zeta + xi.unsqueeze(0) - xi_star,
+                        maybe_relocate(zeta_labels, xi_labels, xi_labels_star)
                         )
                 integrand -= correction # (n_samples, m, 1)
             else:

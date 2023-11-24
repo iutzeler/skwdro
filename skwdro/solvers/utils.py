@@ -123,6 +123,14 @@ def maybe_flatten_grad_else_raise(tensor: pt.Tensor) -> pt.Tensor:
     else:
         return tensor.grad.flatten()
 
+def maybe_relocate(eval_points: Optional[pt.Tensor], old_center: Optional[pt.Tensor], new_center: Optional[pt.Tensor]) -> Optional[pt.Tensor]:
+    if eval_points is None:
+        return None
+    else:
+        assert old_center is not None
+        assert new_center is not None
+        return eval_points + old_center.unsqueeze(dim=0) - new_center
+
 def interpret_steps_struct(steps_spec: Steps, default_split: float=.3) -> Tuple[int, int]:
     if isinstance(steps_spec, int):
         assert 0 <= default_split <= 1.

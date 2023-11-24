@@ -69,7 +69,7 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
         """
         Just get as many labels as data points (n_sample).
         """
-        return self.data_s.mean.unsqueeze(0).expand(n_sample, -1, -1)
+        return self.labels_s.mean.unsqueeze(0).expand(n_sample, -1, -1)
 
     def reset_mean(self, xi, xi_labels):
         self.__init__(
@@ -84,12 +84,13 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
     labels_s: dst.TransformedDistribution
     def __init__(self, xi: pt.Tensor, xi_labels: pt.Tensor, seed: int, *,
                  p: float,
+                 margin=True,
                  sigma: Optional[Union[float, pt.Tensor]]=None,
                  tril: Optional[pt.Tensor]=None,
                  prec: Optional[pt.Tensor]=None,
                  cov: Optional[pt.Tensor]=None
                  ):
-        assert 0. <= p <= 1.
+        assert 0. <= p < .5
         covar = self.init_covar(xi.size(-1), sigma, tril, prec, cov)
         self.p = p
         super(ClassificationNormalBernouilliSampler, self).__init__(
@@ -102,8 +103,8 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
                         p
                     ),
                     dst.transforms.AffineTransform(
-                        loc=-xi_labels,
-                        scale=2*xi_labels
+                        loc=xi_labels,
+                        scale=-2. * xi_labels if margin else 1. - 2. * xi_labels
                     )
                 ),
                 seed
