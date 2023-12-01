@@ -10,8 +10,8 @@ import seaborn as sns
 
 def getEmpiricalAndTrueRisk(generateData,estimatorsList,score,nTrain,nTrials):
 
-    nTest = nTrain*10
-    Xtest,ytest = generateData(n=nTest)
+    nTest = nTrain*1000
+    Xtest,ytest = generateData(n=nTest,shift=.05)
 
     nEst = len(estimatorsList)
 
@@ -22,7 +22,7 @@ def getEmpiricalAndTrueRisk(generateData,estimatorsList,score,nTrain,nTrials):
 
         print("Trial {:6d}/{:6d}".format(nt+1,nTrials), end='\r')
 
-        Xtrain,ytrain = generateData(n=nTest)
+        Xtrain,ytrain = generateData(n=nTrain)
 
         for i,est in enumerate(estimatorsList):
             est.fit(Xtrain,ytrain)
@@ -64,7 +64,7 @@ def plotRiskHistograms(empRisk,trueRisk):
 
         plt.legend()
 
-        plt.savefig("Estimator_{}.png".format(i+1))
+        plt.savefig("./Estimator_{}.png".format(i+1))
         plt.show()
 
 
