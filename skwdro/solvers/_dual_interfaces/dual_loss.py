@@ -85,10 +85,10 @@ class _DualFormulation(_SampleDisplacer):
                     ) - self.sampler.log_prob(
                         xi_star,
                         xi_labels_star,
-                        zeta,
+                        zeta + xi.unsqueeze(0) - xi_star,
                         zeta_labels
                         )
-                integrand -= correction # (n_samples, m, 1)
+                integrand += correction # (n_samples, m, 1)
             else:
                 l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
                 c = self.cost(
