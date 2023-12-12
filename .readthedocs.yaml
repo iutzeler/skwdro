@@ -30,4 +30,4 @@ python:
    - requirements: doc/requirements.txt
    - requirements: requirements.txt
    - method: pip
-      path: .
+     path: ../skwdro/
