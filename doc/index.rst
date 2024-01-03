@@ -18,7 +18,6 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 
    user_guide
    models
-   solvers
    tuning
 
 .. toctree::
@@ -29,23 +28,23 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    custom
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :hidden:
    :caption: API
 
    api
    losses
+   solvers
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :hidden:
-   :caption: API
+   :caption: Optimization
 
-   api
-   losses
+   optim
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :hidden:
    :caption: Tutorial - Examples
 
@@ -70,6 +69,11 @@ Description of how to implement new estimators fitting the package.
 -------------------------------
 
 Structure of the models and losses.
+
+`Optimization <optimization.html>`_
+-------------------------------
+
+Numerical optimization routines used for solving (entropy-regularized) WDRO problems.
 
 `Examples <auto_examples/index.html>`_
 --------------------------------------
