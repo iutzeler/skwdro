@@ -71,7 +71,7 @@ Description of how to implement new estimators fitting the package.
 Structure of the models and losses.
 
 `Optimization <optimization.html>`_
--------------------------------
+-----------------------------------
 
 Numerical optimization routines used for solving (entropy-regularized) WDRO problems.
 

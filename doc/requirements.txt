@@ -1,3 +1,6 @@
 sphinx-gallery
 sphinx_rtd_theme
+sphinx_copybutton
+sphinx_design
+myst_parser
 numpydoc

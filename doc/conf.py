@@ -45,7 +45,19 @@ extensions = [
     'sphinx_rtd_theme',
     'numpydoc',
     'sphinx_gallery.gen_gallery',
+    'sphinx.ext.autosectionlabel',
+    'sphinx_copybutton',
+    'sphinx_design',
+    'myst_parser',
 ]
+
+
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath"
+]
+
+
 
 # this is needed for some reason...
 # see https://github.com/numpy/numpydoc/issues/69
@@ -320,3 +332,10 @@ sphinx_gallery_conf = {
     'ignore_pattern' : '/examples/plot_'
 }
 
+# # The following is used by sphinx.ext.linkcode to provide links to github
+# linkcode_resolve = make_linkcode_resolve(
+#     "skwdro",
+#     "https://github.com/iutzeler/"
+#     "skwdro/blob/{revision}/"
+#     "{package}/{path}#L{lineno}",
+# )

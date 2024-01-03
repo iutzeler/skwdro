@@ -13,7 +13,6 @@ Entropic Solvers using torch
 
 .. autosummary::
    :toctree: generated/
-   :template: function.rst
 
    solve_dual
 
@@ -26,7 +25,6 @@ Specific Solvers
 
 .. autosummary::
    :toctree: generated/
-   :template: function.rst
 
    WDRONewsvendorSpecificSolver
    WDROLogisticSpecificSolver
