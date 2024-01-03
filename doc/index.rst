@@ -32,15 +32,16 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    :hidden:
    :caption: API
 
-   api
-   losses
-   solvers
+   API/modules
+   API/skwdro.solvers
 
 .. toctree::
    :maxdepth: 3
    :hidden:
    :caption: Optimization
 
+   losses
+   solvers
    optim
 
 .. toctree::

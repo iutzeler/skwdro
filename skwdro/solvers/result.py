@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from functools import wraps
 
 class SolverResult(Iterable):
     def __init__(self, coef=None, intercept=None, dual_var=None, robust_loss=None, _iter_attrs=['coef', 'intercept', 'dual_var'], **kwargs):
@@ -21,6 +22,8 @@ def wrap_solver_result(solver_func):
     """
         Decorator to wrap the return of a legacy solver 
     """
+    @wraps(solver_func) # This is a convenience function for invoking update_wrapper() as a function decorator when defining a wrapper function. It enables the doc to go through.
+
     def wrapper(*args, **kwargs):
         legacy_res = solver_func(*args, **kwargs)
         if isinstance(legacy_res, SolverResult):
