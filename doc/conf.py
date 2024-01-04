@@ -45,7 +45,19 @@ extensions = [
     'sphinx_rtd_theme',
     'numpydoc',
     'sphinx_gallery.gen_gallery',
+    'sphinx.ext.autosectionlabel',
+    'sphinx_copybutton',
+    'sphinx_design',
+    'myst_parser',
 ]
+
+
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath"
+]
+
+
 
 # this is needed for some reason...
 # see https://github.com/numpy/numpydoc/issues/69
@@ -81,7 +93,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'skwdro'
-copyright = u'2023 skwdro team'
+copyright = u'2024 skwdro team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -217,14 +229,14 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'project-templatedoc'
+htmlhelp_basename = 'project-skwdro'
 
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'a4paper',
 
 # The font size ('10pt', '11pt' or '12pt').
 #'pointsize': '10pt',
@@ -237,8 +249,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'project-template.tex', u'project-template Documentation',
-   u'The authors', 'manual'),
+  ('index', 'skwdro_doc.tex', u'skwdro Documentation',
+   u'skwdro team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -268,7 +280,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'skwdro', u'skwdro Documentation',
-     [u'The authors'], 1)
+     [u'skwdro team'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -282,7 +294,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'skwdro', u'skwdro Documentation',
-   u'The authors', 'skwdro', 'Wasserstein Distributionally Robust (WDRO) estimators.',
+   u'skwdro team', 'skwdro', 'Wasserstein Distributionally Robust (WDRO) estimators.',
    'Machine Learning'),
 ]
 
@@ -320,3 +332,10 @@ sphinx_gallery_conf = {
     'ignore_pattern' : '/examples/plot_'
 }
 
+# # The following is used by sphinx.ext.linkcode to provide links to github
+# linkcode_resolve = make_linkcode_resolve(
+#     "skwdro",
+#     "https://github.com/iutzeler/"
+#     "skwdro/blob/{revision}/"
+#     "{package}/{path}#L{lineno}",
+# )

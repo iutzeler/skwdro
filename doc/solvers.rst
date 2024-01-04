@@ -6,19 +6,6 @@ The following solvers are implemented in skwdro
 
 .. currentmodule:: skwdro
 
-
-Entropic Solvers
-================
-
-.. currentmodule:: skwdro.solvers.entropic_dual_solvers
-
-.. autosummary::
-   :toctree: generated/
-   :template: function.rst
-
-   WangGaoXie_v2
-
-
 Entropic Solvers using torch
 ============================
 
@@ -26,7 +13,6 @@ Entropic Solvers using torch
 
 .. autosummary::
    :toctree: generated/
-   :template: function.rst
 
    solve_dual
 
@@ -39,7 +25,6 @@ Specific Solvers
 
 .. autosummary::
    :toctree: generated/
-   :template: function.rst
 
    WDRONewsvendorSpecificSolver
    WDROLogisticSpecificSolver
