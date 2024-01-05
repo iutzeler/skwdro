@@ -1,0 +1,38 @@
+[personal]
+makepath="/usr/bin/make"
+# homepath="/home/flvincen"
+import="ljk/skwdro"
+
+[clusterparams]
+# cluster="dahu"
+# user="vincenfl"
+walltime="16:00:00"
+nodes=1
+cores=16
+# name="SkWDRO_probplots"
+
+
+[logreg]
+
+repeat=1000
+
+[logreg.logrho]
+min = -7.0
+max = 0.0
+num = 15
+
+[logreg.d]
+val=5
+
+[logreg.n_train]
+val=500
+
+[logreg.n_test]
+val=10000
+
+[logreg.sigma]
+val=1.5
+
+[logreg.n_zeta]
+val=100
+
