@@ -28,4 +28,5 @@ clean:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	@$(SPHINXAPI) -o "$(APIDIR)" "$(PROJDIR)" 
+	@echo "   :ignore-module-all:" >> API/skwdro.distributions.rst
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
