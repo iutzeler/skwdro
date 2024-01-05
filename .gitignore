@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Singularity jobs files
+*.sif
+params.toml
+
 # Types
 .pytype*
 
