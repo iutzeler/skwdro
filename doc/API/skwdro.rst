@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   skwdro.distributions
    skwdro.linear_models
    skwdro.neural_network
    skwdro.operations_research

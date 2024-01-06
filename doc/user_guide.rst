@@ -11,8 +11,8 @@ Using WDRO estimators
 
 The estimators can be used as those in sklearn.
 
-Regressor
-~~~~~~~~~
+WDRO Regressors
+~~~~~~~~~~~~~~~
 
 Similarly, regressors are scikit-learn estimators which implement a ``predict``
 method. The use case is the following:
@@ -26,11 +26,11 @@ method. The use case is the following:
 Since we inherit from the :class:`sklearn.base.RegressorMixin`, we can call
 the ``score`` method which will return the :math:`R^2` score::
 
-    >>> pipe.score(X, y)  
+    >>> pipe.score(X, y)
     -3.9...
 
-Classifier
-~~~~~~~~~~
+WDRO Classifier
+~~~~~~~~~~~~~~~
 
 Similarly to regressors, classifiers implement ``predict``. In addition, they
 output the probabilities of the prediction using the ``predict_proba`` method:

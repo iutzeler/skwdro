@@ -12,15 +12,16 @@ Full objective:
             e^{\frac{1}{\epsilon}(L_\theta(\zeta)-\lambda c(\zeta, \xi))}
 
 Gradients:
+
 .. math::
     \nabla_\theta J=
     \mathbb{E}_{\xi\sim\mathbb{P}^N}
         \mathbb{E}_{\zeta\sim\mathcal{N}(\xi, \sigma)}
-            \nabla_\theta L_\theta(\zeta)\frac{e^{\dots}}{\mathcal{E}_\zeta e^{\dots}}\\
+            \nabla_\theta L_\theta(\zeta)\frac{e^{\dots}}{\mathbb{E}_\zeta e^{\dots}}\\
     \nabla_\lambda J=
     \rho - \mathbb{E}_{\xi\sim\mathbb{P}^N}
         \mathbb{E}_{\zeta\sim\mathcal{N}(\xi, \sigma)}
-         c(\zeta, \xi)\frac{e^{\dots}}{\mathcal{E}_\zeta e^{\dots}}
+         c(\zeta, \xi)\frac{e^{\dots}}{\mathbb{E}_\zeta e^{\dots}}
 """
 
 import numpy as np

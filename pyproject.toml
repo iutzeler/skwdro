@@ -53,6 +53,9 @@ docs = [
     "sphinx",
     "sphinx-gallery",
     "sphinx_rtd_theme",
+	"sphinx-copybutton",
+	"sphinx-design",
+	"myst-parser",
 ]
 test = [
     "pytest",

@@ -1,6 +1,8 @@
 ENV=env-dev
 TEST_ENV=env-dev
 
+.PHONY: docs test shell reset_env clean
+
 reset_env:
 	@hatch env prune
 
@@ -21,3 +23,11 @@ test_sk:
 test_misc:
 	@echo "Solo tests:"
 	@hatch -e $(TEST_ENV) run env-test:test-misc
+
+docs:
+	@echo "Doc building (no warnings):"
+	$(MAKE) -C doc html
+
+clean:
+	$(MAKE) -C doc clean
+

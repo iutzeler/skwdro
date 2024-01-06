@@ -55,8 +55,8 @@ def init_theta(d):
     return theta
 
 def prepare_data(samples, m, d, n_samples, epsilon, fit_intercept):
-    """
-    Draw the ``n_samples` zeta vectors from the xi vectors, and initiate theta
+    r"""
+    Draw the ``n_samples`` zeta vectors from the xi vectors, and initiate theta
     """
     if fit_intercept:
         xi = np.concatenate((np.ones((m, 1)), samples), axis=1)

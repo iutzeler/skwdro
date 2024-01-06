@@ -8,6 +8,7 @@ import torch as pt
 from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
+from skwdro.base.costs_torch.base_cost import TorchCost
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
 from skwdro.base.loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
@@ -139,11 +140,12 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
             )
 
         # #########################################
+        assert isinstance(cost, TorchCost)
         custom_sampler = LabeledCostSampler(
                     cost,
                     pt.Tensor(self.problem_.p_hat.samples_x),
                     pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(self.rho),
+                    sigma=pt.tensor(self.solver_reg),
                     seed=self.random_state
                 )
 
@@ -156,12 +158,13 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma_=self.solver_reg,
-                    seed=self.random_state
-                )
-            self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
+            # TODO: fix
+            # self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
+            #         self.problem_,
+            #         sigma_=self.solver_reg,
+            #         seed=self.random_state
+            #     )
+            # self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
             self.problem_.loss = DualPreSampledLoss(
                     ShallowNetLossTorch(custom_sampler, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
@@ -171,11 +174,12 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma_=self.solver_reg,
-                    seed=self.random_state
-                )
+            # TODO: fix
+            # self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
+            #         self.problem_,
+            #         sigma_=self.solver_reg,
+            #         seed=self.random_state
+            #     )
             self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
         elif self.solver=="entropic":
             raise NotImplementedError
@@ -216,6 +220,7 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
 
     def params(self):
         """ Return the network's parameters in a standard format
+
         Returns
         -------
         ly1 : ndarray, shape (n_neurons, data_dim+1)

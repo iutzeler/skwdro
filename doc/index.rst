@@ -32,12 +32,14 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    :hidden:
    :caption: API
 
+   api
    API/skwdro
+   API/modules
    API/skwdro.solvers
    API/skwdro.linear_models
    API/skwdro.operations_research
    API/skwdro.neural_network
-   API/skwdro.distributions
+   distributions
 
 .. toctree::
    :maxdepth: 3

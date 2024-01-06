@@ -143,8 +143,8 @@ class OptCondTorch:
         Checks the dual and primal parameters for convergence by using functional monads on the tensors,
         see :py:func:`~OptCondTorch.check_t` and :py:func:`~OptCondTorch.check_l`
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         lam: LazyTensor
             the dual multiplier
         lam_grad: LazyTensor
@@ -173,10 +173,10 @@ class OptCondTorch:
     def check_t(self, flat_theta: LazyTensor, flat_theta_grad: LazyTensor) -> bool:
         r"""
         Check the convergence of the theta parameter, either in gradient or in parameter value.
-        The parameters are ``LazyTensor``s which means that they must be called as functions to be evaluated
+        The parameters are ``LazyTensor`` which means that they must be called as functions to be evaluated
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         flat_theta: LazyTensor
             the flattened concatenation of all the optimizeable parameters of the primal model
         flat_theta_grad: LazyTensor
@@ -235,10 +235,10 @@ class OptCondTorch:
     def check_l(self, lam: LazyTensor, lam_grad: LazyTensor) -> bool:
         r"""
         Check the convergence of the theta parameter, either in gradient or in parameter value.
-        The parameters are ``LazyTensor``s which means that they must be called as functions to be evaluated
+        The parameters are ``LazyTensor`` which means that they must be called as functions to be evaluated
 
-        Parameter
-        ---------
+        Parameters
+        ----------
         lam: LazyTensor
             the dual multiplier
         lam_grad: LazyTensor

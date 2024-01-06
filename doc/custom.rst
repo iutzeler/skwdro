@@ -252,15 +252,13 @@ The package accepts custom losses in its optimizers provided that are compliant 
 Custom costs
 -----------------------
 
-
-
 Examples
 -----------------------
 
-Regressor
-~~~~~~~~~
+Custom Regressor
+~~~~~~~~~~~~~~~~
 
 A template regressor is available in the folder ``examples/CustomWDROEstimators/``
 
-The template inherits from the :class:`sklearn.base.RegressorMixin`. 
+The template inherits from the :class:`sklearn.base.RegressorMixin`.
 

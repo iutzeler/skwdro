@@ -10,6 +10,7 @@ class Dirac(dst.ExponentialFamily):
         return {
             "loc": cstr.real_vector
         }
+
     @property
     def support(self) -> Optional[cstr.Constraint]:
         return cstr.real_vector # type: ignore
@@ -26,8 +27,26 @@ class Dirac(dst.ExponentialFamily):
         self.loc: pt.Tensor = loc
         super().__init__(batch_shape, event_shape, validate_args)
 
-
     def expand(self, batch_shape: pt.Size, _instance=None):
+        r""" Returns a new distribution instance (or populates an existing instance
+        provided by a derived class) with batch dimensions expanded to
+        `batch_shape`. This method calls :class:`~torch.Tensor.expand` on
+        the distribution's parameters. As such, this does not allocate new
+        memory for the expanded distribution instance. Additionally,
+        this does not repeat any args checking or parameter broadcasting in
+        `__init__.py`, when an instance is first created.
+
+        Parameters
+        ----------
+        batch_shape: the desired expanded size.
+        _instance: new instance provided by subclasses that
+            need to override `.expand`.
+
+        Returns
+        -------
+        New distribution instance with batch dimensions expanded to
+            `batch_size`.
+        """
         new: Dirac = self._get_checked_instance(Dirac, _instance)
         batch_shape = pt.Size(batch_shape)
         loc_shape = batch_shape + self.event_shape
