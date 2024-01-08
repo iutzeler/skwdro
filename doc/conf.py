@@ -324,13 +324,19 @@ intersphinx_mapping = {
 
 # sphinx-gallery configuration
 sphinx_gallery_conf = {
-    'doc_module': 'skwdro',
-    'backreferences_dir': os.path.join('generated'),
-    'reference_url': {
-        'skwdro': None},
-    'filename_pattern': '/examples/doc/plot_',
-    'ignore_pattern' : '/examples/plot_'
+     'examples_dirs': '../examples',   # path to your example scripts
+     'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
 }
+
+
+# sphinx_gallery_conf = {
+#     'doc_module': 'skwdro',
+#     'backreferences_dir': os.path.join('generated'),
+#     'reference_url': {
+#         'skwdro': None},
+#     'filename_pattern': '/examples/doc/plot_',
+#     'ignore_pattern' : '/examples/plot_'
+# }
 
 # # The following is used by sphinx.ext.linkcode to provide links to github
 # linkcode_resolve = make_linkcode_resolve(
