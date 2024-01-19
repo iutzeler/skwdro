@@ -169,9 +169,9 @@ def optim_presample(
         if opt_cond(loss, iteration): break
         with pt.no_grad():
             _is = loss.imp_samp
-            loss.imp_samp = not _is
+            loss.imp_samp = False # Shut down IS if it is on.
             losses.append(closure(False))
-            loss.imp_samp = _is
+            loss.imp_samp = _is # Put it back on if it used to be.
             del _is
 
     return losses
