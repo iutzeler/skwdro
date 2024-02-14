@@ -1,5 +1,19 @@
 from typing import List, Optional, Union
+# from warnings import deprecated # Python 3.12+
+import warnings
 import numpy as np
+
+
+def deprecated(message):
+  def deprecated_decorator(func):
+      def deprecated_func(*args, **kwargs):
+          warnings.warn("{} is a deprecated function. {}".format(func.__name__, message),
+                        category=DeprecationWarning,
+                        stacklevel=2)
+          warnings.simplefilter('default', DeprecationWarning)
+          return func(*args, **kwargs)
+      return deprecated_func
+  return deprecated_decorator
 
 from skwdro.base.costs import Cost
 from skwdro.base.costs_torch import Cost as TorchCost
@@ -63,6 +77,7 @@ class Distribution:
             raise TypeError()
 
 
+@deprecated("The WDRO Problem class is being deprecated")
 class WDROProblem:
     """ Base class for WDRO problem """
 

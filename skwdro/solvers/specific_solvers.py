@@ -191,7 +191,7 @@ def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.n
 
     problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-    problem.solve(verbose=False)
+    problem.solve(verbose=False,solver=cp.ECOS)
 
     return coeff.value, intercept.value , None
 
