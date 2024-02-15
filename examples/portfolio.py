@@ -34,4 +34,4 @@ lam = estimator.dual_var_
 print("Value of theta: ", theta)
 print("Value of lambda: ", lam)
 
-print("Optimal value: ", estimator.problem_.loss.value(theta=theta,xi=X))
+print("Optimal value: ", estimator.loss.value(theta=theta,xi=X).numpy())
