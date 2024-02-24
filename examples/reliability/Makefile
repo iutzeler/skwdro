@@ -64,6 +64,7 @@ clean:
 cleanall:clean
 	rm -f $(BASE).sif
 	rm -f $(SK).sif
+	rm -f skwdro_hists.sif
 
 .PHONY:init_ssh
 init_ssh:
@@ -100,6 +101,9 @@ ADD_COMMAND=
 endif
 
 GIT_BYPASS=git config --global --add safe.directory /skwdro &&
+.PHONY: gitbypass
+gitbypass:
+	$(GIT_BYPASS)
 
 .PHONY:submit
 submit:deploy
@@ -109,7 +113,28 @@ submit:deploy
 sksubmit:skdeploy
 	$(SSH) $(CLUSTER).gricad "oarsub -n $(NAME) -l $(RES) --project $(PROJECT) \"$(ADD_COMMAND) $(GIT_BYPASS) singularity run --bind /tmp:/skwdro/wandb $(SK).sif $(ARGS)\""
 
+
+#==============
+# Histograms
+skwdro_hists.sif:skwdro_hists.def
+	echo $(SKIMPORT) > singularity_import.txt
+	$(SINGULARITY_BUILD) --notest --force skwdro_hists.sif skwdro_hists.def
+	rm singularity_import.txt
+
+.PHONY:histdeploy
+histdeploy:skwdro_hists.sif
+	rsync -Pavu skwdro_hists.sif $(CLUSTER).gricad:/home/$(CLUSTER_USER)
+
+.PHONY:histsubmit
+histsubmit: histdeploy
+	$(SSH) $(CLUSTER).gricad "oarsub -n SKWDRO_histograms -l $(RES) --project $(PROJECT) \"$(ADD_COMMAND) singularity run --bind /tmp:/skwdro/wandb skwdro_hists.sif $(ARGS)\""
+#==============
+
+
 .PHONY:clear_logs
 clear_logs:
 	$(SSH) $(CLUSTER).gricad "rm OAR*"
 
+setup:
+	ssh-add
+	$(SSH) $(CLUSTER).gricad "$(GIT_BYPASS)"

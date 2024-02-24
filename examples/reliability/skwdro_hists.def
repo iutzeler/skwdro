@@ -30,7 +30,6 @@ From: python:3.11
     touch $HATCH_CONFIG
 
     # Install hatch
-	pip install --upgrade pip
     pip install hatch
 
     # Authorize user to use imported files
@@ -40,5 +39,5 @@ From: python:3.11
     make shell
 
 %runscript
-    cd $IMPORT && hatch -e env-dev run python main.py "$@"
+    cd $IMPORT && hatch -e env-dev run python examples/reliability/hists.py "$@"
 

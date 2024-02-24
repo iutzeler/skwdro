@@ -4,20 +4,18 @@ import wandb
 import math
 import torch
 
-from skwdro.base.costs import NormLabelCost
 from skwdro.linear_models import LogisticRegression
-from skwdro.solvers.optim_cond import OptCond
 
 L2_REG = 1e-5 #Don't change
 
-def fit_estimator(rho_norm, X, y, X_test, y_test, n_zeta):
+def fit_estimator(rho_norm, X, y, X_test, y_test, n_zeta, epsilon):
     estimator = LogisticRegression(
             rho=np.sqrt(2)*rho_norm,
             l2_reg=L2_REG,
             cost="t-NLC-2-2",
             fit_intercept=True,
             solver="entropic_torch",
-            solver_reg=None,
+            solver_reg=epsilon,
             sampler_reg=None,
             n_zeta_samples=n_zeta,
         )
@@ -27,7 +25,7 @@ def fit_estimator(rho_norm, X, y, X_test, y_test, n_zeta):
     test_loss = estimator.problem_.loss.primal_loss(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=torch.float32)).mean()
     return robust_loss, test_loss
 
-def fit_cvx(rho_norm, X, y, X_test, y_test, n_zeta):
+def fit_cvx(rho_norm, X, y, X_test, y_test, n_zeta, *_):
     estimator = LogisticRegression(
             rho=np.sqrt(2)*rho_norm,
             l2_reg=L2_REG,
@@ -57,16 +55,16 @@ def gen_data(d, n, sigma):
 
     return X, y
 
-def one_run_reliability(rho, d, n_train, sigma, X_test, y_test, n_zeta, baseline: bool=False):
+def one_run_reliability(rho, d, n_train, sigma, X_test, y_test, n_zeta, epsilon, baseline: bool=False):
     X, y = gen_data(d, n_train, sigma)
     fitter = fit_cvx if baseline else fit_estimator
-    robust_loss, test_loss = fitter(rho, X, y, X_test, y_test, n_zeta)
+    robust_loss, test_loss = fitter(rho, X, y, X_test, y_test, n_zeta, epsilon)
     return int((robust_loss >= test_loss).item())
 
-def all_runs_reliability(rho, d, n_train, n_test, n_zeta, sigma, repeat, baseline: bool=False):
+def all_runs_reliability(rho, d, n_train, n_test, n_zeta, sigma, epsilon, repeat, baseline: bool=False):
     X_test, y_test = gen_data(d, n_test, sigma)
     avg = 0.
-    xps = np.array([one_run_reliability(rho, d, n_train, sigma, X_test, y_test, n_zeta, baseline) for _ in range(repeat)])
+    xps = np.array([one_run_reliability(rho, d, n_train, sigma, X_test, y_test, n_zeta, epsilon, baseline) for _ in range(repeat)])
     avg = xps.mean()
     std = xps.std(ddof=1)
     del xps
@@ -87,13 +85,14 @@ def main():
     parser.add_argument("--n_test", type=int, default=int(1e5))
     parser.add_argument("--logrho", type=float, default=math.log10(0.02))
     parser.add_argument("--repeat", type=int, default=100)
+    parser.add_argument("-e", "--epsilon", type=float, default=1e-6)
     parser.add_argument("-c", "--cvx_wdro", action='store_true', help="Launch with specific cvxopt solver (baseline)")
     args = parser.parse_args()
     rho = math.pow(10, args.logrho)
     config = vars(args)
     config.update({"IS":IS})
-    run = wandb.init(project="toolbox", config=config, name=str(config))
+    run = wandb.init(project="toolbox_eps", config=config, name=str(config))
     assert run is not None, "Failed to run wandb init"
-    avg, sdev = all_runs_reliability(rho, args.d, args.n_train, args.n_test, args.n_zeta, args.sigma, args.repeat, args.cvx_wdro)
+    avg, sdev = all_runs_reliability(rho, args.d, args.n_train, args.n_test, args.n_zeta, args.sigma, args.epsilon, args.repeat, args.cvx_wdro)
     run.log({"avg_rel": avg, "sdev_rel": sdev})
 

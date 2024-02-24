@@ -5,7 +5,6 @@ __pycache__/
 
 # Singularity jobs files
 *.sif
-params.toml
 
 # Types
 .pytype*
@@ -79,3 +78,11 @@ target/
 examples/stored_data/*
 test_post.npy
 test_pre.npy
+
+# Wandb logs & stuff
+**/wandb/
+
+# Plots
+epsilon*.png
+logreg.png
+examples/reliability/*.png
