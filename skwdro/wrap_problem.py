@@ -129,10 +129,11 @@ def dualize_primal_loss(
     cost: Cost
 
     has_labels = xi_labels_batchinit is not None
-    assert isinstance(xi_labels_batchinit, pt.Tensor), "Please provide a starting (mini/full)batch of labels to initialize the samplers"
+    if has_labels: assert isinstance(xi_labels_batchinit, pt.Tensor), "Please provide a starting (mini/full)batch of labels to initialize the samplers"
 
     parsed_cost = parse_code_torch(cost_spec, has_labels)
     expert_sigma, expert_epsilon = expert_hyperparams(rho, power_from_parsed_spec(parsed_cost), epsilon, EPSILON_SIGMA_FACTOR, sigma, SIGMA_FACTOR)
+    expert_sigma, expert_epsilon = expert_sigma.to(xi_batchinit), expert_epsilon.to(xi_batchinit)
 
     cost = cost_from_parse_torch(parsed_cost)
 
