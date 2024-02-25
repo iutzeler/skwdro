@@ -1,7 +1,5 @@
 .. title:: Custom WDRO Estimators
 
-.. _user_guide:
-
 ==================================================
 Training custom WDRO Estimators
 ==================================================

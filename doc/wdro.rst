@@ -19,7 +19,7 @@ In machine learning, it is usual to train our model (or fit, ie. optimize on :ma
     :label: ERM
 
 
-Equation :eq:`ERM` is usually called Empirical Risk Minimization (ERM) is the literature.
+Equation :eq:`ERM` is usually called Empirical Risk Minimization (ERM) in the literature.
 
 
 Robustness
