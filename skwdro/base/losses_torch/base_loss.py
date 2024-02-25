@@ -1,12 +1,12 @@
 from typing import Optional
-from abc import abstractclassmethod, abstractproperty
+from abc import abstractmethod, abstractproperty, ABC
 
 import torch as pt
 import torch.nn as nn
 
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
-class Loss(nn.Module):
+class Loss(nn.Module, ABC):
     """ Base class for loss functions """
     _sampler: BaseSampler
     def __init__(
@@ -59,7 +59,8 @@ class Loss(nn.Module):
     def sampler(self):
         del self._sampler
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> BaseSampler:
         raise NotImplementedError("Please Implement this method")
 
