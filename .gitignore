@@ -86,3 +86,6 @@ test_pre.npy
 epsilon*.png
 logreg.png
 examples/reliability/*.png
+robust_*.png
+baseline_*.png
+*net.png
