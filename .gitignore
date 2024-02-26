@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Singularity jobs files
+*.sif
+
 # Types
 .pytype*
 
@@ -75,3 +78,14 @@ target/
 examples/stored_data/*
 test_post.npy
 test_pre.npy
+
+# Wandb logs & stuff
+**/wandb/
+
+# Plots
+epsilon*.png
+logreg.png
+examples/reliability/*.png
+robust_*.png
+baseline_*.png
+*net.png
