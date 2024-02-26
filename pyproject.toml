@@ -30,7 +30,7 @@ classifiers = [
 dependencies = [
     "numpy",
     "pandas",
-    "scikit-learn @ https://pypi.anaconda.org/scientific-python-nightly-wheels/simple/scikit-learn/1.4.dev0/scikit_learn-1.4.dev0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
+    "scikit-learn",
     "scipy",
     "cvxopt",
     "cvxpy",
@@ -60,6 +60,9 @@ docs = [
 test = [
     "pytest",
     "pytest-cov",
+]
+monitor = [
+    "wandb",
 ]
 
 [project.urls]
@@ -101,7 +104,8 @@ pre-install-commands = [
 features = [
     "test",
     "examples",
-    "docs"
+    "docs",
+    "monitor"
 ]
 [tool.hatch.envs.env-dev.scripts]
 test = "pytest -s -vv . "

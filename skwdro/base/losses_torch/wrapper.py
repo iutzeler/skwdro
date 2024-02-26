@@ -6,6 +6,8 @@ import torch.nn as nn
 from skwdro.base.losses_torch import Loss
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
+class WrappingError(ValueError): pass
+
 class WrappedPrimalLoss(Loss):
     def __init__(
             self,
@@ -20,6 +22,10 @@ class WrappedPrimalLoss(Loss):
         self.loss = loss
         self.transform = transform if transform is not None else nn.Identity()
         self.has_labels = has_labels
+
+    @classmethod
+    def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
+        raise WrappingError("No default sampler can be attributed by default by a wrapped loss.")
 
     @property
     def theta(self):

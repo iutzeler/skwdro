@@ -1,6 +1,7 @@
-from typing import List, Optional, Union
-
+from typing import List, Optional
+import matplotlib.pyplot as plt
 import numpy as np
+
 import torch as pt
 
 from skwdro.solvers.oracle_torch import _DualLoss
@@ -92,7 +93,26 @@ def solve_dual(wdro_problem: WDROProblem):
 
     opt_cond: OptCond = wdro_problem.opt_cond
 
-    losses = optim_(optimizer, xi, xi_labels, loss, opt_cond)
+    losses, lgrads, tgrads, lams = optim_(optimizer, xi, xi_labels, loss, opt_cond)
+
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": 'STIXGeneral',
+        "mathtext.fontset": 'cm'
+    })
+    fig, axes = plt.subplots(4, 1, sharex=True)
+    axes[0].plot(losses, label='Robust loss L',color='k')
+    axes[0].set_yscale('log')
+    axes[1].plot(range(len(losses) - len(lgrads), len(losses)), lgrads, label='$\\nabla_\\lambda L$',color='r')
+    # axes[1].set_yscale('log')
+    axes[2].plot(tgrads, label='$\\nabla_\\theta L$',color='g')
+    axes[2].set_yscale('log')
+    axes[3].plot(range(len(losses) - len(lgrads), len(losses)), lams, label='$\\lambda$',color='b')
+    axes[3].set_yscale('log')
+    fig.suptitle(f"$\\epsilon=${loss.epsilon.item()}")
+    fig.legend()
+    fig.savefig(f"epsilon{loss.epsilon.item()}.png", transparent=True)
+    plt.show()
     theta = detach_tensor(loss.theta)
     intercept = loss.intercept
     if intercept is not None:
@@ -169,9 +189,9 @@ def optim_presample(
         if opt_cond(loss, iteration): break
         with pt.no_grad():
             _is = loss.imp_samp
-            loss.imp_samp = False # Shut down IS if it is on.
+            loss.imp_samp = not _is
             losses.append(closure(False))
-            loss.imp_samp = _is # Put it back on if it used to be.
+            loss.imp_samp = _is
             del _is
 
     return losses
@@ -208,11 +228,12 @@ def optim_postsample(
     xi_labels: (m, d')
     """
     losses = []
+    lgrads, tgrads, lams = [], [], []
 
     pretrain_iters, train_iters = interpret_steps_struct(loss.n_iter)
 
     # Pretrain ERM
-    loss.erm_mode = False
+    loss.erm_mode = True
     for _ in range(pretrain_iters):
         optimizer.zero_grad()
 
@@ -224,12 +245,13 @@ def optim_postsample(
         # Perform the stochastic step
         optimizer.step()
         losses.append(objective.item())
+        tgrads.append(pt.linalg.norm(loss.primal_loss.loss.pos.grad.detach()).item())
 
     # Init lambda
     loss.get_initial_guess_at_dual(xi, xi_labels)
 
     if hasattr(optimizer, "reset_lbd_state") and loss.erm_mode:
-        optimizer.reset_lbd_state()
+        optimizer.reset_lbd_state() #type: ignore
 
     # Train WDRO
     loss.erm_mode = False
@@ -244,6 +266,9 @@ def optim_postsample(
         # Perform the stochastic step
         optimizer.step()
         if opt_cond(loss, iteration): break
-        losses.append(objective.item())
+        losses.append(pt.abs(objective).item())
+        lgrads.append(loss._lam.grad.item())
+        lams.append(float(loss.lam.item()))
+        tgrads.append(pt.linalg.norm(loss.primal_loss.loss.pos.grad.detach()).item())
 
-    return losses
+    return np.array(losses), np.array(lgrads), np.array(tgrads), np.array(lams)

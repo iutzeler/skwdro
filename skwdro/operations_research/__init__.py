@@ -1,5 +1,5 @@
-from ._weber import Weber
 from ._newsvendor import NewsVendor
 from ._portfolio import Portfolio
+from ._weber import Weber
 
-__all__ = ['Weber','NewsVendor','Portfolio']
+__all__ = ['NewsVendor','Portfolio', 'Weber']
