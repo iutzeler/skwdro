@@ -1,37 +1,37 @@
-"""
-===================
-Mean-Risk Portfolio
-===================
-
-An example of resolution of the mean-risk portfolio problem.
-"""
-
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sb
+from matplotlib.colors import LogNorm, Colormap
+from matplotlib.cm import ScalarMappable
+from skwdro.operations_research._portfolio import Portfolio
 
-from skwdro.operations_research import Portfolio
-from skwdro.base.rho_tuners import *
+def plots(r, pbrs):
+    plt.rcParams.update({
+        "text.usetex": True,
+        "font.family": 'STIXGeneral',
+        "mathtext.fontset": 'cm'
+    })
+    fig, ax = plt.subplots()
 
-N = 10 #Number of samples
+    #cm = sb.color_palette("flare_r", as_cmap=True)
+    #cn = None#LogNorm(vmin=trafic.min(), vmax=trafic.max())
+    #assert isinstance(cm, Colormap)
+    data = np.vstack([m.coef_ for m in pbrs]).T
+    data = data[np.argsort(data[:, -1]), :]
+    ax.stackplot([m.rho for m in pbrs], data)
+    ax.set_xscale('log')
+    fig.savefig("robust_portfolio.png", transparent=True)
 
-#Create input: 2 assets with only one that gives us good returns
-X = np.array([1.,0.])
-X = np.tile(X,(N,1)) #Duplicate the above line N times
+def main():
 
-print("Value of the samples:", X)
+    psi = np.random.randn(100, 1) * 2e-2
+    zeta = (np.random.randn(100, 10) * 2.5e-2 + 3e-2) * np.arange(10)[None, :]
+    returns_by_asset = psi + zeta
+    #pb = Portfolio(0., n_zeta_samples=-1, cost="t-NC-2-2", seed=42)
+    #pb.fit(returns_by_asset)
+    pbrs = [Portfolio(i, n_zeta_samples=100, cost="t-NC-2-2", seed=i, solver="entropic_torch", alpha=.2, eta=10., solver_reg=1e-5).fit(returns_by_asset) for i in np.logspace(1, -4, 15)]
+    plots(returns_by_asset, pbrs)
 
-#Creating the estimator and solving the problem
-estimator = Portfolio(solver="dedicated", cost="n-NC-1-1", rho=1e-10)
 
-estimator.fit(X=X)
-
-print("Value of C (after fitting):", estimator.C_)
-print("Value of d (after fitting):", estimator.d_)
-
-theta = estimator.coef_
-lam = estimator.dual_var_
-
-print("Value of theta: ", theta)
-print("Value of lambda: ", lam)
-
-print("Optimal value: ", estimator.loss.value(theta=theta,xi=X).numpy())
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,43 @@
+Bootstrap: docker
+From: python:3.11
+
+%setup
+    echo $WANDB_API_KEY > ${SINGULARITY_ROOTFS}/api.key
+    cp -r $(cat singularity_import.txt) ${SINGULARITY_ROOTFS}/skwdro
+
+%environment
+    export IMPORT=/skwdro
+    export HATCH_DIR=/hatch_dir
+    export HATCH_DATA_DIR=$HATCH_DIR/data
+    export HATCH_CACHE_DIR=$HATCH_DIR/cache
+    export HATCH_CONFIG=$HATCH_DIR/config.toml
+    export WANDB_API_KEY=$(cat /api.key)
+
+%post
+    # Configure hatch folders
+    # Main folder
+    export HATCH_DIR=/hatch_dir
+    mkdir $HATCH_DIR
+    chmod 777 $HATCH_DIR
+    # Data folder
+    export HATCH_DATA_DIR=$HATCH_DIR/data
+    mkdir $HATCH_DATA_DIR
+    # Cache folder
+    export HATCH_CACHE_DIR=$HATCH_DIR/cache
+    mkdir $HATCH_CACHE_DIR
+    # Config
+    export HATCH_CONFIG=$HATCH_DIR/config.toml
+    touch $HATCH_CONFIG
+
+    # Install hatch
+    pip install hatch
+
+    # Authorize user to use imported files
+    export IMPORT=/skwdro
+    chmod 777 $IMPORT
+    cd $IMPORT
+    make shell
+
+%runscript
+    cd $IMPORT && hatch -e env-dev run python examples/reliability/hists.py "$@"
+

@@ -101,9 +101,9 @@ def diff_opt_tensor(tensor: Optional[pt.Tensor], us_dim: Optional[int]=0) -> Opt
 
 def diff_tensor(tensor: pt.Tensor, us_dim: Optional[int]=0) -> pt.Tensor:
     if us_dim is not None:
-        return tensor.clone().detach().unsqueeze(us_dim).requires_grad_(True)
+        return tensor.clone().unsqueeze(us_dim).requires_grad_(True)
     else:
-        return tensor.clone().detach().requires_grad_(True)
+        return tensor.clone().requires_grad_(True)
 
 def maybe_unsqueeze(tensor: Optional[pt.Tensor], dim: int=0) -> Optional[pt.Tensor]:
     return None if tensor is None else tensor.unsqueeze(dim)

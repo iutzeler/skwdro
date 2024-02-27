@@ -58,6 +58,9 @@ test = [
     "pytest",
     "pytest-cov",
 ]
+monitor = [
+    "wandb",
+]
 
 [project.urls]
 Download = "https://github.com/iutzeler/skwdro"
@@ -98,7 +101,8 @@ pre-install-commands = [
 features = [
     "test",
     "examples",
-    "docs"
+    "docs",
+    "monitor"
 ]
 [tool.hatch.envs.env-dev.scripts]
 test = "pytest -s -vv . "

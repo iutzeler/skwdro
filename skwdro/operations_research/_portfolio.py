@@ -5,12 +5,15 @@ WDRO Estimators
 import numpy as np
 from sklearn.base import BaseEstimator
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
+from torch import Tensor
 
 
 from skwdro.base.problems import EmpiricalDistributionWithoutLabels
 from skwdro.base.losses import PortfolioLoss_torch
 from skwdro.base.losses_torch_portfolio import *
-from skwdro.solvers.oracle_torch import DualPreSampledLoss, DualPostSampledLoss
+from skwdro.base.losses_torch.portfolio import SimplePortfolio
+from skwdro.solvers.utils import detach_tensor
+from skwdro.wrap_problem import dualize_primal_loss
 
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.base.losses_torch_portfolio import *
@@ -20,7 +23,6 @@ from skwdro.solvers.optim_cond import OptCond, OptCondTorch
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_torch as entTorch
 
-import skwdro.solvers.hybrid_opt as hybrid_opt
 
 class Portfolio(BaseEstimator):
     r""" A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
@@ -69,7 +71,7 @@ class Portfolio(BaseEstimator):
 
     def __init__(self,
                  rho=1e-2,
-                 eta=0,
+                 eta=0.,
                  alpha=.95,
                  C=None,
                  d=None,
@@ -94,7 +96,6 @@ class Portfolio(BaseEstimator):
             raise ValueError("The regularization parameter cannot be negative")
         elif n_zeta_samples < 0:
             raise ValueError("Cannot sample a negative number of zetas")
-        
         self.rho = rho
         self.eta = eta
         self.alpha = alpha
@@ -154,7 +155,6 @@ class Portfolio(BaseEstimator):
         #     )
         
         #Setup values C and d that define the polyhedron of xi_maj
-
         if (self.C is None or self.d is None):
             self.C_ = np.zeros((1,m))
             self.d_ = np.zeros((1,1))
@@ -169,79 +169,63 @@ class Portfolio(BaseEstimator):
             raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
         elif self.solver == "dedicated":
             self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(C=self.C_, d=self.d_, m=self.n_features_in_, cost=self.cost_, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
-        elif self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
+        elif "torch" in self.solver:
             epsilon = pt.tensor(self.solver_reg_)
 
-            _wdro_loss = DualPreSampledLoss(
-                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.tensor(X),
-                                                                epsilon=pt.tensor(self.solver_reg_), 
-                                                                seed=self.seed,
-                                                                m=m, 
-                                                                reparam=self.reparam,
-                                                                eta=pt.as_tensor(self.eta_),
-                                                                alpha=pt.as_tensor(self.alpha_)),
-                    eta=pt.as_tensor(self.eta_), 
-                    alpha=pt.as_tensor(self.alpha_)),
-                    cost = self.cost_,
-                    n_samples=self.n_zeta_samples,
-                    epsilon_0 = epsilon,
-                    rho_0 = pt.as_tensor(self.rho_)
-                )
-
-        elif self.solver == "entropic_torch_post":
-            _wdro_loss = DualPostSampledLoss(
-                    MeanRisk_torch(loss=RiskPortfolioLoss_torch(cost=self.cost_, xi=pt.as_tensor(X), epsilon=pt.tensor(self.solver_reg_),
-                                                                seed=self.seed, m=m, reparam=self.reparam), eta=pt.as_tensor(self.eta_),
-                                                                alpha=pt.as_tensor(self.alpha_)),
-                    cost = self.cost_,
-                    n_iter=1000,
-                    n_samples=self.n_zeta_samples,
-                    epsilon_0 = pt.tensor(self.solver_reg_),
-                    rho_0 = pt.as_tensor(self.rho_)
-                )
-        else:
-            raise NotImplementedError("Designation for solver not recognized")
-        
-        if self.solver in {"entropic_torch_pre", "entropic_torch_post"}:
-        
-            #Define the optimizer
-
-            '''
-            Hybrid optimizer with MWU method : WIP
-            
-            _wdro_loss.optimizer = hybrid_opt.HybridAdam([
-            {'params': [_wdro_loss.loss.loss._theta_tilde], 'lr':1e-10, 'mwu_simplex':True},
-            {'params': [_wdro_loss.loss.tau]},
-            {'params': [_wdro_loss._lam], 'non_neg':True}
-            ], lr=1e-5, betas=(.99, .999), weight_decay=0., amsgrad=True, foreach=True)
-            '''
-                      
-            # self.coef_, _, self.dual_var_, _ = entTorch.solve_dual(
-            #         wdro_problem=self.problem_,
-            #         seed=self.seed,
-            #         sigma_=pt.tensor(self.solver_reg_)
-            # ) 
-
+            self._wdro_loss = dualize_primal_loss(
+                        SimplePortfolio(m, risk_aversion=self.eta_, risk_level=self.alpha_),
+                        None,
+                        pt.tensor(self.rho_),
+                        pt.Tensor(emp.samples),
+                        None,
+                        not "post" in self.solver,
+                        self.cost,
+                        self.n_zeta_samples,
+                        self.seed,
+                        epsilon=self.solver_reg_,
+                        l2reg=0.
+                    )
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
-                    _wdro_loss,
+                    self._wdro_loss,
                     emp,
                     self.opt_cond, # type: ignore
                     )
+            self.coef_ = detach_tensor(self._wdro_loss.primal_loss.loss.assets.weight) # type: ignore
 
-            # Stock the robust loss result 
-            if self.solver == "entropic_torch_pre":
-                #self.result_ = _wdro_loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
-                raise NotImplementedError("Result for pre_sample not available")
-            elif self.solver == "entropic_torch_post":
-                self.result_ = _wdro_loss.forward(xi=pt.from_numpy(self.X_))
+        else:
+            raise NotImplementedError("Designation for solver not recognized")
+        # if self.solver in {"entropic_torch_pre", "entropic_torch_post"}:
+        #     #Define the optimizer
 
-            self.tau_ = _wdro_loss.primal_loss.tau.item()         
+        #     '''
+        #     Hybrid optimizer with MWU method : WIP
+        #     
+        #     self.problem_.loss.optimizer = hybrid_opt.HybridAdam([
+        #     {'params': [self.problem_.loss.loss.loss._theta_tilde], 'lr':1e-10, 'mwu_simplex':True},
+        #     {'params': [self.problem_.loss.loss.tau]},
+        #     {'params': [self.problem_.loss._lam], 'non_neg':True}
+        #     ], lr=1e-5, betas=(.99, .999), weight_decay=0., amsgrad=True, foreach=True)
+        #     '''
+        #     self.coef_, _, self.dual_var_, _ = entTorch.solve_dual(
+        #             wdro_problem=self.problem_,
+        #             seed=self.seed,
+        #             sigma_=pt.tensor(self.solver_reg_)
+        #     )
+
+        #     # Stock the robust loss result
+        #     if self.solver == "entropic_torch_pre":
+        #         #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
+        #         raise NotImplementedError("Result for pre_sample not available")
+        #     elif self.solver == "entropic_torch_post":
+        #         self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(self.X_))
+
+        #     self.tau_ = self.problem_.loss.primal_loss.tau.item()
 
         self.is_fitted_ = True
 
         #Return the estimator
         return self
-    
+
     def score(self, X, y=None):
         '''
         Score method to estimate the quality of the model.
@@ -278,7 +262,7 @@ class Portfolio(BaseEstimator):
 
         match self.solver:
             case "dedicated":
-                return _wdro_loss.value(theta=self.coef_, xi=X)
+                return self._wdro_loss.value(theta=self.coef_, xi=X)
             case "entropic":
                 return NotImplementedError("Entropic solver for Portfolio not implemented yet")
             case "entropic_torch":
@@ -286,7 +270,7 @@ class Portfolio(BaseEstimator):
             case "entropic_torch_pre":
                 return entropic_case(X)
             case "entropic_torch_post":
-                return entropic_case(X)            
+                return entropic_case(X)
             case _:
                 return ValueError("Solver not recognized")
 
