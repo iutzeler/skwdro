@@ -128,8 +128,6 @@ class Portfolio(BaseEstimator):
         self.alpha_ = float(self.alpha)
         self.solver_reg_ = float(self.solver_reg)
 
-        self.loss = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
-
         #Check that X has correct shape
         X = check_array(X)
 
@@ -170,7 +168,6 @@ class Portfolio(BaseEstimator):
         elif self.solver == "dedicated":
             self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(C=self.C_, d=self.d_, m=self.n_features_in_, cost=self.cost_, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
         elif "torch" in self.solver:
-            epsilon = pt.tensor(self.solver_reg_)
 
             self._wdro_loss = dualize_primal_loss(
                         SimplePortfolio(m, risk_aversion=self.eta_, risk_level=self.alpha_),
@@ -249,28 +246,27 @@ class Portfolio(BaseEstimator):
             The testing input samples.
         '''
 
+        #Check that X has correct shape
+        X = check_array(X)
+
         assert self.is_fitted_ == True #We have to fit before evaluating
 
-        def entropic_case(X):
-            if isinstance(X, (np.ndarray,np.generic)):
-                X = pt.from_numpy(X)
+        # def entropic_case(X):
+        #     if isinstance(X, (np.ndarray,np.generic)):
+        #         X = pt.from_numpy(X)
 
-            #We optimize on tau once again
-            reducer_loss = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
+        #     #We optimize on tau once again
+        #     reducer_loss = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
 
-            return reducer_loss.value(theta=self.coef_, xi=X).mean()
+        #     return reducer_loss.value(theta=self.coef_, xi=X).mean()
 
-        match self.solver:
-            case "dedicated":
-                return self._wdro_loss.value(theta=self.coef_, xi=X)
-            case "entropic":
-                return NotImplementedError("Entropic solver for Portfolio not implemented yet")
-            case "entropic_torch":
-                return entropic_case(X)
-            case "entropic_torch_pre":
-                return entropic_case(X)
-            case "entropic_torch_post":
-                return entropic_case(X)
-            case _:
-                return ValueError("Solver not recognized")
+        if "entropic" in self.solver:
+            return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()
+        elif self.solver == "dedicated":
+            return -np.mean(X,axis=0)@self.coef_
+        else:
+            raise(ValueError("Solver not recognized"))
+    
+
+
 

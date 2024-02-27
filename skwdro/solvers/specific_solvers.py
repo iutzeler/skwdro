@@ -9,7 +9,7 @@ from skwdro.base.problems import WDROProblem
 
 
 @wrap_solver_result
-def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
+def WDRONewsvendorSpecificSolver(k=5.,u=7.,rho=1.0,samples=None):
     assert samples is not None
     z = np.sort(samples, axis=0)
     n = z.shape[0]
@@ -43,7 +43,7 @@ def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
 
 
 @wrap_solver_result
-def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
+def SAANewsvendorSpecificSolver(k=5.,u=7.,samples=None):
     assert samples is not None
 
     z = np.sort(samples, axis=0)
@@ -91,7 +91,7 @@ def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
     return theta, dual_fun
 
 @wrap_solver_result
-def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
+def SAANewsvendorSpecificSolver2(k=5.,u=7.,samples=None):
     assert samples is not None
 
     z = np.sort(samples, axis=0)
