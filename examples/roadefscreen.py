@@ -1,8 +1,9 @@
 import torch as pt
 import torch.nn as nn
-from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
-from skwdro.solvers.entropic_dual_torch import solve_dual
+from skwdro.base.problems import EmpiricalDistributionWithLabels
+from skwdro.solvers.entropic_dual_torch import solve_dual_wdro
 from skwdro.wrap_problem import dualize_primal_loss
+from skwdro.solvers.optim_cond import OptCondTorch
 
 class SimpleWeber(nn.Module):
     def __init__(self, d: int) -> None:
@@ -31,15 +32,6 @@ def weber(X, y, rho):
             _post_sample
         )
 
-    # Specify the problem in case you need it later
-    problem_ = WDROProblem(
-        loss=dual_loss, rho=rho,
-        cost=dual_loss.cost,
-        p_hat=emp, d=d, d_labels=1, n=d
-    )
-
     # Optimize with the default algorithm
-    coef_, _, dual_var_, robust_loss_ = solve_dual(
-        problem_,
-    )
+    coef_, _, dual_var_, robust_loss_ = solve_dual_wdro(dual_loss,emp,opt=OptCondTorch(2))
     return coef_, robust_loss_

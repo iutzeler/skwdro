@@ -1,8 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sb
-from matplotlib.colors import LogNorm, Colormap
-from matplotlib.cm import ScalarMappable
 from skwdro.operations_research._portfolio import Portfolio
 
 def plots(r, pbrs):

@@ -16,11 +16,10 @@ def deprecated(message):
   return deprecated_decorator
 
 
-from skwdro.base.losses import Loss as LossNumpy
 from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
 
 Bounds = Optional[List[float]]
-LossType = Union[LossNumpy, LossTorch]
+LossType = LossTorch
 
 class Distribution:
     empirical: bool
