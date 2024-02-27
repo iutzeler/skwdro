@@ -3,22 +3,21 @@ WDRO Estimators
 """
 
 import numpy as np
+import torch as pt
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted, check_random_state
+from sklearn.utils.validation import check_array, check_is_fitted, check_random_state
 from torch import Tensor
 
+from typing import Optional
 
 from skwdro.base.problems import EmpiricalDistributionWithoutLabels
-from skwdro.base.losses import PortfolioLoss_torch
-from skwdro.base.losses_torch_portfolio import *
 from skwdro.base.losses_torch.portfolio import SimplePortfolio
 from skwdro.solvers.utils import detach_tensor
 from skwdro.wrap_problem import dualize_primal_loss
 
 from skwdro.base.cost_decoder import cost_from_str
-from skwdro.base.losses_torch_portfolio import *
 
-from skwdro.solvers.optim_cond import OptCond, OptCondTorch
+from skwdro.solvers.optim_cond import OptCondTorch
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_torch as entTorch
@@ -81,8 +80,8 @@ class Portfolio(BaseEstimator):
                  solver_reg=1e-3,
                  reparam="softmax",
                  n_zeta_samples: int=10,
-                 seed: int=0,
-                 opt_cond: Optional[OptCond]=OptCondTorch(2)
+                 seed: int=0, 
+                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2) # type: ignore
                  ):
 
         #Verifying conditions on rho, eta and alpha
@@ -141,16 +140,7 @@ class Portfolio(BaseEstimator):
         emp = EmpiricalDistributionWithoutLabels(m=N, samples=X)
 
         self.cost_ = cost_from_str(self.cost) #NormCost(1, 1., "L1 cost")
-        # self.problem_ = WDROProblem(
-        #         loss=PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_),
-        #         cost=self.cost_,
-        #         xi_bounds=[-np.inf,np.inf],
-        #         theta_bounds=[-np.inf,np.inf],
-        #         rho=self.rho,
-        #         p_hat=emp,
-        #         d=m,
-        #         n=m
-        #     )
+        p = self.cost_.power
         
         #Setup values C and d that define the polyhedron of xi_maj
         if (self.C is None or self.d is None):
@@ -166,7 +156,7 @@ class Portfolio(BaseEstimator):
         if self.solver == "entropic":
             raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
         elif self.solver == "dedicated":
-            self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(C=self.C_, d=self.d_, m=self.n_features_in_, cost=self.cost_, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
+            self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(C=self.C_, d=self.d_, m=self.n_features_in_, p=p, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
         elif "torch" in self.solver:
 
             self._wdro_loss = dualize_primal_loss(
@@ -191,32 +181,6 @@ class Portfolio(BaseEstimator):
 
         else:
             raise NotImplementedError("Designation for solver not recognized")
-        # if self.solver in {"entropic_torch_pre", "entropic_torch_post"}:
-        #     #Define the optimizer
-
-        #     '''
-        #     Hybrid optimizer with MWU method : WIP
-        #     
-        #     self.problem_.loss.optimizer = hybrid_opt.HybridAdam([
-        #     {'params': [self.problem_.loss.loss.loss._theta_tilde], 'lr':1e-10, 'mwu_simplex':True},
-        #     {'params': [self.problem_.loss.loss.tau]},
-        #     {'params': [self.problem_.loss._lam], 'non_neg':True}
-        #     ], lr=1e-5, betas=(.99, .999), weight_decay=0., amsgrad=True, foreach=True)
-        #     '''
-        #     self.coef_, _, self.dual_var_, _ = entTorch.solve_dual(
-        #             wdro_problem=self.problem_,
-        #             seed=self.seed,
-        #             sigma_=pt.tensor(self.solver_reg_)
-        #     )
-
-        #     # Stock the robust loss result
-        #     if self.solver == "entropic_torch_pre":
-        #         #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
-        #         raise NotImplementedError("Result for pre_sample not available")
-        #     elif self.solver == "entropic_torch_post":
-        #         self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(self.X_))
-
-        #     self.tau_ = self.problem_.loss.primal_loss.tau.item()
 
         self.is_fitted_ = True
 
@@ -250,15 +214,6 @@ class Portfolio(BaseEstimator):
         X = check_array(X)
 
         assert self.is_fitted_ == True #We have to fit before evaluating
-
-        # def entropic_case(X):
-        #     if isinstance(X, (np.ndarray,np.generic)):
-        #         X = pt.from_numpy(X)
-
-        #     #We optimize on tau once again
-        #     reducer_loss = PortfolioLoss_torch(eta=self.eta_, alpha=self.alpha_)
-
-        #     return reducer_loss.value(theta=self.coef_, xi=X).mean()
 
         if "entropic" in self.solver:
             return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()

@@ -10,7 +10,7 @@ from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
-from skwdro.base.loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
+from skwdro.neural_network._loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
 from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
 from skwdro.base.samplers.torch import LabeledCostSampler

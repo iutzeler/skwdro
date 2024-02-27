@@ -2,10 +2,7 @@ import numpy as np
 from cvxopt import matrix, solvers
 import cvxpy as cp
 
-from skwdro.base.losses.newsvendor import NewsVendorLoss
 from skwdro.solvers.result import wrap_solver_result
-from skwdro.base.costs import NormCost
-from skwdro.base.problems import WDROProblem
 
 
 @wrap_solver_result
@@ -190,7 +187,7 @@ def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.n
 
 
 @wrap_solver_result
-def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, samples=None, fit_intercept=None):
+def WDROPortfolioSpecificSolver(C, d, m, p, eta=.0, alpha=.95, rho=1.0, samples=None, fit_intercept=None):
     '''
     Solver for the dual program linked to Mean-Risk portfolio problem (Kuhn 2017).
     '''
@@ -220,15 +217,13 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
     for j in range(m):
         constraints.append(theta[j] >= 0)
 
-    if isinstance(cost, NormCost): #Obtain the q-norm for the dual norm
-        p = cost.p
-        if p != 1:
-            q = 1/(1 - (1/p))
-        elif p == 1:
-            q = np.inf
-            pass
-    else:
-        raise TypeError("Please define NormCost instance for cost attribute to define dual norm")
+
+    if p != 1:
+        q = 1/(1 - (1/p))
+    elif p == 1:
+        q = np.inf
+        pass
+
 
     for i in range(N):
         xii_hat = samples[i]

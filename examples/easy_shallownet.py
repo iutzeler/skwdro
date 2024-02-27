@@ -2,7 +2,7 @@ from typing import Iterable
 import matplotlib.pyplot as plt
 import torch as pt
 import torch.nn as nn
-from torch.utils.data import TensorDataset, DataLoader, StackDataset
+from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
 from skwdro.wrap_problem import dualize_primal_loss
