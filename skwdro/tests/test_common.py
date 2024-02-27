@@ -20,7 +20,7 @@ dict_wdro_estimators["LinearReg (entropic presampled)"] = LinearRegression(solve
 
 dict_wdro_estimators["Weber (entropic presampled)"] = Weber(solver="entropic_torch_pre")
 
-dict_wdro_estimators["Portfolio"] = Portfolio(cost="n-NC-1-1")
+dict_wdro_estimators["Portfolio"] = Portfolio(cost="t-NC-1-1")
 
 #dict_wdro_estimators["Portfolio_entropic"] = Portfolio(solver="entropic_torch")
 

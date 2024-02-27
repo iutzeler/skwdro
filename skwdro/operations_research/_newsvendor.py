@@ -73,7 +73,7 @@ class NewsVendor(BaseEstimator):
             rho: float=1e-2,
             k: float=5,
             u: float=7,
-            cost: str="n-NC-1-2",
+            cost: str="t-NC-1-2",
             l2_reg: float=0.,
             solver_reg: float=.01,
             n_zeta_samples: int=10,

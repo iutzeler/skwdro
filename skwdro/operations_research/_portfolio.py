@@ -140,6 +140,7 @@ class Portfolio(BaseEstimator):
         emp = EmpiricalDistributionWithoutLabels(m=N, samples=X)
 
         self.cost_ = cost_from_str(self.cost) #NormCost(1, 1., "L1 cost")
+        p = self.cost_.power
         
         #Setup values C and d that define the polyhedron of xi_maj
         if (self.C is None or self.d is None):
@@ -155,7 +156,7 @@ class Portfolio(BaseEstimator):
         if self.solver == "entropic":
             raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
         elif self.solver == "dedicated":
-            self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(C=self.C_, d=self.d_, m=self.n_features_in_, cost=self.cost_, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
+            self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(C=self.C_, d=self.d_, m=self.n_features_in_, p=p, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
         elif "torch" in self.solver:
 
             self._wdro_loss = dualize_primal_loss(
