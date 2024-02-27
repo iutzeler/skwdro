@@ -2,6 +2,7 @@
 Linear Regression
 """
 import warnings
+from typing import Optional
 
 import numpy as np
 import torch as pt
@@ -15,12 +16,12 @@ import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
-from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
+from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.costs_torch import Cost as TorchCost
 from skwdro.base.losses import QuadraticLoss
 from skwdro.base.losses_torch import QuadraticLoss as QuadraticLossTorch
 from skwdro.base.samplers.torch import LabeledCostSampler
-from skwdro.solvers.optim_cond import OptCond
+from skwdro.solvers.optim_cond import OptCondTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.wrap_problem import dualize_primal_loss
@@ -92,7 +93,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  sampler_reg=None,
                  n_zeta_samples: int=10,
                  random_state: int=0,
-                 opt_cond=None
+                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
                  ):
 
         if rho < 0:
@@ -153,52 +154,47 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         self.cost_ = cost_from_str(self.cost)
-        self.problem_ = WDROProblem(
-                loss=QuadraticLoss(l2_reg=self.l2_reg),
-                cost=self.cost_,
-                xi_bounds=[-1e8,1e8],
-                theta_bounds=[-1e8,1e8],
-                rho=self.rho,
-                p_hat=emp,
-                d_labels=1,
-                d=d,
-                n=d
-            )
+        # self.problem_ = WDROProblem(
+        #         loss=QuadraticLoss(l2_reg=self.l2_reg),
+        #         cost=self.cost_,
+        #         xi_bounds=[-1e8,1e8],
+        #         theta_bounds=[-1e8,1e8],
+        #         rho=self.rho,
+        #         p_hat=emp,
+        #         d_labels=1,
+        #         d=d,
+        #         n=d
+        #     )
         # #########################################
-
         if self.solver=="entropic":
-            self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
-                    self.problem_,
-                    fit_intercept=self.fit_intercept,
-                    opt_cond=OptCond(2,max_iter=int(1e9),tol_theta=1e-6,tol_lambda=1e-6)
-            )
-
-            if np.isnan(self.coef_).any() or (self.intercept_ is not None and np.isnan(self.intercept_)):
-                raise ConvergenceWarning(f"The entropic solver has not converged: theta={self.coef_} intercept={self.intercept_} lambda={self.dual_var_} ")
+            raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
         elif "torch" in self.solver:
-            # assert isinstance(self.cost_, TorchCost)
+            assert isinstance(self.cost_, TorchCost)
+
+            if self.opt_cond is None:
+                self.opt_cond = OptCondTorch(2)
             # custom_sampler = LabeledCostSampler(
             #         self.cost_,
-            #         pt.Tensor(self.problem_.p_hat.samples_x),
-            #         pt.Tensor(self.problem_.p_hat.samples_y),
+            #         pt.Tensor(emp.samples_x),
+            #         pt.Tensor(emp.samples_y),
             #         sigma=self.sampler_reg,
             #         seed=self.random_state
             #     )
 
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
-            self.problem_.loss = dualize_primal_loss(
+            _wdro_loss = dualize_primal_loss(
                     nn.MSELoss(reduction="none"),
                     nn.Linear(d, 1),
                     pt.tensor(self.rho),
-                    pt.Tensor(self.problem_.p_hat.samples_x),
-                    pt.Tensor(self.problem_.p_hat.samples_y),
+                    pt.Tensor(emp.samples_x),
+                    pt.Tensor(emp.samples_y),
                     _post_sample,
                     self.cost,
                     self.n_zeta_samples,
                     self.random_state,
                     l2reg=self.l2_reg
                 )
-                # self.problem_.loss = DualLoss(
+                # _wdro_loss = DualLoss(
                 #         QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
                 #         self.cost_,
                 #         n_samples=10,
@@ -206,7 +202,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 #         epsilon_0=self.solver_reg,
                 #         rho_0=pt.tensor(self.rho)
                 #     )
-                # self.problem_.loss = DualPreSampledLoss(
+                # _wdro_loss = DualPreSampledLoss(
                 #         QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
                 #         self.cost_,
                 #         n_samples=10,
@@ -214,14 +210,16 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 #         rho_0=pt.tensor(self.rho)
                 #     )
 
-            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual(
-                    self.problem_,
-                )
-            self.coef_ = detach_tensor(self.problem_.loss.primal_loss.transform.weight) # type: ignore
-            self.intercept_ = maybe_detach_tensor(self.problem_.loss.primal_loss.transform.bias) # type: ignore
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
+                    _wdro_loss,
+                    emp,
+                    self.opt_cond # type: ignore
+                    )
+            self.coef_ = detach_tensor(_wdro_loss.primal_loss.transform.weight) # type: ignore
+            self.intercept_ = maybe_detach_tensor(_wdro_loss.primal_loss.transform.bias) # type: ignore
         elif self.solver=="dedicated":
             self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(
-                    rho=self.problem_.rho,
+                    rho=self.rho,
                     X=X,
                     y=y,
                     fit_intercept=self.fit_intercept

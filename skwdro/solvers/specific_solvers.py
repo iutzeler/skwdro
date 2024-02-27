@@ -7,14 +7,9 @@ from skwdro.solvers.result import wrap_solver_result
 from skwdro.base.costs import NormCost
 from skwdro.base.problems import WDROProblem
 
-@wrap_solver_result
-def WDRONewsvendorSolver(pbm: WDROProblem):
-    l = pbm.loss
-    assert isinstance(l, NewsVendorLoss)
-    return WDRONewsvendorSpecificSolver(k=float(l.k), u=float(l.u), rho=pbm.rho, samples=pbm.p_hat.samples)
 
 @wrap_solver_result
-def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
+def WDRONewsvendorSpecificSolver(k=5.,u=7.,rho=1.0,samples=None):
     assert samples is not None
     z = np.sort(samples, axis=0)
     n = z.shape[0]
@@ -46,12 +41,9 @@ def WDRONewsvendorSpecificSolver(k=5,u=7,rho=1.0,samples=None):
 
 
 
-@wrap_solver_result
-def SAANewsvendorSolver(WDROProblem):
-    return SAANewsvendorSpecificSolver2(k=WDROProblem.loss.k,u=WDROProblem.loss.u,samples=WDROProblem.P.samples)
 
 @wrap_solver_result
-def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
+def SAANewsvendorSpecificSolver(k=5.,u=7.,samples=None):
     assert samples is not None
 
     z = np.sort(samples, axis=0)
@@ -99,7 +91,7 @@ def SAANewsvendorSpecificSolver(k=5,u=7,samples=None):
     return theta, dual_fun
 
 @wrap_solver_result
-def SAANewsvendorSpecificSolver2(k=5,u=7,samples=None):
+def SAANewsvendorSpecificSolver2(k=5.,u=7.,samples=None):
     assert samples is not None
 
     z = np.sort(samples, axis=0)
@@ -145,7 +137,7 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-        result = problem.solve(verbose=False)
+        result = problem.solve(verbose=False,solver=cp.ECOS)
 
         return beta.value[:d], beta.value[d+1+n] , beta.value[d], result
     else:
@@ -161,7 +153,7 @@ def WDROLogisticSpecificSolver(rho=1.0,kappa=1000,X=None,y=None,fit_intercept=Fa
 
         problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-        result = problem.solve(verbose=False)
+        result = problem.solve(verbose=False,solver=cp.ECOS)
 
         return beta.value[:d], 0.0 , beta.value[d], result
 
@@ -191,16 +183,10 @@ def WDROLinRegSpecificSolver(rho: float=1.0,X: np.ndarray=np.array(None),y: np.n
 
     problem = cp.Problem(cp.Minimize(loss),constraints=constraints)
 
-    problem.solve(verbose=False)
+    problem.solve(verbose=False,solver=cp.ECOS)
 
     return coeff.value, intercept.value , None
 
-
-
-@wrap_solver_result
-def WDROPortfolioSolver(WDROProblem, cost, C, d, eta, alpha, fit_intercept=None):
-    return WDROPortfolioSpecificSolver(C=C, d=d, m=WDROProblem.n, cost=cost, eta=eta, \
-                                       alpha=alpha, rho=WDROProblem.rho, samples=WDROProblem.p_hat.samples)
 
 
 @wrap_solver_result
@@ -253,7 +239,7 @@ def WDROPortfolioSpecificSolver(C, d, m, cost, eta=0, alpha=.95, rho=1.0, sample
 
     #Solving the problem
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
-    result = problem.solve()
+    result = problem.solve(solver=cp.ECOS)
 
     if theta.value is None or np.isnan(sum(theta.value)):
         raise ValueError("No solution exists for the Mean-Risk Portfolio problem")

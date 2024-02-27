@@ -5,7 +5,11 @@ import numpy as np
 import torch as pt
 
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y
+from sklearn.utils.validation import check_X_y, check_array
+
+from typing import Optional
+
+from skwdro.solvers.optim_cond import OptCond, OptCondTorch
 
 from skwdro.solvers.utils import detach_tensor
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
@@ -62,7 +66,8 @@ class Weber(BaseEstimator):
             n_zeta_samples: int=10,
             cost: str="t-NLC-2-2",
             solver="entropic_torch",
-            random_state: int=0
+            random_state: int=0,
+            opt_cond: Optional[OptCond]=OptCondTorch(2)
             ):
 
         if rho < 0:
@@ -77,6 +82,7 @@ class Weber(BaseEstimator):
         self.n_zeta_samples = n_zeta_samples
         self.random_state = random_state
         self.cost = cost
+        self.opt_cond = opt_cond
 
     def fit(self, X, y):
         """Fits a Weber WDRO model
@@ -121,7 +127,7 @@ class Weber(BaseEstimator):
 
         if "torch" in self.solver:
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
-            l = dualize_primal_loss(
+            self._wdro_loss = dualize_primal_loss(
                     SimpleWeber(d),
                     None,
                     pt.tensor(self.rho),
@@ -135,22 +141,23 @@ class Weber(BaseEstimator):
                     sigma=self.sampler_reg,
                     l2reg=self.l2_reg
                 )
-            self.problem_ = WDROProblem(
-                loss=l,
-                cost = cost,
-                xi_bounds=[0,20],
-                theta_bounds=[0,np.inf],
-                rho=self.rho,
-                p_hat=emp,
-                d=d,
-                d_labels=1,
-                n=d
-            )
-            l.n_iter = 300
-            self.coef_, _, self.dual_var_, self.robust_loss_ = entTorch.solve_dual(
-                self.problem_,
-            )
-
+            # self.problem_ = WDROProblem(
+            #     loss=l,
+            #     cost = cost,
+            #     xi_bounds=[0,20],
+            #     theta_bounds=[0,np.inf],
+            #     rho=self.rho,
+            #     p_hat=emp,
+            #     d=d,
+            #     d_labels=1,
+            #     n=d
+            # )
+            self._wdro_loss.n_iter = 300
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
+                    self._wdro_loss,
+                    emp,
+                    self.opt_cond, # type: ignore
+                    )
             self.coef_ = detach_tensor(self.problem_.loss.primal_loss.loss.pos).flatten() # type: ignore
 
             # if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
@@ -236,22 +243,32 @@ class Weber(BaseEstimator):
 
         assert self.is_fitted_ == True #We have to fit before evaluating
 
-        def entropic_case(X):
-            if isinstance(X, (np.ndarray,np.generic)):
-                X = pt.from_numpy(X)
 
-            return self.problem_.loss.primal_loss.value(xi=X).mean()
+        #Check that X has correct shape
+        X = check_array(X)
 
-        match self.solver:
-            case "dedicated":
-                return self.problem_.loss.value(theta=self.coef_, xi=X)
-            case "entropic":
-                return NotImplementedError("Entropic solver for Portfolio not implemented yet")
-            case "entropic_torch":
-                return entropic_case(X)
-            case "entropic_torch_pre":
-                return entropic_case(X)
-            case "entropic_torch_post":
-                return entropic_case(X)            
-            case _:
-                return ValueError("Solver not recognized")
+        if "entropic" in self.solver:
+            return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()
+        else:
+            raise(ValueError("Solver not recognized"))
+
+
+        # def entropic_case(X):
+        #     if isinstance(X, (np.ndarray,np.generic)):
+        #         X = pt.from_numpy(X)
+
+        #     return self.problem_.loss.primal_loss.value(xi=X).mean()
+
+        # match self.solver:
+        #     case "dedicated":
+        #         return self.problem_.loss.value(theta=self.coef_, xi=X)
+        #     case "entropic":
+        #         return NotImplementedError("Entropic solver for Portfolio not implemented yet")
+        #     case "entropic_torch":
+        #         return entropic_case(X)
+        #     case "entropic_torch_pre":
+        #         return entropic_case(X)
+        #     case "entropic_torch_post":
+        #         return entropic_case(X)            
+        #     case _:
+        #         return ValueError("Solver not recognized")

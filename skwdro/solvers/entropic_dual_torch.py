@@ -1,5 +1,19 @@
 from typing import List, Optional, Union
 
+# from warnings import deprecated # Python 3.12+
+import warnings
+
+def deprecated(message):
+  def deprecated_decorator(func):
+      def deprecated_func(*args, **kwargs):
+          warnings.warn("{} is a deprecated function. {}".format(func.__name__, message),
+                        category=DeprecationWarning,
+                        stacklevel=2)
+          warnings.simplefilter('default', DeprecationWarning)
+          return func(*args, **kwargs)
+      return deprecated_func
+  return deprecated_decorator
+
 import numpy as np
 import torch as pt
 
@@ -42,6 +56,7 @@ def extract_data(dist: Distribution):
 
 
 @wrap_solver_result
+@deprecated("The function solve_dual (using a WDROProblem class as input) is being deprecated in favor of solve_dual_wdro")
 def solve_dual(wdro_problem: WDROProblem):
     r""" Solve the dual problem with the loss-dependant grandient descent algorithm.
 
@@ -100,6 +115,69 @@ def solve_dual(wdro_problem: WDROProblem):
     lambd = detach_tensor(loss.lam) if loss.rho > 0. else [0.]
     robust_loss = losses[-1]
     return theta, intercept, lambd, robust_loss
+
+
+
+@wrap_solver_result
+def solve_dual_wdro(loss : _DualLoss, p_hat : Distribution, opt: OptCond):
+    r""" Solve the dual problem with the loss-dependant grandient descent algorithm.
+
+    Parameters
+    ----------
+    loss: _DualLoss
+        Dual loss
+    p_hat: Distribution
+        Empirical distribution
+    opt: OptCond
+        Optimality conditions
+
+    Returns
+    -------
+    theta: np.ndarray
+        Concatenated array of the parameters of the model, except the intercept if there is one
+    intercept: Optional[np.ndarray]
+        If the model has specificaly an intercept as one of its parameters, it is stacked in this output
+        tensor
+    lambd: Union[np.ndarray, float]
+        Dual variable :math:`\lambda` of the problem
+
+    Shapes
+    ------
+    sigma_: (1,) or (d, d)
+    theta: (n_params,)
+    intercept: (n_intercepts,) or None
+    lambd: (1,)
+    """
+
+    # Cast our raw data into tensors
+    xi, xi_labels = extract_data(p_hat)
+
+    # If user provides a numpy loss, fail.
+    assert loss is not None
+    assert isinstance(loss, _DualLoss)
+
+    # Initialize sampler.
+    assert isinstance(loss.sampler, BaseSampler)
+
+    # If user wants to specify a custom optimizer, they need to register an instance
+    # of a subclass of torch optimizers in the relevant attribute.
+    optimizer: pt.optim.Optimizer = loss.optimizer
+
+
+    # _DualLoss.presample determines the way the optimization is performed
+    optim_ = optim_presample if loss.presample else optim_postsample
+
+    opt_cond: OptCond = opt
+
+    losses = optim_(optimizer, xi, xi_labels, loss, opt_cond)
+    theta = detach_tensor(loss.theta)
+    intercept = loss.intercept
+    if intercept is not None:
+        intercept = detach_tensor(intercept)
+    lambd = detach_tensor(loss.lam) if loss.rho > 0. else [0.]
+    robust_loss = losses[-1]
+    return theta, intercept, lambd, robust_loss
+
 
 def optim_presample(
         optimizer: pt.optim.Optimizer,
