@@ -2,10 +2,8 @@ import numpy as np
 from cvxopt import matrix, solvers
 import cvxpy as cp
 
-from skwdro.base.losses.newsvendor import NewsVendorLoss
 from skwdro.solvers.result import wrap_solver_result
 from skwdro.base.costs import NormCost
-from skwdro.base.problems import WDROProblem
 
 
 @wrap_solver_result

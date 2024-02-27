@@ -16,7 +16,7 @@ from scipy.special import expit
 
 from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.losses_torch.logistic import BiDiffSoftMarginLoss
-from skwdro.solvers.optim_cond import OptCond, OptCondTorch
+from skwdro.solvers.optim_cond import OptCondTorch
 from skwdro.base.cost_decoder import cost_from_str
 
 import skwdro.solvers.specific_solvers as spS
@@ -48,8 +48,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         regularization value for the entropic solver
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
-    opt_cond: Optional[OptCond]
-        optimality condition, see :py:class:`OptCond`
+    opt_cond: Optional[OptCondTorch]
+        optimality condition, see :py:class:`OptCondTorch`
 
     Attributes
     ----------
@@ -90,7 +90,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  sampler_reg: Optional[float]=None,
                  n_zeta_samples: int=10,
                  random_state: int=0,
-                 opt_cond: Optional[OptCond]=OptCondTorch(2)
+                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
                  ):
 
         if rho < 0:
@@ -102,7 +102,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.fit_intercept  = fit_intercept
         self.solver         = solver
         self.solver_reg     = solver_reg
-        # Temporary default
         self.sampler_reg    = sampler_reg # sigma
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
@@ -170,29 +169,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Define cleanly the hyperparameters of the problem.
         self.cost_ = cost_from_str(self.cost)
-        # self.problem_ = WDROProblem(
-        #         cost=self.cost_,
-        #         loss=LogisticLoss(l2_reg=self.l2_reg),
-        #         p_hat=emp,
-        #         n=d,
-        #         d=d,
-        #         d_labels=1,
-        #         xi_bounds=[-1e8,1e8],
-        #         theta_bounds=[-1e8,1e8],
-        #         rho=self.rho
-        #     )
         # #########################################
 
         if self.solver=="entropic":
             raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
-            # if self.opt_cond is None:
-            #     self.opt_cond = OptCond(2)
-            # # In the entropic case, we use the numpy gradient descent solver
-            # self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
-            #         self.problem_,
-            #         fit_intercept=self.fit_intercept,
-            #         opt_cond=self.opt_cond
-            # )
         elif self.solver=="dedicated":
             # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
             # One may use it by specifying this option
@@ -219,36 +199,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     epsilon=self.solver_reg,
                     l2reg=self.l2_reg
                 )
-            # custom_sampler = LabeledCostSampler(
-            #         self.cost_,
-            #         pt.Tensor(emp.samples_x),
-            #         pt.Tensor(emp.samples_y),
-            #         epsilon=self.sampler_reg,
-            #         seed=self.random_state
-            #     )
-            # # The problem loss is changed to a more suitable "dual loss"
-            # if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            #     # Default torch implementation resamples from pi_0 at each SGD step
-            #     _wdro_loss = DualLoss(
-            #             LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-            #             self.cost_,
-            #             n_samples=self.n_zeta_samples,
-            #             n_iter=1000,
-            #             epsilon_0=self.solver_reg,
-            #             rho_0=pt.tensor(self.rho)
-            #         )
-
-            # elif self.solver == "entropic_torch_pre":
-            #     # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
-            #     _wdro_loss = DualPreSampledLoss(
-            #             LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-            #             self.cost_,
-            #             n_samples=self.n_zeta_samples,
-            #             epsilon_0=self.solver_reg,
-            #             rho_0=pt.tensor(self.rho)
-            #         )
-            # else:
-            #     raise NotImplementedError()
 
             # The problem is solved with the new "dual loss"
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(

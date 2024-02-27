@@ -9,10 +9,10 @@ from sklearn.utils.validation import check_X_y, check_array
 
 from typing import Optional
 
-from skwdro.solvers.optim_cond import OptCond, OptCondTorch
+from skwdro.solvers.optim_cond import OptCondTorch
 
 from skwdro.solvers.utils import detach_tensor
-from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
+from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
 from skwdro.base.losses_torch.weber import SimpleWeber
 from skwdro.wrap_problem import dualize_primal_loss
@@ -67,7 +67,7 @@ class Weber(BaseEstimator):
             cost: str="t-NLC-2-2",
             solver="entropic_torch",
             random_state: int=0,
-            opt_cond: Optional[OptCond]=OptCondTorch(2)
+            opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
             ):
 
         if rho < 0:

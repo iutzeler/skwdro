@@ -5,18 +5,14 @@ import numpy as np
 import torch as pt
 import torch.nn as nn
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
-from sklearn.utils.multiclass import unique_labels
-from sklearn.metrics import euclidean_distances
+from sklearn.utils.validation import check_array, check_is_fitted
 
 from typing import Optional
 
-from skwdro.solvers.optim_cond import OptCond, OptCondTorch
+from skwdro.solvers.optim_cond import OptCondTorch
 
 from skwdro.base.problems import EmpiricalDistributionWithoutLabels
-from skwdro.base.losses import NewsVendorLoss
 import skwdro.solvers.specific_solvers as spS
-import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.wrap_problem import dualize_primal_loss
@@ -54,8 +50,8 @@ class NewsVendor(BaseEstimator):
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
-    opt_cond: Optional[OptCond]
-        optimality condition, see :py:class:`OptCond`
+    opt_cond: Optional[OptCondTorch]
+        optimality condition, see :py:class:`OptCondTorch`
 
     Attributes
     ----------
@@ -83,7 +79,7 @@ class NewsVendor(BaseEstimator):
             n_zeta_samples: int=10,
             solver: str="entropic",
             random_state: int=0,
-            opt_cond: Optional[OptCond]=OptCondTorch(2)
+            opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
             ):
 
         if rho < 0:
@@ -135,16 +131,6 @@ class NewsVendor(BaseEstimator):
         self.cost_ = cost_from_str(self.cost)
 
         emp = EmpiricalDistributionWithoutLabels(m=m,samples=X)
-        # Define problem w/ hyperparameters
-        # self.problem_ = WDROProblem(
-        #         loss=NewsVendorLoss(k=self.k, u=self.u),
-        #         cost=self.cost_,
-        #         d=1,
-        #         xi_bounds=[0, 20],
-        #         n=1,
-        #         theta_bounds=[0, np.inf],
-        #         rho=self.rho,
-        #         p_hat=EmpiricalDistributionWithoutLabels(m=m,samples=X))
         # #################################
 
         if "torch" in self.solver:
@@ -160,34 +146,6 @@ class NewsVendor(BaseEstimator):
                     seed=self.random_state,
                     epsilon=self.solver_reg,
             )
-            # custom_sampler = NoLabelsCostSampler(
-            #         self.cost_,
-            #         pt.Tensor(self.problem_.p_hat.samples),
-            #         epsilon=pt.tensor(self.rho),
-            #         seed=self.random_state
-            #     )
-            # Use torch backend to solve the entropy-regularized version
-            # if self.solver == "entropic_torch" or self.solver == "entropic_torch_pre":
-            #     # Default is to sample once the zetas
-            #     self.problem_.loss = DualPreSampledLoss(
-            #             NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
-            #             self.cost_,
-            #             self.n_zeta_samples,
-            #             epsilon_0=pt.tensor(self.solver_reg),
-            #             rho_0=pt.tensor(self.rho),
-            #             )
-            # elif self.solver == "entropic_torch_post":
-            #     # Use this option to resample the zetas at each gradient step
-            #     self.problem_.loss = DualLoss(
-            #             NewsVendorLoss_torch(custom_sampler, k=self.k, u=self.u, l2reg=self.l2_reg),
-            #             self.cost_,
-            #             self.n_zeta_samples,
-            #             n_iter=1000,
-            #             epsilon_0=pt.tensor(self.solver_reg),
-            #             rho_0=pt.tensor(self.rho),
-            #             )
-            # else:
-            #     raise NotImplementedError()
             # Solve dual problem
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
                     self._wdro_loss,
@@ -252,25 +210,4 @@ class NewsVendor(BaseEstimator):
             return np.mean(gains - losses)
         else:
             raise(ValueError("Solver not recognized"))
-
-        # def entropic_case(X):
-        #     if isinstance(X, (np.ndarray,np.generic)):
-        #         X = pt.from_numpy(X)
-
-        #     return self.problem_.loss.primal_loss.value(xi=X).mean().item()
-
-        # match self.solver:
-        #     case "dedicated":
-        #         return self.problem_.loss.value(theta=self.coef_, xi=X)
-        #     case "entropic":
-        #         return NotImplementedError("Entropic solver for Portfolio not implemented yet")
-        #     case "entropic_torch":
-        #         return entropic_case(X)
-        #     case "entropic_torch_pre":
-        #         return entropic_case(X)
-        #     case "entropic_torch_post":
-        #         return entropic_case(X)
-        #     case _:
-        #         return ValueError("Solver not recognized")
-
 

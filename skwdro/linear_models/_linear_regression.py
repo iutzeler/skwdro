@@ -9,20 +9,15 @@ import torch as pt
 import torch.nn as nn
 
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
+from sklearn.exceptions import DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 import skwdro.solvers.specific_solvers as spS
-import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
 from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.costs_torch import Cost as TorchCost
-from skwdro.base.losses import QuadraticLoss
-from skwdro.base.losses_torch import QuadraticLoss as QuadraticLossTorch
-from skwdro.base.samplers.torch import LabeledCostSampler
 from skwdro.solvers.optim_cond import OptCondTorch
-from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.wrap_problem import dualize_primal_loss
 
@@ -57,8 +52,8 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         regularization value for the entropic solver
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
-    opt_cond: Optional[OptCond]
-        optimality condition, see :py:class:`OptCond`
+    opt_cond: Optional[OptCondTorch]
+        optimality condition, see :py:class:`OptCondTorch`
 
     Attributes
     ----------
@@ -154,17 +149,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
         self.cost_ = cost_from_str(self.cost)
-        # self.problem_ = WDROProblem(
-        #         loss=QuadraticLoss(l2_reg=self.l2_reg),
-        #         cost=self.cost_,
-        #         xi_bounds=[-1e8,1e8],
-        #         theta_bounds=[-1e8,1e8],
-        #         rho=self.rho,
-        #         p_hat=emp,
-        #         d_labels=1,
-        #         d=d,
-        #         n=d
-        #     )
+      
         # #########################################
         if self.solver=="entropic":
             raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
@@ -173,13 +158,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             if self.opt_cond is None:
                 self.opt_cond = OptCondTorch(2)
-            # custom_sampler = LabeledCostSampler(
-            #         self.cost_,
-            #         pt.Tensor(emp.samples_x),
-            #         pt.Tensor(emp.samples_y),
-            #         sigma=self.sampler_reg,
-            #         seed=self.random_state
-            #     )
 
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
             _wdro_loss = dualize_primal_loss(
@@ -194,21 +172,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                     self.random_state,
                     l2reg=self.l2_reg
                 )
-                # _wdro_loss = DualLoss(
-                #         QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-                #         self.cost_,
-                #         n_samples=10,
-                #         n_iter=1000,
-                #         epsilon_0=self.solver_reg,
-                #         rho_0=pt.tensor(self.rho)
-                #     )
-                # _wdro_loss = DualPreSampledLoss(
-                #         QuadraticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-                #         self.cost_,
-                #         n_samples=10,
-                #         epsilon_0=self.solver_reg,
-                #         rho_0=pt.tensor(self.rho)
-                #     )
+
 
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
                     _wdro_loss,
