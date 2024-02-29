@@ -14,7 +14,7 @@ Entropic Solvers using torch
 .. autosummary::
    :toctree: generated/
 
-   solve_dual
+   solve_dual_wdro
 
 
 Specific Solvers

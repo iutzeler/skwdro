@@ -1,3 +1,6 @@
+"""
+Roadef 24
+"""
 import torch as pt
 import torch.nn as nn
 from skwdro.base.problems import EmpiricalDistributionWithLabels

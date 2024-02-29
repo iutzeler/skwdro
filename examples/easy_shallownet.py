@@ -1,3 +1,6 @@
+"""
+Easy shallownet
+"""
 from typing import Iterable
 import matplotlib.pyplot as plt
 import torch as pt

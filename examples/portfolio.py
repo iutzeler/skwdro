@@ -1,3 +1,6 @@
+"""
+Portfolio
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 from skwdro.operations_research._portfolio import Portfolio
