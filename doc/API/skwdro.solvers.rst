@@ -4,14 +4,6 @@ skwdro.solvers package
 Submodules
 ----------
 
-skwdro.solvers.entropic\_dual\_solvers module
----------------------------------------------
-
-.. automodule:: skwdro.solvers.entropic_dual_solvers
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 skwdro.solvers.entropic\_dual\_torch module
 -------------------------------------------
 
@@ -20,10 +12,10 @@ skwdro.solvers.entropic\_dual\_torch module
    :undoc-members:
    :show-inheritance:
 
-skwdro.solvers.gradient\_estimates module
------------------------------------------
+skwdro.solvers.entropic\_dual\_torch\_epsilon module
+----------------------------------------------------
 
-.. automodule:: skwdro.solvers.gradient_estimates
+.. automodule:: skwdro.solvers.entropic_dual_torch_epsilon
    :members:
    :undoc-members:
    :show-inheritance:

@@ -6,18 +6,19 @@ import numpy as np
 import torch as pt
 
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
+from sklearn.exceptions import  DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
-from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
+from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.neural_network._loss_shallownet import ShallowNetLoss as ShallowNetLossTorch
-from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
-from skwdro.base.samplers.torch import LabeledCostSampler
+
 
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
 from skwdro.base.cost_decoder import cost_from_str
+
+from skwdro.solvers.optim_cond import OptCondTorch
 
 class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
     """ A Wasserstein Distributionally Robust shallow network.
@@ -66,7 +67,7 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
                  ly1= None,
                  ly2= None,
                  random_state: int=0,
-                 opt_cond=None
+                 opt_cond=OptCondTorch(2)
                  ):
 
         if rho is not float:
@@ -126,57 +127,33 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
         cost = cost_from_str(self.cost)
         emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
 
-        self.problem_ = WDROProblem(
-                loss=None,
-                cost=NormCost(p=2),
-                xi_bounds=[-1e8,1e8],
-                theta_bounds=[-1e8,1e8],
-                rho=self.rho,
-                p_hat=emp,
-                d_labels=1,
-                d=d,
-                n=d
-            )
 
         # #########################################
-        custom_sampler = LabeledCostSampler(
-                    cost,
-                    pt.Tensor(self.problem_.p_hat.samples_x),
-                    pt.Tensor(self.problem_.p_hat.samples_y),
-                    epsilon=pt.tensor(self.rho),
-                    seed=self.random_state
-                )
 
         if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            self.problem_.loss = DualLoss(
-                    ShallowNetLossTorch(custom_sampler, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept, ly1=self.ly1, ly2=self.ly2),
+            _wdro_loss = DualLoss(
+                    ShallowNetLossTorch( n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept, ly1=self.ly1, ly2=self.ly2),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma_=self.solver_reg,
-                    seed=self.random_state
-                )
-            self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
+            self.coef_, self.intercept_, self.dual_var_,self.robust_loss_ = entTorch.solve_dual_wdro(_wdro_loss,emp,self.opt_cond)
+
+            self.parameters_ = _wdro_loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
-            self.problem_.loss = DualPreSampledLoss(
-                    ShallowNetLossTorch(custom_sampler, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept),
+            _wdro_loss = DualPreSampledLoss(
+                    ShallowNetLossTorch(n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=self.n_zeta_samples,
                     epsilon_0=pt.tensor(self.solver_reg),
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma_=self.solver_reg,
-                    seed=self.random_state
-                )
-            self.parameters_ = self.problem_.loss.primal_loss.parameters_iter
+            self.coef_, self.intercept_, self.dual_var_,self.robust_loss_  = entTorch.solve_dual_wdro(_wdro_loss,emp,self.opt_cond)
+
+            self.parameters_ = _wdro_loss.primal_loss.parameters_iter
         elif self.solver=="entropic":
             raise NotImplementedError
         elif self.solver=="dedicated":
@@ -209,7 +186,7 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
         # Input validation
         X = check_array(X)
         X = pt.tensor(X, dtype=pt.float32, device="cpu")
-        model = ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=self.problem_.d, fit_intercept=self.fit_intercept)
+        model = ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept)
         model.load_state_dict(self.parameters_) # load
 
         return model.pred(X).cpu().detach().numpy().flatten()

@@ -1,3 +1,6 @@
+"""
+Weber epsilon
+"""
 import numpy as np
 from skwdro.operations_research._weber import Weber
 
