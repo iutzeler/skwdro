@@ -14,14 +14,12 @@ from scipy.special import expit
 
 
 
-from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
-from skwdro.base.losses import LogisticLoss
+from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.losses_torch.logistic import BiDiffSoftMarginLoss
-from skwdro.solvers.optim_cond import OptCond
+from skwdro.solvers.optim_cond import OptCondTorch
 from skwdro.base.cost_decoder import cost_from_str
 
 import skwdro.solvers.specific_solvers as spS
-import skwdro.solvers.entropic_dual_solvers as entS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
 from skwdro.wrap_problem import dualize_primal_loss
@@ -50,8 +48,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         regularization value for the entropic solver
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
-    opt_cond: Optional[OptCond]
-        optimality condition, see :py:class:`OptCond`
+    opt_cond: Optional[OptCondTorch]
+        optimality condition, see :py:class:`OptCondTorch`
 
     Attributes
     ----------
@@ -92,7 +90,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  sampler_reg: Optional[float]=None,
                  n_zeta_samples: int=10,
                  random_state: int=0,
-                 opt_cond: Optional[OptCond]=OptCond(2)
+                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
                  ):
 
         if rho < 0:
@@ -104,7 +102,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.fit_intercept  = fit_intercept
         self.solver         = solver
         self.solver_reg     = solver_reg
-        # Temporary default
         self.sampler_reg    = sampler_reg # sigma
         self.opt_cond       = opt_cond
         self.n_zeta_samples = n_zeta_samples
@@ -172,33 +169,15 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Define cleanly the hyperparameters of the problem.
         self.cost_ = cost_from_str(self.cost)
-        self.problem_ = WDROProblem(
-                cost=self.cost_,
-                loss=LogisticLoss(l2_reg=self.l2_reg),
-                p_hat=emp,
-                n=d,
-                d=d,
-                d_labels=1,
-                xi_bounds=[-1e8,1e8],
-                theta_bounds=[-1e8,1e8],
-                rho=self.rho
-            )
         # #########################################
 
         if self.solver=="entropic":
-            if self.opt_cond is None:
-                self.opt_cond = OptCond(2)
-            # In the entropic case, we use the numpy gradient descent solver
-            self.coef_ , self.intercept_, self.dual_var_ = entS.WDROEntropicSolver(
-                    self.problem_,
-                    fit_intercept=self.fit_intercept,
-                    opt_cond=self.opt_cond
-            )
+            raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
         elif self.solver=="dedicated":
             # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
             # One may use it by specifying this option
             self.coef_ , self.intercept_, self.dual_var_, self.result_ = spS.WDROLogisticSpecificSolver(
-                    rho=self.problem_.rho,
+                    rho=self.rho,
                     kappa=1000,
                     X=X,
                     y=y,
@@ -206,12 +185,12 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             )
         elif "torch" in self.solver:
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
-            self.problem_.loss = dualize_primal_loss(
+            _wdro_loss = dualize_primal_loss(
                     BiDiffSoftMarginLoss(reduction='none'),
-                    nn.Linear(self.problem_.d, 1, bias=self.fit_intercept),
+                    nn.Linear(self.n_features_in_, 1, bias=self.fit_intercept),
                     pt.tensor(self.rho),
-                    pt.Tensor(self.problem_.p_hat.samples_x),
-                    pt.Tensor(self.problem_.p_hat.samples_y),
+                    pt.Tensor(emp.samples_x),
+                    pt.Tensor(emp.samples_y),
                     _post_sample,
                     self.cost,
                     self.n_zeta_samples,
@@ -220,44 +199,16 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     epsilon=self.solver_reg,
                     l2reg=self.l2_reg
                 )
-            # custom_sampler = LabeledCostSampler(
-            #         self.cost_,
-            #         pt.Tensor(self.problem_.p_hat.samples_x),
-            #         pt.Tensor(self.problem_.p_hat.samples_y),
-            #         epsilon=self.sampler_reg,
-            #         seed=self.random_state
-            #     )
-            # # The problem loss is changed to a more suitable "dual loss"
-            # if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            #     # Default torch implementation resamples from pi_0 at each SGD step
-            #     self.problem_.loss = DualLoss(
-            #             LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-            #             self.cost_,
-            #             n_samples=self.n_zeta_samples,
-            #             n_iter=1000,
-            #             epsilon_0=self.solver_reg,
-            #             rho_0=pt.tensor(self.rho)
-            #         )
-
-            # elif self.solver == "entropic_torch_pre":
-            #     # One may specify this option to use ~ the WangGaoXie algorithm, i.e. sample once and do BFGS steps
-            #     self.problem_.loss = DualPreSampledLoss(
-            #             LogisticLossTorch(custom_sampler, d=self.problem_.d, l2reg=self.l2_reg, fit_intercept=self.fit_intercept),
-            #             self.cost_,
-            #             n_samples=self.n_zeta_samples,
-            #             epsilon_0=self.solver_reg,
-            #             rho_0=pt.tensor(self.rho)
-            #         )
-            # else:
-            #     raise NotImplementedError()
 
             # The problem is solved with the new "dual loss"
-            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual(
-                    self.problem_,
-                )
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
+                    _wdro_loss,
+                    emp,
+                    self.opt_cond # type: ignore
+                    )
 
-            self.coef_ = detach_tensor(self.problem_.loss.primal_loss.transform.weight).flatten() # type: ignore
-            self.intercept_ = maybe_detach_tensor(self.problem_.loss.primal_loss.transform.bias) # type: ignore
+            self.coef_ = detach_tensor(_wdro_loss.primal_loss.transform.weight).flatten() # type: ignore
+            self.intercept_ = maybe_detach_tensor(_wdro_loss.primal_loss.transform.bias) # type: ignore
             # # TODO: deprecate ?
             # # Stock the robust loss result
             # Problems w/ dtypes (f32->f64 for some reason)
@@ -265,11 +216,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             # =============================================
             # Stock the robust loss result
             # if self.solver == "entropic_torch_pre":
-            #     #self.result_ = self.problem_.loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
+            #     #self.result_ = _wdro_loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
             #     #raise NotImplementedError("Result for pre_sample not available")
             #     pass
             # elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            #     self.result_ = self.problem_.loss.forward(xi=pt.from_numpy(emp.samples_x), xi_labels=pt.from_numpy(emp.samples_y)).item()
+            #     self.result_ = _wdro_loss.forward(xi=pt.from_numpy(emp.samples_x), xi_labels=pt.from_numpy(emp.samples_y)).item()
 
         else:
             raise NotImplementedError()

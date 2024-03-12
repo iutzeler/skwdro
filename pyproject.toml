@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "A Robust ML toolbox"
 readme = "README.md"
 maintainers = [
-    { name = "F. Iutzeler", email = "franck.iutzeler@univ-grenoble-alpes.fr" },
+    { name = "F. Iutzeler", email = "franck.iutzeler@gmail.com" },
 ]
 classifiers = [
     "Intended Audience :: Developers",
@@ -30,11 +30,11 @@ classifiers = [
 dependencies = [
     "numpy",
     "pandas",
-    "scikit-learn",
+    "scikit-learn>=1.4",
     "scipy",
     "cvxopt",
     "cvxpy",
-    "torch @ https://download.pytorch.org/whl/cpu-cxx11-abi/torch-2.0.1%2Bcpu.cxx11.abi-cp311-cp311-linux_x86_64.whl",
+    "torch",
     "sqwash",
     "dask[distributed]",
     "prodigyopt",
@@ -57,6 +57,9 @@ docs = [
 test = [
     "pytest",
     "pytest-cov",
+]
+monitor = [
+    "wandb",
 ]
 
 [project.urls]
@@ -98,7 +101,8 @@ pre-install-commands = [
 features = [
     "test",
     "examples",
-    "docs"
+    "docs",
+    "monitor"
 ]
 [tool.hatch.envs.env-dev.scripts]
 test = "pytest -s -vv . "

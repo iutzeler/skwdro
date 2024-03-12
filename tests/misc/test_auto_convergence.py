@@ -1,9 +1,8 @@
 import numpy as np
 import multiprocessing as mp
 
-from skwdro.base.costs import NormLabelCost
 from skwdro.linear_models import LogisticRegression
-from skwdro.solvers.optim_cond import OptCond
+
 
 from tests.torch_tests.test_binary_separable_log_classif import generate_points
 

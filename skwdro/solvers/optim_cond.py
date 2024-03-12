@@ -3,39 +3,6 @@ L_OR_T  = {"one", "theta_or_lambda", "tUl", "lambda_or_theta", "lUt"}
 JUST_T  = {"theta", "t"}
 JUST_L  = {"lambda", "l"}
 
-# ########### NUMPY code #############
-import numpy as np
-
-class OptCond:
-    def __init__(self, order, tol_theta: float=1e-4, tol_lambda: float=1e-6, max_iter: int=int(1e5), mode: str="both"):
-        assert order > 0
-        self.p = order
-        self.tol_t = tol_theta
-        self.tol_l = tol_lambda
-        self.maxiter = max_iter
-
-        self.mode = True
-        if mode in L_AND_T:
-            self.mode = True
-        elif mode in L_OR_T:
-            self.mode = False
-        else:
-            raise ValueError("Please provide a valid string value for parameter 'mode' in OptCond: '" + str(mode) + "' is invalid.")
-
-    def __call__(self, grads, it: int) -> bool:
-        grad_theta, grad_lambda = grads
-        grad_t_stop = float(np.linalg.norm(grad_theta, ord=self.p)) < self.tol_t and self.tol_t  > 0
-        grad_l_stop = float(grad_lambda) < self.tol_l and self.tol_l  > 0
-        it_stop = it >= self.maxiter and self.maxiter > 0
-        if it_stop: # Warn the user that the optimality conditions may not be verified (loss of accuracy)
-            Warning("Maximum number of iterations reached")
-        return self.grad_stop(grad_t_stop, grad_l_stop) or it_stop
-
-    def grad_stop(self, grad_t_stop: bool, grad_l_stop: bool) -> bool:
-        if self.mode:
-            return grad_t_stop and grad_l_stop
-        else:
-            return grad_t_stop or grad_l_stop
 
 # ########### TORCH code #############
 from typing import Callable, Optional, Union
@@ -46,6 +13,12 @@ from skwdro.solvers._dual_interfaces import _DualLoss as BaseDualLoss
 from skwdro.solvers.utils import maybe_flatten_grad_else_raise, NoneGradError
 
 LazyTensor = Callable[[], pt.Tensor]
+
+def combine(a, b):
+    return a[0] and b[0], a[1] + b[1]
+
+def wrap(b):
+    return b, 0.
 
 class OptCondTorch:
     r""" Callable object representing some optimality conditions
@@ -131,7 +104,11 @@ class OptCondTorch:
         lam: LazyTensor = lambda: dual_loss.lam
         lamgrad: LazyTensor = lambda: maybe_flatten_grad_else_raise(dual_loss._lam)
 
-        return self.check_iter(it_number) or self.check_all_params(lam, lamgrad, flattheta, flatgrad)
+        ci = self.check_iter(it_number)
+        cp, err = self.check_all_params(lam, lamgrad, flattheta, flatgrad)
+        if it_number % 100 == 0:
+            print(f"[{it_number = }] {ci = } {cp = } {err = }")
+        return ci or cp
 
     def check_all_params(
             self,
@@ -160,7 +137,7 @@ class OptCondTorch:
             green light to stop algorithm
         """
         if self.monitoring in L_AND_T:
-            return self.check_l(lam, lamgrad) and self.check_t(flattheta, flatgrad)
+            return combine(self.check_l(lam, lamgrad), self.check_t(flattheta, flatgrad))
         elif self.monitoring in L_OR_T:
             return self.check_l(lam, lamgrad) or self.check_t(flattheta, flatgrad)
         elif self.monitoring in JUST_L:
@@ -197,7 +174,7 @@ class OptCondTorch:
                     # Compute nabla_theta because we are at nabla theta right now
                     # Wait for next iteration to verify convergence.
                     self.t_grad_0 = pt.linalg.norm(flat_theta_grad(), self.order)
-                    return False
+                    return wrap(False)
                 else:
                     # Compute nabla_theta at current iteration and compare it to first iterate
                     new = pt.linalg.norm(flat_theta_grad(), self.order)
@@ -208,14 +185,14 @@ class OptCondTorch:
                 if mem0 is None:
                     # Define theta_0
                     self.t_0 = flat_theta()
-                    return False
+                    return wrap(False)
                 elif mem1 is None:
                     assert mem0 is not None
                     # Define theta_1 (=theta_k)
                     self.t_mem = flat_theta()
                     # |theta_1 - theta_0|
                     self.delta_t_1 = pt.linalg.norm(self.t_mem - mem0, self.order)
-                    return False
+                    return wrap(False)
                 else:
                     # theta_k
                     mem = self.t_mem
@@ -230,7 +207,7 @@ class OptCondTorch:
                     # Check current diff wrt first iterate diff
                     return self.check_metric(delta, self.delta_t_1, self.tol_theta)
             else:
-                return False
+                return wrap(False)
 
     def check_l(self, lam: LazyTensor, lam_grad: LazyTensor) -> bool:
         r"""
@@ -250,14 +227,14 @@ class OptCondTorch:
             green light to stop algorithm
         """
         if self.tol_lambda <= 0.:
-            return False
+            return wrap(False)
         else:
             if self.metric == "grad":
                 mem = self.l_grad_0
                 if mem is None:
                     # nabla_lambda at first iterate
                     self.l_grad_0 = pt.abs(lam_grad())
-                    return False
+                    return wrap(False)
                 else:
                     # New nabla_lambda
                     new = pt.abs(lam_grad())
@@ -268,14 +245,14 @@ class OptCondTorch:
                 if mem0 is None:
                     # first lambda
                     self.l_0 = lam()
-                    return False
+                    return wrap(False)
                 elif mem1 is None:
                     assert mem0 is not None
                     # lambda_1 (=lambda_k)
                     self.l_mem = lam()
                     # first diff in lambda
                     self.delta_l_1 = pt.abs(self.l_mem - mem0)
-                    return False
+                    return wrap(False)
                 else:
                     # lambda_k
                     mem = self.l_mem
@@ -289,7 +266,7 @@ class OptCondTorch:
                     assert self.delta_l_1 is not None
                     return self.check_metric(delta, self.delta_l_1, self.tol_lambda)
             else:
-                return False
+                return wrap(False)
 
     def check_metric(self, new_obs: pt.Tensor, memory: pt.Tensor, tol: float) -> bool:
         r"""
@@ -311,9 +288,9 @@ class OptCondTorch:
         """
         assert tol > 0.
         if self.mode == "rel":
-            return new_obs.sum().item() < tol * memory.sum().item()
+            return new_obs.sum().item() < tol * memory.sum().item(), new_obs.sum().item()
         elif self.mode == "abs":
-            return new_obs.sum().item() < tol
+            return new_obs.sum().item() < tol, new_obs.sum().item()
         else:
             raise ValueError("Please set the optcond mode to either 'rel' for relative tolerance or 'abs'")
 

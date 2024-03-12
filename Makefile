@@ -21,3 +21,11 @@ test_sk:
 test_misc:
 	@echo "Solo tests:"
 	@hatch -e $(TEST_ENV) run env-test:test-misc
+
+epsilon_plotting_in_source:
+	mv skwdro/solvers/entropic_dual_torch.py skwdro/solvers/entropic_dual_torch.cp.py
+	mv skwdro/solvers/entropic_dual_torch_epsilon.py skwdro/solvers/entropic_dual_torch.py
+
+remove_epsilon_plotting_in_source:
+	mv skwdro/solvers/entropic_dual_torch.py skwdro/solvers/entropic_dual_torch_epsilon.py
+	mv skwdro/solvers/entropic_dual_torch.cp.py skwdro/solvers/entropic_dual_torch.py

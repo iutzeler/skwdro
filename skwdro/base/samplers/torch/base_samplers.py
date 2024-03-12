@@ -37,6 +37,14 @@ class BaseSampler(ABC):
     @abstractmethod
     def log_prob(
             self,
+            zeta: pt.Tensor,
+            zeta_labels: Optional[pt.Tensor]
+            ) -> pt.Tensor:
+        raise NotImplementedError()
+
+    @abstractmethod
+    def log_prob_recentered(
+            self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor],
             zeta: pt.Tensor,
@@ -50,8 +58,8 @@ class NoLabelsSampler(BaseSampler, ABC):
         super(NoLabelsSampler, self).__init__(seed)
         self.data_s = data_sampler
 
-    def sample(self, n_sample: int):
-        return self.data_s.rsample(pt.Size((n_sample,))), None
+    def sample(self, n_samples: int):
+        return self.data_s.rsample(pt.Size((n_samples,))), None
 
     @property
     def produces_labels(self):
@@ -59,12 +67,21 @@ class NoLabelsSampler(BaseSampler, ABC):
 
     def log_prob(
             self,
-            xi: pt.Tensor,
-            xi_labels: NoneType,
             zeta: pt.Tensor,
-            zeta_labels: NoneType
+            zeta_labels: Optional[pt.Tensor]
             ) -> pt.Tensor:
+        assert zeta_labels is None
         return self.data_s.log_prob(zeta).unsqueeze(-1)
+
+    def log_prob_recentered(
+            self,
+            xi: pt.Tensor,
+            xi_labels: Optional[pt.Tensor],
+            zeta: pt.Tensor,
+            zeta_labels: Optional[pt.Tensor]
+            ) -> pt.Tensor:
+        assert xi_labels is None and zeta_labels is None
+        return self.data_s.log_prob(zeta - xi + self.data_s.mean).unsqueeze(-1)
 
 class LabeledSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution, seed: int):
@@ -72,9 +89,9 @@ class LabeledSampler(BaseSampler, ABC):
         self.data_s = data_sampler
         self.labels_s = labels_sampler
 
-    def sample(self, n_sample: int):
-        zeta = self.sample_data(n_sample)
-        zeta_labels = self.sample_labels(n_sample)
+    def sample(self, n_samples: int):
+        zeta = self.sample_data(n_samples)
+        zeta_labels = self.sample_labels(n_samples)
         return zeta, zeta_labels
 
     def sample_data(self, n_sample: int):
@@ -89,13 +106,24 @@ class LabeledSampler(BaseSampler, ABC):
 
     def log_prob(
             self,
-            xi: pt.Tensor,
-            xi_labels: pt.Tensor,
             zeta: pt.Tensor,
-            zeta_labels: pt.Tensor
+            zeta_labels: Optional[pt.Tensor]
             ) -> pt.Tensor:
+        assert zeta_labels is not None
         lp = self.data_s.log_prob(zeta)\
                 + self.labels_s.log_prob(zeta_labels)
+        return lp.unsqueeze(-1)
+
+    def log_prob_recentered(
+            self,
+            xi: pt.Tensor,
+            xi_labels: Optional[pt.Tensor],
+            zeta: pt.Tensor,
+            zeta_labels: Optional[pt.Tensor]
+            ) -> pt.Tensor:
+        assert zeta_labels is not None and xi_labels is not None
+        lp = self.data_s.log_prob(zeta - xi + self.data_s.mean)\
+                + self.labels_s.log_prob(zeta_labels - xi_labels + self.labels_s.mean)
         return lp.unsqueeze(-1)
 
 # Helper class ########################

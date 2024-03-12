@@ -13,16 +13,15 @@ from numpy.random import RandomState
 import matplotlib.pyplot as plt
 
 from skwdro.linear_models import LogisticRegression
-from skwdro.base.costs_torch import NormLabelCost
 
 
-RHO = 1e-4
+RHO = 3e-1
 
 # Generate the random data ##################################################
 rng = RandomState(seed=666)
 n = 100
 d = 2
-X, y, centers = make_blobs(n, d, centers=2, shuffle=True, random_state=rng, return_centers=True) # type: ignore
+X, y, centers = make_blobs(n, d, centers=2, shuffle=True, random_state=rng, return_centers=True, cluster_std=2.) # type: ignore
 y = 2 * y - 1 # type: ignore
 
 # Center data to avoid learning intercept
@@ -60,7 +59,7 @@ estimator_ent = LogisticRegression(
         l2_reg=0.,
         fit_intercept=True,
         cost="t-NC-2-2",
-        n_zeta_samples=20,
+        n_zeta_samples=50,
         solver="entropic_torch"
         )
 
@@ -82,7 +81,7 @@ estimator_pre = LogisticRegression(
         l2_reg=0.,
         fit_intercept=True,
         cost="t-NLC-2-2",
-        n_zeta_samples=20,
+        n_zeta_samples=50,
         solver="entropic_torch_pre"
         )
 
@@ -120,22 +119,24 @@ def plot_line(est, x):
     return -(x*c0 + est.intercept_) / c1
 
 line_plot = [X[:, 0].min(), X[:, 0].max()] # type: ignore
-fig, axes = plt.subplots(2, 2)
+fig, axes = plt.subplots(1, 2)
+cvx_score = estimator.score(X, y)
 for ax, name, est in zip(
         axes.flatten(),
-        ("cvx", "BFGS", "Adam", "Adam-ERM"),
-        (estimator, estimator_pre, estimator_ent, estimator_erm)
+        # ("\"True\" WDRO", "BFGS", "BFGS-ERM", "Adam")[2:],
+        ("ERM", "Our method"),
+        (estimator, estimator_pre, estimator_erm, estimator_ent)[2:]
          ):
     ax.scatter(X[y==-1, 0], X[y==-1, 1], color="r") # type: ignore
     ax.scatter(X[y==1, 0], X[y==1, 1], color="b") # type: ignore
-    ax.plot(line_plot, [plot_line(estimator, line_plot[0]), plot_line(estimator, line_plot[1])], 'k:', label=f"cvx (baseline)")
-    ax.plot(line_plot, [plot_line(est, line_plot[0]), plot_line(est, line_plot[1])], 'g--', label=name+f": {est.score(X, y)}")
-    ax.legend()
+    ax.plot(line_plot, [plot_line(estimator, line_plot[0]), plot_line(estimator, line_plot[1])], 'k:', label=f"'True' WDRO: {cvx_score}")
+    ax.plot(line_plot, [plot_line(est, line_plot[0]), plot_line(est, line_plot[1])], 'g--' if name == "ERM" else 'r--', label=name+f": {est.score(X, y)}")
+    # ax.legend()
 # plt.plot(line_plot, [plot_line(estimator, line_plot[0]), plot_line(estimator, line_plot[1])], 'k--', label=f"cvx: {estimator.score(X, y)}")
 # plt.plot(line_plot, [plot_line(estimator_ent, line_plot[0]), plot_line(estimator_ent, line_plot[1])], 'k:', label=f"Adam: {estimator_ent.score(X, y)}")
 # plt.plot(line_plot, [plot_line(estimator_pre, line_plot[0]), plot_line(estimator_pre, line_plot[1])], 'k-', label=f"BFGS: {estimator_pre.score(X, y)}")
 # plt.plot(line_plot, [plot_line(estimator_erm, line_plot[0]), plot_line(estimator_erm, line_plot[1])], 'k-', label=f"Adam - ERM: {estimator_erm.score(X, y)}")
 
-plt.show()
+fig.savefig("logreg.png", transparent=True)
 
 print("#######")

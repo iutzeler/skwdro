@@ -1,8 +1,6 @@
 import numpy as np
 
-from skwdro.base.costs import NormLabelCost
 from skwdro.linear_models import LogisticRegression
-from skwdro.solvers.optim_cond import OptCond
 
 import pytest
 
@@ -13,9 +11,11 @@ L2_REG = 1e-5 #Don't change
 def fit_estimator(my_rho_norm, reg, sigma, X, y):
     rho_norm = my_rho_norm# ** 2 # because no 0.5 in cost
     estimator = LogisticRegression(
+            # rho=np.sqrt(2) * rho_norm,
             rho=rho_norm,
             l2_reg=L2_REG,
             cost="t-NC-2-2",
+            # cost="t-NLC-2-2-1",
             fit_intercept=False,
             solver="entropic_torch",
             solver_reg=reg,
