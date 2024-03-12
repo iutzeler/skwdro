@@ -15,7 +15,6 @@ import numpy as np
 import torch as pt
 
 from skwdro.linear_models import LinearRegression
-from skwdro.base.costs import NormCost
 from skwdro.base.costs_torch import NormLabelCost
 
 

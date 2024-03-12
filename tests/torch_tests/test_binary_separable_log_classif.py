@@ -1,8 +1,6 @@
 import numpy as np
 
-from skwdro.base.costs import NormLabelCost
 from skwdro.linear_models import LogisticRegression
-from skwdro.solvers.optim_cond import OptCond
 
 ANGLE_TOL = 1e-1 * np.pi
 

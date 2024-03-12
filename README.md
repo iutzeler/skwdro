@@ -4,6 +4,8 @@
 
 The goal of this toolbox is to provide robust versions of classical machine learning models using the framework of Wasserstein Distributionally Robust Optimization.
 
+Here is a draft of the doc: [https://skwdro.readthedocs.io/en/latest/](https://skwdro.readthedocs.io/en/latest/)
+
 ### Warning: The project is currently UNDER DEVELOPMENT 
 
 skwdro can undergo significant changes in the interface or inner code. 

@@ -11,12 +11,12 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from sklearn.exceptions import ConvergenceWarning, DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
-from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels
+from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.costs_torch import NormLabelCost
 from skwdro.base.losses_torch import Loss
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
-
+from skwdro.solvers.optim_cond import OptCondTorch
 
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
@@ -120,17 +120,11 @@ class MyWDRORegressor(BaseEstimator, RegressorMixin):
 
         cost = NormLabelCost(2., 1., 1e8)
 
-        self.problem_ = WDROProblem(
-                loss = None,
-                cost = cost,
-                rho=self.rho,
-                p_hat=emp
-            )
 
         # #########################################
 
         if self.solver == "entropic_torch" or "entropic_torch_pre":
-            self.problem_.loss = DualPreSampledLoss(
+            _wdro_loss = DualPreSampledLoss(
                     MyLoss(None, d=self.n_features_in_, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=10,
@@ -138,12 +132,13 @@ class MyWDRORegressor(BaseEstimator, RegressorMixin):
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma=self.solver_reg,
+            opt = OptCondTorch(2)
+
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(_wdro_loss,emp,opt)
+
                 )
         elif self.solver == "entropic_torch_post":
-            self.problem_.loss = DualLoss(
+            _wdro_loss = DualLoss(
                     MyLoss(None, d=self.problem_.d, fit_intercept=self.fit_intercept),
                     NormLabelCost(2., 1., 1e8),
                     n_samples=10,
@@ -151,10 +146,9 @@ class MyWDRORegressor(BaseEstimator, RegressorMixin):
                     rho_0=pt.tensor(self.rho)
                 )
 
-            self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-                    self.problem_,
-                    sigma=self.solver_reg,
-                )
+            opt = OptCondTorch(2)
+
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(_wdro_loss,emp,opt)
         else:
             raise NotImplementedError
 

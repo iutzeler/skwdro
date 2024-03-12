@@ -3,7 +3,11 @@ import torch as pt
 import torch.nn as nn
 
 import skwdro.distributions as dst
-from skwdro.base.costs import ENGINES_NAMES
+
+ENGINES_NAMES = {
+    "pt": "PyTorch tensors",
+    "jx": "Jax arrays"
+}
 
 class TorchCost(nn.Module):
     """ Base class for transport functions """
