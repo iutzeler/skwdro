@@ -1,6 +1,6 @@
 """
 ===================
-Logistic regression
+Linear regression
 ===================
 
 An example of logistic regression for binary classification.

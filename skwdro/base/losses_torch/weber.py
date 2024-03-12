@@ -10,6 +10,9 @@ from skwdro.base.samplers.torch.base_samplers import LabeledSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 
 class SimpleWeber(nn.Module):
+    """
+    Exemple of a short code to write a Weber loss.
+    """
     def __init__(self, d: int) -> None:
         super(SimpleWeber, self).__init__()
         self.pos = nn.Parameter(pt.zeros(d))
@@ -22,7 +25,16 @@ class SimpleWeber(nn.Module):
 
 
 class WeberLoss(Loss):
+    r"""
+    The "data" dimension (first) represents the various anchor points of the problem specification
+    (e.g the various factories).
+    The "x" tensor is for the d-dimensional coordinates of said points,
+    and the "y"/"label" tensor is for the ground costs (e.g. the train cost per unit distance).
+    The problem writes:
 
+    ..math::
+        \min_\theta \mathbb{E}\left[\xi_\text{labels}.\|\xi_\text{data}-theta\|\right]
+    """
     def __init__(
             self,
             sampler: LabeledSampler,
@@ -35,6 +47,9 @@ class WeberLoss(Loss):
         self.pos = nn.Parameter(pt.zeros(d))
 
     def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]):
+        """
+        The function the :py:method:`~Loss.forward` method will call internally.
+        """
         assert xi_labels is not None
         distances = pt.linalg.norm(xi - self.pos.unsqueeze(0), dim=-1, keepdims=True)
         val = xi_labels * distances * xi_labels.shape[0]

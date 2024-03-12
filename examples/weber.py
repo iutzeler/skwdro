@@ -1,3 +1,10 @@
+"""
+==========================
+Weber localization problem
+==========================
+
+Comparison plots for the 3-factories Weber problem.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb

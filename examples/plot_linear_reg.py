@@ -1,7 +1,7 @@
 """
-===================
-Logistic regression
-===================
+=======================
+Linear regression plots
+=======================
 
 An example of logistic regression for binary classification.
 """

@@ -1,3 +1,12 @@
+"""
+================================
+Weber for varying epsilon values
+================================
+
+Runs the Weber estimator for various values of regularization parameters.
+When plotting epsilon with ``make epsilon_plotting_in_source``, this will plot the various optimization curves.
+One may then gather the ``epsilon*.png`` resulting files in a gif.
+"""
 import numpy as np
 from skwdro.operations_research._weber import Weber
 

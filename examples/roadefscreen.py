@@ -1,3 +1,8 @@
+"""
+=================================
+Weber code presented @ROADEF-2024
+=================================
+"""
 import torch as pt
 import torch.nn as nn
 from skwdro.base.problems import WDROProblem, EmpiricalDistributionWithLabels

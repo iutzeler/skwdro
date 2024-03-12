@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:00.259** total execution time for 15 files **from all galleries**:
+**00:03.923** total execution time for 20 files **from all galleries**:
 
 .. container::
 
@@ -32,8 +32,8 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_plot_portfolio.py` (``../examples/plot_portfolio.py``)
-     - 00:00.259
+   * - :ref:`sphx_glr_auto_examples_plot_linear_reg.py` (``../examples/plot_linear_reg.py``)
+     - 00:03.923
      - 0.0
    * - :ref:`sphx_glr_auto_examples_LinearRegression.py` (``../examples/LinearRegression.py``)
      - 00:00.000
@@ -53,6 +53,12 @@ Computation times
    * - :ref:`sphx_glr_auto_examples__plot_display.py` (``../examples/_plot_display.py``)
      - 00:00.000
      - 0.0
+   * - :ref:`sphx_glr_auto_examples_curves_logreg.py` (``../examples/curves_logreg.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_easy_shallownet.py` (``../examples/easy_shallownet.py``)
+     - 00:00.000
+     - 0.0
    * - :ref:`sphx_glr_auto_examples_linear_reg.py` (``../examples/linear_reg.py``)
      - 00:00.000
      - 0.0
@@ -60,9 +66,6 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_plot_computations.py` (``../examples/plot_computations.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_plot_linear_reg.py` (``../examples/plot_linear_reg.py``)
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_plot_logistic_reg.py` (``../examples/plot_logistic_reg.py``)
@@ -75,5 +78,17 @@ Computation times
      - 00:00.000
      - 0.0
    * - :ref:`sphx_glr_auto_examples_portfolio_module_with_model_selection.py` (``../examples/portfolio_module_with_model_selection.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_roadefscreen.py` (``../examples/roadefscreen.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_weber.py` (``../examples/weber.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_weber_baseline.py` (``../examples/weber_baseline.py``)
+     - 00:00.000
+     - 0.0
+   * - :ref:`sphx_glr_auto_examples_weber_epsilon.py` (``../examples/weber_epsilon.py``)
      - 00:00.000
      - 0.0

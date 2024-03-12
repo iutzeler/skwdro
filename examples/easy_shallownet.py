@@ -1,3 +1,11 @@
+"""
+======================
+Shallow neural network
+======================
+
+3-layers neural network approximating a sine curve noised in both x and y directions.
+A small Wasserstein radius is expected.
+"""
 from typing import Iterable
 import matplotlib.pyplot as plt
 import torch as pt

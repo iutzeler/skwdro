@@ -41,7 +41,7 @@ def histplot_loss(ax, df, c):
     u_ = plot_kde(ax, df, {KEYS[-1]: c, **{k:v for k, v in DEFAULTS_COLORS.items() if k != 'erm'}})
     for name, c in zip(PLOT_ORDER, ax.get_children()):
         if isinstance(c, matplotlib.collections.PolyCollection) and DISCRIMINATE_TOPBOTTOM not in name:
-            c.set_transform(matplotlib.transforms.Affine2D(np.eye(3) * np.array([[1, -1, 1]])) + c.get_transform())
+            c.set_transform(matplotlib.transforms.Affine2D(np.eye(3) * np.array([[1, -1, .95]])) + c.get_transform())
     l = ax.get_ylim()
     ax.set_ylim([-l[1]/5, l[1]/5])
     return u_
@@ -69,7 +69,7 @@ def checkrange(min, max, val):
 def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
     api = wandb.Api()
 
-    plt.rc('legend',fontsize=15, title_fontsize=15)
+    plt.rc('legend',fontsize=30, title_fontsize=15)
     plt.rcParams.update({
         "text.usetex": True,
         "font.family": 'STIXGeneral',
@@ -121,6 +121,8 @@ def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
         assert isinstance(r, float)
         for ax, (e, edf), sety in zip(axline, rdf.groupby('eps'), ttof()):
             results = histfunc(ax, edf, cm(cn(r)))
+            ls = ax.get_xlim()
+            ax.set_xlim(ls[0], .4*ls[1])
             if sety and axes.shape[0] > 1:
                 ax.set_ylabel(f"$\\rho={r:.1e}$", rotation=60)
             if sett:

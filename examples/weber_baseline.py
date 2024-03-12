@@ -1,3 +1,10 @@
+"""
+================
+Non-robust Weber
+================
+
+Plot of a 3-factories Weber problem, with colorbar.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb
@@ -37,6 +44,7 @@ def main():
     pb.fit(factories, trafic)
     pbrs = [Weber(1e-1, kappa=10., n_zeta_samples=10, cost="t-NLC-2-2-10", random_state=i).fit(factories, trafic) for i in range(5)]
     plots(factories, trafic, pbrs, pb)
+    plt.show()
 
 
 if __name__ == '__main__':

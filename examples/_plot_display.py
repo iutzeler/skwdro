@@ -1,4 +1,8 @@
 """
+================================
+Seaborn histograms for portfolio
+================================
+
 Plot Display
 """
 

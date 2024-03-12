@@ -1,3 +1,11 @@
+"""
+========================
+Portfolio with 10 assets
+========================
+
+Stackplot for a portfolio problem.
+10 assets for varying radii and a choice of epsilon regularization.
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sb

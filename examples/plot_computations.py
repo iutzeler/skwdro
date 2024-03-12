@@ -1,5 +1,10 @@
 """
-Plot Computations
+========================
+Portfolio parallel plots
+========================
+
+Plot computations for portfolio.
+Default Kuhn et al. hyperparameters.
 """
 
 import numpy as np

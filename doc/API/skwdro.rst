@@ -21,6 +21,7 @@ skwdro.wrap\_problem module
 
 .. automodule:: skwdro.wrap_problem
    :members:
+   :undoc-members:
    :show-inheritance:
 
 Module contents
@@ -28,4 +29,5 @@ Module contents
 
 .. automodule:: skwdro
    :members:
+   :undoc-members:
    :show-inheritance:
