@@ -76,6 +76,7 @@ target/
 
 # Examples data
 examples/stored_data/*
+examples/test_mnist/data
 test_post.npy
 test_pre.npy
 
