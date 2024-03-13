@@ -185,7 +185,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             )
         elif "torch" in self.solver:
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
-            _wdro_loss = dualize_primal_loss(
+            self.wdro_loss_ = dualize_primal_loss(
                     BiDiffSoftMarginLoss(reduction='none'),
                     nn.Linear(self.n_features_in_, 1, bias=self.fit_intercept),
                     pt.tensor(self.rho),
@@ -202,13 +202,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
             # The problem is solved with the new "dual loss"
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
-                    _wdro_loss,
+                    self.wdro_loss_,
                     emp,
                     self.opt_cond # type: ignore
                     )
 
-            self.coef_ = detach_tensor(_wdro_loss.primal_loss.transform.weight).flatten() # type: ignore
-            self.intercept_ = maybe_detach_tensor(_wdro_loss.primal_loss.transform.bias) # type: ignore
+            self.coef_ = detach_tensor(self.wdro_loss_.primal_loss.transform.weight).flatten() # type: ignore
+            self.intercept_ = maybe_detach_tensor(self.wdro_loss_.primal_loss.transform.bias) # type: ignore
             # # TODO: deprecate ?
             # # Stock the robust loss result
             # Problems w/ dtypes (f32->f64 for some reason)

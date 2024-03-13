@@ -24,8 +24,8 @@ def fit_estimator(rho_norm, X, y, X_test, y_test, n_zeta, epsilon):
         )
     torch.manual_seed(int(rho_norm*1e6))
     estimator.fit(X, y)
-    robust_loss = estimator.robust_loss_
-    test_loss = estimator.problem_.loss.primal_loss(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=torch.float32)).mean()
+    robust_loss = estimator.wdro_loss_.primal_loss(torch.tensor(X, dtype=torch.float32), torch.tensor(y, dtype=torch.float32)).mean()
+    test_loss = estimator.wdro_loss_.primal_loss(torch.tensor(X_test, dtype=torch.float32), torch.tensor(y_test, dtype=torch.float32)).mean()
     return robust_loss, test_loss
 
 def fit_cvx(rho_norm, X, y, X_test, y_test, n_zeta, *_):
