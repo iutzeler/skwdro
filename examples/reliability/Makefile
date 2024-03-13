@@ -19,6 +19,9 @@ SSH=ssh -F $(SSH_CONFIG)
 $(BASE).sif:$(BASE).def pyproject.toml
 	$(SINGULARITY_BUILD) $(BASE).sif $(BASE).def
 
+skwdro_hists.sif: export SINGULARITY_TMPDIR=exemples/reliability/tmp
+$(SK).sif: export SINGULARITY_TMPDIR=exemples/reliability/tmp
+
 .PHONY:shell_base
 shell_base:$(BASE).sif
 	$(SINGULARITY_BIN) instance start --contain $(BASE).sif base
