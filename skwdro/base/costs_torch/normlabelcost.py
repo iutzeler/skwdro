@@ -74,21 +74,23 @@ class NormLabelCost(NormCost):
             return distance**self.power
 
     def _sampler_labels(self, xi_labels, epsilon):
+        d = xi_labels.size(-1)
         if epsilon is None:
             epsilon = 1e-3
         if self.kappa == float('inf'):
-            return Constant(xi_labels)
+            return dst.Dirac(xi_labels)
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
                             loc=xi_labels,
                             scale=epsilon/self.kappa
                         )
+            else: raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
                 return dst.MultivariateNormal(
                         loc=xi_labels,
-                        scale_tril=epsilon*pt.eye(xi_labels.size(-1))/self.kappa
+                        scale_tril=epsilon*pt.eye(d)/self.kappa
                     )
             else: raise NotImplementedError()
         else: raise NotImplementedError()

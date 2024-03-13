@@ -36,6 +36,7 @@ class NormCost(TorchCost):
         return pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
 
     def _sampler_data(self, xi, epsilon):
+        d = xi.size(-1)
         if epsilon is None:
             epsilon = 1e-3
         if self.power == 1:
@@ -44,11 +45,12 @@ class NormCost(TorchCost):
                             loc=xi,
                             scale=epsilon
                         )
+            else: raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
                 return dst.MultivariateNormal(
                         loc=xi,
-                        scale_tril=epsilon*pt.eye(xi.size(-1))
+                        scale_tril=epsilon*pt.eye(d)
                     )
             else: raise NotImplementedError()
         else: raise NotImplementedError()
