@@ -86,6 +86,6 @@ def main():
     dataset_train = MNIST(root, download=True, train=True, transform=model.preprocess)
     dataset_test = Subset(MNIST(root, download=True, train=False, transform=model.preprocess), range(0, 10000, 100))
 
-    np.save(root+"losses.npy", train_alexnet(pt.compile(model), dataset_train, dataset_test, 50))
+    np.save(root+"losses.npy", train_alexnet(pt.compile(model), dataset_train, dataset_test, 10))
 
 if __name__ == '__main__': main()

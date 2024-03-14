@@ -15,8 +15,8 @@ import argparse as ap
 from matplotlib.colors import LogNorm, Colormap
 from matplotlib.cm import ScalarMappable
 
-PATH = "florian-vincent31/toolbox_hists"
-HIDE = False
+PATH = "florian-vincent31/toolbox_hists_logreg"
+HIDE = True
 DISCRIMINATE_TOPBOTTOM = "robust"
 KEYS = ['ERM train loss', (' ' if HIDE else '') + 'robust train loss', 'ERM test loss', (' ' if HIDE else '') + 'robust test loss']
 PLOT_ORDER = KEYS[-1::-2] + KEYS[-2::-2]
@@ -39,14 +39,16 @@ def histplot_diffs(ax, df, c):
     return plot_kde(ax, df, {'_skwdro': c, 'erm': DEFAULTS_COLORS['erm']})
 
 def histplot_loss(ax, df, c):
-    df = pd.melt(df.loc[:, KEYS], var_name='loss_type', value_name='loss')
+    df = df.loc[:, KEYS].rename(lambda s: s[1:] if s[0]=='_' else s, axis='columns')
+    df_ = pd.melt(df, var_name='loss_type', value_name='loss')
     ax.axis('off')
-    u_ = plot_kde(ax, df, {KEYS[-1]: c, **{k:v for k, v in DEFAULTS_COLORS.items() if k != 'erm'}})
-    for name, c in zip(PLOT_ORDER, ax.get_children()):
-        if isinstance(c, matplotlib.collections.PolyCollection) and DISCRIMINATE_TOPBOTTOM not in name:
-            c.set_transform(matplotlib.transforms.Affine2D(np.eye(3) * np.array([[1, -1, 1]])) + c.get_transform())
-    l = ax.get_ylim()
-    ax.set_ylim([-l[1]/5, l[1]/5])
+    u_ = plot_kde(ax, df_, {df.columns[-1]: c})
+    # , **{k:v for k, v in DEFAULTS_COLORS.items() if k != 'erm'}
+    # for name, c in zip(PLOT_ORDER, ax.get_children()):
+    #     if isinstance(c, matplotlib.collections.PolyCollection) and DISCRIMINATE_TOPBOTTOM not in name:
+    #         c.set_transform(matplotlib.transforms.Affine2D(np.eye(3) * np.array([[1, -1, 1]])) + c.get_transform())
+    # l = ax.get_ylim()
+    # ax.set_ylim([-l[1]/5, l[1]/5])
     return u_
 
 def histplot_test(ax, df, c):
@@ -70,6 +72,7 @@ def checkrange(min, max, val):
     return check_optional(min, val, sup=True) and check_optional(max, val)
 
 def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
+    global KEYS
     api = wandb.Api()
 
     plt.rc('legend',fontsize=15, title_fontsize=15)
@@ -93,6 +96,15 @@ def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
     histfunc = OPTIONCHOICES[parser.parse_args().mode]
 
     rs = []
+    KEYS = list(
+        map(
+            lambda s: s,# s[1:] if s[0] == '_' else s,
+            map(
+                lambda s: s.replace(' ', '_').removeprefix('ERM_'),
+                KEYS
+            )
+        )
+    )
     for run in runs:
         base = run.config['cvx_wdro']
         if not base:
@@ -101,19 +113,21 @@ def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
                 epsilon = run.config['epsilon']
                 if checkrange(epsmin, epsmax, epsilon):
                     sigma = run.config['sigma']
-                    h = run.history(keys=list(map(lambda s: s[1:] if s[0] == '_' else s, map(lambda s: s.replace(' ', '_').removeprefix('ERM_'), KEYS))))
+                    h = run.history(keys=KEYS)
                     if '_step' in h.columns:
                         h = h.drop(['_step'], axis=1)
                         h['eps'] = epsilon
                         h['s'] = sigma
                         h['rho'] = rho
                         rs.append(h)
-    df = pd.concat(rs).rename(columns={
-        'robust_test_loss': ('_' if HIDE else '') + 'robust test loss',
-        'robust_train_loss': ('_' if HIDE else '') + 'robust train loss',
-        'train_loss': 'ERM train loss',
-        'test_loss': 'ERM test loss'
-    })
+    df = pd.concat(
+        rs)
+    # ).rename(columns={
+    #     'robust_test_loss': ('_' if HIDE else '') + 'robust test loss',
+    #     'robust_train_loss': ('_' if HIDE else '') + 'robust train loss',
+    #     'train_loss': 'ERM train loss',
+    #     'test_loss': 'ERM test loss'
+    # })
     rhos = df['rho'].unique()
     epsilons = df['eps'].unique()
 
@@ -143,6 +157,7 @@ def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
 
 def main():
     generate_plots(2e-1, 3e-1, 1e-2, 1e-1)
+    # generate_plots()
 
 if __name__ == '__main__':
     main()
