@@ -45,7 +45,9 @@ def launch_combinations(args_combinations, cluster, repeat, paths, baseline, his
             itemgetter('cluster', 'user', 'walltime', 'nodes', 'cores', 'name')(cluster)
             )
     make_path, home_path, import_path = paths
+    iteration = 0
     for n_zeta, d, n_train, n_test, logrho, epsilon in args_combinations:
+        print(f"========= {iteration:=iteration+1} ========")
         message = f"Skwdro run d={d} n={n_train} logrho={logrho}, eps={epsilon}"
         environ['WANDB_NAME'] = message
         print(message, flush=True)
