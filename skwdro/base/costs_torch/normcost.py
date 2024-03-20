@@ -44,6 +44,13 @@ class NormCost(TorchCost):
                             loc=xi,
                             scale=epsilon
                         )
+            elif self.p == pt.inf:
+                Warning("For sup norm, we use a gaussian sampler by default.")
+                return dst.MultivariateNormal(
+                        loc=xi,
+                        scale_tril=epsilon*pt.eye(xi.size(-1))
+                    )
+            else: raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
                 return dst.MultivariateNormal(
