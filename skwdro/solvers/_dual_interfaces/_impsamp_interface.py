@@ -87,7 +87,7 @@ class _SampleDisplacer(_SampledDualLoss):
 
         # Backward pass, at all output loss per sample,
         # i.e. one gradient per xi sample, m total
-        out.backward(pt.ones(xi.size(0))) # xi.size = m
+        out.backward(pt.ones(xi.size(0)).to(xi)) # xi.size = m
 
         # Unfreeze the parameters to allow training
         self.freeze(rg=True)

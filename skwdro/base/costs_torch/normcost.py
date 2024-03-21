@@ -50,7 +50,7 @@ class NormCost(TorchCost):
             if self.p == 2:
                 return dst.MultivariateNormal(
                         loc=xi,
-                        scale_tril=epsilon*pt.eye(d)
+                        scale_tril=epsilon*pt.eye(d).to(xi)
                     )
             else: raise NotImplementedError()
         else: raise NotImplementedError()

@@ -90,7 +90,7 @@ class NormLabelCost(NormCost):
             if self.p == 2:
                 return dst.MultivariateNormal(
                         loc=xi_labels,
-                        scale_tril=epsilon*pt.eye(d)/self.kappa
+                        scale_tril=epsilon*pt.eye(d).to(xi_labels)/self.kappa
                     )
             else: raise NotImplementedError()
         else: raise NotImplementedError()
