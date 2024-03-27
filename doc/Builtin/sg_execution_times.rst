@@ -1,12 +1,12 @@
 
 :orphan:
 
-.. _sphx_glr_sg_execution_times:
+.. _sphx_glr_Builtin_sg_execution_times:
 
 
 Computation times
 =================
-**00:23.048** total execution time for 2 files **from all galleries**:
+**00:02.516** total execution time for 1 file **from Builtin**:
 
 .. container::
 
@@ -32,9 +32,6 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_Custom_shallow_network.py` (``../examples/custom_models/shallow_network.py``)
-     - 00:23.048
-     - 0.0
-   * - :ref:`sphx_glr_Builtin_portfolio.py` (``../examples/builtin_models/portfolio.py``)
-     - 00:00.000
+   * - :ref:`sphx_glr_Builtin_portfolio.py` (``portfolio.py``)
+     - 00:02.516
      - 0.0

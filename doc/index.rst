@@ -53,7 +53,8 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    :hidden:
    :caption: Tutorial - Examples
 
-   auto_examples/index
+   Builtin/index
+   Custom/index
 
 `Getting started <quick_start.html>`_
 -------------------------------------
