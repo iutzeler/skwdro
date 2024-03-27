@@ -1,6 +1,1 @@
-.. _general_examples:
-
-General examples
-================
-
-Introductory examples.
+Examples directory

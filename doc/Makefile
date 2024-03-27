@@ -10,6 +10,8 @@ BUILDDIR      = _build
 
 SPHINXAPI     ?= sphinx-apidoc
 APIDIR        = API
+EXDIR         = examples
+GENDIR        = generated
 PROJDIR       = ../skwdro
 
 # Put it first so that "make" without argument is like "make help".
@@ -21,6 +23,10 @@ help:
 clean:
 	@rm -rf "$(APIDIR)"/*
 	@echo "Removing everything under $(APIDIR)"
+	@rm -rf "$(EXDIR)"/*
+	@echo "Removing everything under $(EXDIR)"
+	@rm -rf "$(GENDIR)"/*
+	@echo "Removing everything under $(GENDIR)"
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 
 

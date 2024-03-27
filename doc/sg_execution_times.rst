@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:00.000** total execution time for 10 files **from all galleries**:
+**00:15.237** total execution time for 2 files **from all galleries**:
 
 .. container::
 
@@ -32,33 +32,9 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_auto_examples_LinearRegression.py` (``../examples/LinearRegression.py``)
-     - 00:00.000
+   * - :ref:`sphx_glr_examples_Custom_shallow_network.py` (``../examples/custom_models/shallow_network.py``)
+     - 00:12.200
      - 0.0
-   * - :ref:`sphx_glr_auto_examples_NewsVendor.py` (``../examples/NewsVendor.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_ShallowNet.py` (``../examples/ShallowNet.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_ShallowNet_visu.py` (``../examples/ShallowNet_visu.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_Weber.py` (``../examples/Weber.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_linear_reg.py` (``../examples/linear_reg.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_logistic_reg.py` (``../examples/logistic_reg.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_portfolio.py` (``../examples/portfolio.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_portfolio_module.py` (``../examples/portfolio_module.py``)
-     - 00:00.000
-     - 0.0
-   * - :ref:`sphx_glr_auto_examples_portfolio_module_with_model_selection.py` (``../examples/portfolio_module_with_model_selection.py``)
-     - 00:00.000
+   * - :ref:`sphx_glr_examples_Builtin_portfolio.py` (``../examples/builtin_models/portfolio.py``)
+     - 00:03.037
      - 0.0

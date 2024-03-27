@@ -328,8 +328,11 @@ sphinx_gallery_conf = {
     'backreferences_dir': os.path.join('generated'),
     'reference_url': {
         'skwdro': None},
-    'filename_pattern': '/examples/doc/plot_',
-    'ignore_pattern' : '/examples/plot_'
+    'filename_pattern': '',
+    # 'ignore_pattern' : '/examples/TODO/' ,
+    'capture_repr': ('_repr_html_', '__repr__'),
+    'examples_dirs': ['../examples/builtin_models/', '../examples/custom_models/'],
+    'gallery_dirs': ['examples/Builtin', 'examples/Custom'],
 }
 
 # # The following is used by sphinx.ext.linkcode to provide links to github
