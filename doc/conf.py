@@ -332,7 +332,7 @@ sphinx_gallery_conf = {
     # 'ignore_pattern' : '/examples/TODO/' ,
     'capture_repr': ('_repr_html_', '__repr__'),
     'examples_dirs': ['../examples/builtin_models/', '../examples/custom_models/'],
-    'gallery_dirs': ['Builtin', 'Custom'],
+    'gallery_dirs': ['examples/Builtin', 'examples/Custom'],
 }
 
 # # The following is used by sphinx.ext.linkcode to provide links to github

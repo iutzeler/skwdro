@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**00:23.048** total execution time for 2 files **from all galleries**:
+**00:15.237** total execution time for 2 files **from all galleries**:
 
 .. container::
 
@@ -32,9 +32,9 @@ Computation times
    * - Example
      - Time
      - Mem (MB)
-   * - :ref:`sphx_glr_Custom_shallow_network.py` (``../examples/custom_models/shallow_network.py``)
-     - 00:23.048
+   * - :ref:`sphx_glr_examples_Custom_shallow_network.py` (``../examples/custom_models/shallow_network.py``)
+     - 00:12.200
      - 0.0
-   * - :ref:`sphx_glr_Builtin_portfolio.py` (``../examples/builtin_models/portfolio.py``)
-     - 00:00.000
+   * - :ref:`sphx_glr_examples_Builtin_portfolio.py` (``../examples/builtin_models/portfolio.py``)
+     - 00:03.037
      - 0.0
