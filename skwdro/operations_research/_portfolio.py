@@ -26,8 +26,19 @@ import skwdro.solvers.entropic_dual_torch as entTorch
 class Portfolio(BaseEstimator):
     r""" A Wasserstein Distributionally Robust Mean-Risk Portfolio estimator.
 
-    The cost function is XXX
-    Uncertainty is XXX
+    Model for the portfolio optimization problem
+
+    .. math::
+
+        \mathbb{E}[ - \langle x ; \xi \rangle ] + \eta \mathrm{CVar}_\alpha[- \langle x ; \xi \rangle]
+
+    which amounts to using the following loss function
+
+    .. math::
+
+        \ell(x,\tau;\xi) =  - \langle x ; \xi \rangle + \eta \tau + \frac{1}{\alpha} \max( - \langle x ; \xi \rangle - \tau ; 0)
+
+    where :math:`\tau` is an extra real parameter accounting for the threshold of the CVaR (see [Rockafellar and Uryasev (2000)]). The parameter :math:`x` is constrained to live in the simplex (This is encoded in the constraints of the problem in [Esfahani et al. (2018)] and by an exponential reparametrization for the entropy-regularized version). 
 
     Parameters
     ----------
