@@ -21,7 +21,7 @@ class NormCost(TorchCost):
         self.p = p
         self.power = power
 
-    def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: NoneType=None, zeta_labels: NoneType=None):
+    def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: Optional[pt.Tensor]=None, zeta_labels: Optional[pt.Tensor]=None):
         r"""
         Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
 
@@ -35,8 +35,8 @@ class NormCost(TorchCost):
         diff = xi - zeta
         return pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
 
-    def _sampler_data(self, xi, epsilon):
-        d = xi.size(-1)
+    def _sampler_data(self, xi, epsilon) -> pt.distributions.Distribution:
+        # d = xi.size(-1)
         if epsilon is None:
             epsilon = 1e-3
         if self.power == 1:
@@ -48,14 +48,19 @@ class NormCost(TorchCost):
             else: raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
-                return dst.MultivariateNormal(
+                assert isinstance(epsilon, pt.Tensor)
+                return dst.Normal(
                         loc=xi,
-                        scale_tril=epsilon*pt.eye(d).to(xi)
+                        scale=epsilon.to(xi)
                     )
+                # return dst.MultivariateNormal(
+                #         loc=xi,
+                #         scale_tril=epsilon*pt.eye(d).to(xi)
+                #     )
             else: raise NotImplementedError()
         else: raise NotImplementedError()
 
-    def _sampler_labels(self, xi_labels, epsilon):
+    def _sampler_labels(self, xi_labels, epsilon) -> Optional[pt.distributions.Distribution]:
         if xi_labels is None:
             return None
         else:
@@ -75,6 +80,6 @@ class NormCost(TorchCost):
                 raise NotImplementedError()
         else:
             if self.p == 2 == self.power:
-                return xi + .5 * rhs, None
+                return xi + .5 * rhs, xi_labels
             else:
                 raise NotImplementedError()

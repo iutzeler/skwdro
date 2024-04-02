@@ -41,7 +41,7 @@ class NormLabelCost(NormCost):
         diff = x - x_prime
         return pt.norm(diff, p=p, dim=-1, keepdim=True)
 
-    def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: pt.Tensor, zeta_labels: pt.Tensor):
+    def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: Optional[pt.Tensor], zeta_labels: Optional[pt.Tensor]):
         r"""
         Cost to displace :math:`\xi:=\left[\begin{array}{c}\bm{X}\\y\end{array}\right]`
         to :math:`\zeta:=\left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]`
@@ -58,6 +58,7 @@ class NormLabelCost(NormCost):
         zeta_labels : Tensor, shape (n_samples, n_features_y)
             Label or target in the dataset
         """
+        assert zeta_labels is not None and xi_labels is not None
         if float(self.kappa) is float("inf"):
             # Writing convention: if kappa=+oo we put all cost on switching labels
             #  so the cost is reported on y.
@@ -73,7 +74,7 @@ class NormLabelCost(NormCost):
             distance /= 1. + self.kappa
             return distance**self.power
 
-    def _sampler_labels(self, xi_labels, epsilon):
+    def _sampler_labels(self, xi_labels, epsilon) -> pt.distributions.Distribution:
         d = xi_labels.size(-1)
         if epsilon is None:
             epsilon = 1e-3
@@ -98,9 +99,9 @@ class NormLabelCost(NormCost):
     def solve_max_series_exp(
             self,
             xi: pt.Tensor,
-            xi_labels: pt.Tensor,
+            xi_labels: Optional[pt.Tensor],
             rhs: pt.Tensor,
-            rhs_labels: pt.Tensor
+            rhs_labels: Optional[pt.Tensor]
             ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         if xi_labels is not None and rhs_labels is not None:
             if self.p == 2 == self.power:

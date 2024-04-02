@@ -66,5 +66,5 @@ class TorchCost(nn.Module):
             xi_labels: Optional[pt.Tensor],
             rhs: pt.Tensor,
             rhs_labels: Optional[pt.Tensor]
-            ) -> pt.Tensor:
+            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         raise NotImplementedError()

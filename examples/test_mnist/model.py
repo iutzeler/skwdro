@@ -39,11 +39,11 @@ class TestAlexnet(nn.Module):
         x = self.net.avgpool(
                     x
                 ).flatten(1)
-        return self.net.classifier[:-1](x)
+        return self.net.classifier[:-1](x).squeeze(0)
 
     def forward(self, x):
         return self.classif(
-            self.net.classifier[-1](x).squeeze(1)
+            self.net.classifier[-1](x)
         )
 
     def train(self, mode: bool = True):

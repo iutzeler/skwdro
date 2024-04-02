@@ -48,7 +48,7 @@ class Dirac(dst.ExponentialFamily):
     def variance(self) -> pt.Tensor:
         return pt.zeros_like(self.loc)
 
-    def rsample(self, sample_shape: pt.Size) -> pt.Tensor:
+    def rsample(self, sample_shape: pt.Size=pt.Size()) -> pt.Tensor:
         return self.loc.expand(self._extended_shape(sample_shape))
 
     def log_prob(self, value: pt.Tensor) -> pt.Tensor:

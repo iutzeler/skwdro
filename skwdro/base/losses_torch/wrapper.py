@@ -39,10 +39,30 @@ class WrappedPrimalLoss(Loss):
     def intercept(self):
         return pt.tensor(0.)
 
+    def _flat_value_w_labels(self, xi, xi_labels):
+            return self.regularize(self.loss(self.transform(xi), xi_labels))
+    def _flat_value_wo_labels(self, xi):
+            return self.regularize(self.loss(self.transform(xi)))
+
     def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None):
+        print(f"{xi.size()=}")
         if self.has_labels:
             assert xi_labels is not None
-            return self.regularize(self.loss(self.transform(xi), xi_labels))
+            print(f"{xi_labels.size()=}")
+            if xi.dim() > 2 and xi_labels.dim() > 2:
+                *b, _ = xi.size()
+                return self._flat_value_w_labels(xi.flatten(start_dim=0, end_dim=-2), xi_labels.flatten(start_dim=0, end_dim=-2)).view(*b, 1)
+            elif xi.dim() > 2 and xi_labels.dim() == 2:
+                *b, _ = xi.size()
+                return self._flat_value_w_labels(xi.flatten(start_dim=0, end_dim=-2), xi_labels.squeeze()).view(*b, 1)
+            elif xi.dim() == 2 and xi_labels.dim() <= 2:
+                return self._flat_value_w_labels(xi, xi_labels).unsqueeze(-1)
+            else: raise NotImplementedError()
         else:
             assert xi_labels is None
-            return self.regularize(self.loss(self.transform(xi)))
+            if xi.dim() > 2:
+                *b, _ = xi.size()
+                return self._flat_value_wo_labels(xi.flatten(start_dim=0, end_dim=-2)).view(*b, 1)
+            elif xi.dim() == 2:
+                return self._flat_value_wo_labels(xi).unsqueeze(-1)
+            else: raise NotImplementedError()

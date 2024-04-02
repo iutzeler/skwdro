@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Optional, Tuple
+from typing import Any, Optional, Tuple
 from itertools import chain
 
 import torch as pt
@@ -96,10 +96,6 @@ class _DualLossBase(nn.Module, ABC):
         else:
             return range(self.n_iter[1])
 
-    @abstractmethod
-    def forward(self, *args):
-        raise NotImplementedError()
-
     def freeze(self, rg: bool=False, include_hyper=False):
         """ Freeze all the primal losse's parameters for some gradients operations.
 
@@ -114,6 +110,14 @@ class _DualLossBase(nn.Module, ABC):
         for param in frozen_params:
             param.requires_grad = rg
         return
+
+    def eval(self):
+        self.erm_mode = True
+        return super().eval()
+
+    def train(self, mode: bool = True):
+        self.erm_mode = mode
+        return super().train(mode)
 
 class _OptimizeableDual(_DualLossBase):
     @property
@@ -191,7 +195,8 @@ class _SampledDualLoss(_OptimizeableDual):
         """
         return self.primal_loss.default_sampler(xi, xi_labels, epsilon, seed)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def presample(self) -> bool:
         """ ``True`` for :class:`~DualPreSampledLoss`, ``False`` for :class:`~DualPostSampledLoss`.
 
