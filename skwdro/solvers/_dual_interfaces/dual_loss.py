@@ -90,7 +90,7 @@ class _DualFormulation(_SampleDisplacer):
                         zeta,
                         zeta_labels
                         )
-                integrand += 0#correction # (n_samples, m, 1)
+                integrand -= correction # (n_samples, m, 1)
             else:
                 l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
                 c = self.cost(
@@ -120,7 +120,7 @@ class _DualFormulation(_SampleDisplacer):
                 rho_N = xi.size(0) * self.rho.pow(p) # (1,)
                 q: pt.Tensor = p / (p - 1.) if p != 1. else pt.tensor(pt.inf)
 
-                grads, grads_labels = self.get_optimal_displacement(xi, xi_labels) # (1, m, d), (1, m, d')
+                grads, grads_labels = self.get_displacement_direction(xi, xi_labels) # (1, m, d), (1, m, d')
                 with pt.no_grad():
                     grads_norms = c.value(
                         grads,
