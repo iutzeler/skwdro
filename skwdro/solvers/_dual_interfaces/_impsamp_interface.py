@@ -1,13 +1,18 @@
 from typing import Optional, Tuple
 
 import torch as pt
+from torch._functorch.apis import vmap, grad
 
 from ._misc_dual_interfaces import _SampledDualLoss
 from ..utils import diff_opt_tensor, diff_tensor, normalize_just_vects, normalize_maybe_vects, maybe_unsqueeze
 
 
 class _SampleDisplacer(_SampledDualLoss):
-    def get_displacement_direction(
+    r'''
+    Interfaces for importance sampling, and gradients computations factored for initial lambda
+    computation down the abstraction.
+    '''
+    def get_optimal_displacement(
             self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor],
@@ -36,20 +41,16 @@ class _SampleDisplacer(_SampledDualLoss):
         xi_labels : (m, d')
         disps: (1, m, d), (1, m, d')
         """
-        diff_xi, diff_xi_l = self.get_optimal_displacement(xi, xi_labels)
+        grad_xi, grad_xi_l = self.get_optimal_displacement(xi, xi_labels)
+        print(f"{pt.linalg.norm(grad_xi)=} $$ {pt.linalg.norm(grad_xi)=}")
         # Assert type of results and get them returned
-        assert diff_xi.grad is not None
-        if diff_xi_l is not None:
-            assert diff_xi_l.grad is not None
-            return normalize_just_vects(diff_xi.grad / self._lam, threshold, dim=-1), normalize_maybe_vects(diff_xi_l.grad / self._lam, threshold, dim=-1)
-        else:
-            return normalize_just_vects(diff_xi.grad / self._lam, threshold, dim=-1), None
+        return normalize_just_vects(grad_xi / self._lam, threshold, dim=-1), normalize_maybe_vects(grad_xi_l / self._lam, threshold, dim=-1)
 
-    def get_optimal_displacement(
+    def get_displacement_direction(
             self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor]
-            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         r""" Optimal displacement to maximize the adversity of the samples.
         Yields :math:`\nabla_\xi L(\xi)` with backprop algorithm.
 
@@ -92,7 +93,12 @@ class _SampleDisplacer(_SampledDualLoss):
         # Unfreeze the parameters to allow training
         self.freeze(rg=True)
 
-        return diff_xi, diff_xi_l
+        assert diff_xi.grad is not None
+        if diff_xi_l is not None:
+            assert diff_xi_l.grad is not None
+            return diff_xi.grad, diff_xi_l.grad
+        else:
+            return diff_xi.grad, None
 
     def displace_samples(
             self,
@@ -100,12 +106,12 @@ class _SampleDisplacer(_SampledDualLoss):
             xi_labels: Optional[pt.Tensor],
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> Tuple[
-                    pt.Tensor,
-                    Optional[pt.Tensor],
-                    pt.Tensor,
-                    Optional[pt.Tensor]
-                ]:
+        ) -> Tuple[
+                pt.Tensor,
+                Optional[pt.Tensor],
+                pt.Tensor,
+                Optional[pt.Tensor]
+            ]:
         r""" Optimal displacement to maximize the adversity of the samples.
         Yields :math:`\frac{\nabla_\xi L(\xi)}{\lambda}` with backprop algorithm.
 
