@@ -90,7 +90,7 @@ class _DualFormulation(_SampleDisplacer):
                         zeta,
                         zeta_labels
                         )
-                integrand -= correction # (n_samples, m, 1)
+                integrand += correction # (n_samples, m, 1)
             else:
                 l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)
                 c = self.cost(
@@ -135,6 +135,7 @@ class _DualFormulation(_SampleDisplacer):
                             .pow(1. / q)
                            ) / (p * rho_N)
                     self._lam.data.mul_(0.).add_(lam0)
+                print(f"{lam0.item()=}")
                 return lam0
             else: raise
         else:

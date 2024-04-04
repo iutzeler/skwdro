@@ -155,13 +155,13 @@ def dualize_primal_loss(
         return DualPostSampledLoss(
                 loss,
                 cost,
-                n_iter=(300, 700),
+                n_iter=(200, 800),
                 **kwargs
             )
     else:
         return DualPreSampledLoss(
                 loss,
                 cost,
-                n_iter=(100, 10),
+                n_iter=(1, 10),
                 **kwargs
             )

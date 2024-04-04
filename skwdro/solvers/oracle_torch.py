@@ -99,7 +99,7 @@ class DualPostSampledLoss(_DualLoss):
                     self.parameters(),
                     lr=1e-2,
                     betas=(.99, .999),
-                    weight_decay=.1,
+                    weight_decay=.0,
                     amsgrad=True,
                     foreach=True)
 

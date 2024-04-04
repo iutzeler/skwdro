@@ -198,7 +198,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     sigma=self.sampler_reg,
                     epsilon=self.solver_reg,
                     imp_samp=_post_sample, # hard set
-                    adapt="prodigy",
+                    adapt=None,
                     l2reg=self.l2_reg
                 )
 
