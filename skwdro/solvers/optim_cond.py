@@ -1,24 +1,26 @@
+from skwdro.solvers.utils import maybe_flatten_grad_else_raise, NoneGradError
+from skwdro.solvers._dual_interfaces import _DualLoss as BaseDualLoss
+import torch as pt
+from typing import Callable, Optional, Union
 L_AND_T = {"both", "theta_and_lambda", "t&l", "lambda_and_theta", "l&t"}
-L_OR_T  = {"one", "theta_or_lambda", "tUl", "lambda_or_theta", "lUt"}
-JUST_T  = {"theta", "t"}
-JUST_L  = {"lambda", "l"}
+L_OR_T = {"one", "theta_or_lambda", "tUl", "lambda_or_theta", "lUt"}
+JUST_T = {"theta", "t"}
+JUST_L = {"lambda", "l"}
 
 
 # ########### TORCH code #############
-from typing import Callable, Optional, Union
 
-import torch as pt
-
-from skwdro.solvers._dual_interfaces import _DualLoss as BaseDualLoss
-from skwdro.solvers.utils import maybe_flatten_grad_else_raise, NoneGradError
 
 LazyTensor = Callable[[], pt.Tensor]
+
 
 def combine(a, b):
     return a[0] and b[0], a[1] + b[1]
 
+
 def wrap(b):
     return b, 0.
+
 
 class OptCondTorch:
     r""" Callable object representing some optimality conditions
@@ -53,17 +55,19 @@ class OptCondTorch:
     metric:
         either ``"grad"`` for gradient improvement/change over time, or ``"param"`` for parameter-space improvement/change over time
     """
+
     def __init__(
             self,
             order: Union[int, str],
-            tol_theta: float=1e-8,
-            tol_lambda: float=1e-8,
+            tol_theta: float = 1e-8,
+            tol_lambda: float = 1e-8,
             *,
-            monitoring: str="theta",
-            mode: str="rel",
-            metric: str="grad"
-            ):
-        if isinstance(order, str): assert order == 'inf'
+            monitoring: str = "theta",
+            mode: str = "rel",
+            metric: str = "grad"
+    ):
+        if isinstance(order, str):
+            assert order == 'inf'
         self.order: float = float(order)
         assert self.order > 0., "Please provide an UINT order for the parameters grad norm, or the 'inf' string"
         self.tol_theta = tol_theta
@@ -98,11 +102,15 @@ class OptCondTorch:
         cond: bool
             green light to stop algorithm
         """
-        self.max_iter: int = dual_loss.n_iter if isinstance(dual_loss.n_iter, int) else dual_loss.n_iter[1]
-        flattheta: LazyTensor = lambda: self.get_flat_param(dual_loss.primal_loss)
-        flatgrad: LazyTensor = lambda: self.get_flat_grad(dual_loss.primal_loss)
+        self.max_iter: int = dual_loss.n_iter if isinstance(
+            dual_loss.n_iter, int) else dual_loss.n_iter[1]
+        flattheta: LazyTensor = lambda: self.get_flat_param(
+            dual_loss.primal_loss)
+        flatgrad: LazyTensor = lambda: self.get_flat_grad(
+            dual_loss.primal_loss)
         lam: LazyTensor = lambda: dual_loss.lam
-        lamgrad: LazyTensor = lambda: maybe_flatten_grad_else_raise(dual_loss._lam)
+        lamgrad: LazyTensor = lambda: maybe_flatten_grad_else_raise(
+            dual_loss._lam)
 
         ci = self.check_iter(it_number)
         cp, err = self.check_all_params(lam, lamgrad, flattheta, flatgrad)
@@ -169,19 +177,20 @@ class OptCondTorch:
             return cond
         else:
             if self.metric == "grad":
-                mem = self.t_grad_0 # nabla_theta first iteration
+                mem = self.t_grad_0  # nabla_theta first iteration
                 if mem is None:
                     # Compute nabla_theta because we are at nabla theta right now
                     # Wait for next iteration to verify convergence.
-                    self.t_grad_0 = pt.linalg.norm(flat_theta_grad(), self.order)
+                    self.t_grad_0 = pt.linalg.norm(
+                        flat_theta_grad(), self.order)
                     return wrap(False)
                 else:
                     # Compute nabla_theta at current iteration and compare it to first iterate
                     new = pt.linalg.norm(flat_theta_grad(), self.order)
                     return self.check_metric(new, mem, self.tol_theta)
             elif self.metric == "param":
-                mem0 = self.t_0 # first param vector theta_0
-                mem1 = self.delta_t_1 # |theta_1 - theta_0|
+                mem0 = self.t_0  # first param vector theta_0
+                mem1 = self.delta_t_1  # |theta_1 - theta_0|
                 if mem0 is None:
                     # Define theta_0
                     self.t_0 = flat_theta()
@@ -191,7 +200,8 @@ class OptCondTorch:
                     # Define theta_1 (=theta_k)
                     self.t_mem = flat_theta()
                     # |theta_1 - theta_0|
-                    self.delta_t_1 = pt.linalg.norm(self.t_mem - mem0, self.order)
+                    self.delta_t_1 = pt.linalg.norm(
+                        self.t_mem - mem0, self.order)
                     return wrap(False)
                 else:
                     # theta_k
@@ -292,7 +302,8 @@ class OptCondTorch:
         elif self.mode == "abs":
             return new_obs.sum().item() < tol, new_obs.sum().item()
         else:
-            raise ValueError("Please set the optcond mode to either 'rel' for relative tolerance or 'abs'")
+            raise ValueError(
+                "Please set the optcond mode to either 'rel' for relative tolerance or 'abs'")
 
     def check_iter(self, it_number: int) -> bool:
         r"""
@@ -303,8 +314,10 @@ class OptCondTorch:
         cond: bool
             green light to stop algorithm
         """
-        if self.max_iter <= 0: return False
-        else: return it_number >= self.max_iter
+        if self.max_iter <= 0:
+            return False
+        else:
+            return it_number >= self.max_iter
 
     @classmethod
     def get_flat_param(cls, module: pt.nn.Module) -> pt.Tensor:
@@ -312,9 +325,9 @@ class OptCondTorch:
         Helper function to get a flat vector containing all the primal parameters
         """
         return pt.concat([*map(
-                lambda t: t.flatten(),
-                module.parameters()
-            )])
+            lambda t: t.flatten(),
+            module.parameters()
+        )])
 
     @classmethod
     def get_flat_grad(cls, module: pt.nn.Module) -> pt.Tensor:
@@ -323,9 +336,9 @@ class OptCondTorch:
         """
         try:
             return pt.concat([*map(
-                    maybe_flatten_grad_else_raise,
-                    module.parameters()
-                )])
+                maybe_flatten_grad_else_raise,
+                module.parameters()
+            )])
         except NoneGradError as e:
             raise ValueError("The module provided as the primal loss yields None grads for some of its parameters, "
                              "preventing the solver from computing optimality conditions.\n"

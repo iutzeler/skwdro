@@ -7,8 +7,10 @@ import torch as pt
 
 import skwdro.distributions as dst
 
+
 class BaseSampler(ABC):
     seed: int
+
     def __init__(self, seed: int):
         self.seed = seed
 
@@ -39,7 +41,7 @@ class BaseSampler(ABC):
             self,
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> pt.Tensor:
+    ) -> pt.Tensor:
         raise NotImplementedError()
 
     @abstractmethod
@@ -49,7 +51,7 @@ class BaseSampler(ABC):
             xi_labels: Optional[pt.Tensor],
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> pt.Tensor:
+    ) -> pt.Tensor:
         raise NotImplementedError()
 
 
@@ -69,7 +71,7 @@ class NoLabelsSampler(BaseSampler, ABC):
             self,
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> pt.Tensor:
+    ) -> pt.Tensor:
         assert zeta_labels is None
         return self.data_s.log_prob(zeta).unsqueeze(-1)
 
@@ -79,9 +81,10 @@ class NoLabelsSampler(BaseSampler, ABC):
             xi_labels: Optional[pt.Tensor],
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> pt.Tensor:
+    ) -> pt.Tensor:
         assert xi_labels is None and zeta_labels is None
         return self.data_s.log_prob(zeta - xi + self.data_s.mean).unsqueeze(-1)
+
 
 class LabeledSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution, seed: int):
@@ -108,10 +111,10 @@ class LabeledSampler(BaseSampler, ABC):
             self,
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> pt.Tensor:
+    ) -> pt.Tensor:
         assert zeta_labels is not None
         lp = self.data_s.log_prob(zeta)\
-                + self.labels_s.log_prob(zeta_labels)
+            + self.labels_s.log_prob(zeta_labels)
         return lp.unsqueeze(-1)
 
     def log_prob_recentered(
@@ -120,22 +123,24 @@ class LabeledSampler(BaseSampler, ABC):
             xi_labels: Optional[pt.Tensor],
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> pt.Tensor:
+    ) -> pt.Tensor:
         assert zeta_labels is not None and xi_labels is not None
         lp = self.data_s.log_prob(zeta - xi + self.data_s.mean)\
-                + self.labels_s.log_prob(zeta_labels - xi_labels + self.labels_s.mean)
+            + self.labels_s.log_prob(zeta_labels - xi_labels + self.labels_s.mean)
         return lp.unsqueeze(-1)
 
 # Helper class ########################
+
+
 class IsOptionalCovarianceSampler(ABC):
     def init_covar(
-                self,
-                d: int,
-                sigma: Optional[Union[float, pt.Tensor]]=None,
-                tril: Optional[pt.Tensor]=None,
-                prec: Optional[pt.Tensor]=None,
-                cov: Optional[pt.Tensor]=None
-            ) -> Dict[str, pt.Tensor]:
+        self,
+        d: int,
+        sigma: Optional[Union[float, pt.Tensor]] = None,
+        tril: Optional[pt.Tensor] = None,
+        prec: Optional[pt.Tensor] = None,
+        cov: Optional[pt.Tensor] = None
+    ) -> Dict[str, pt.Tensor]:
         """
         Sets up the covariance matrix in the correct format to give as a kwarg to torch distributions.
         Order of importance for non-None values:
@@ -153,4 +158,5 @@ class IsOptionalCovarianceSampler(ABC):
         elif prec is not None:
             return {"precision_matrix": prec}
         else:
-            raise ValueError("Please provide a valid covariance matrix for the constructor of " + str(self.__class__.__name__))
+            raise ValueError(
+                "Please provide a valid covariance matrix for the constructor of " + str(self.__class__.__name__))

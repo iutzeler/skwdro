@@ -11,8 +11,8 @@ class _SampleDisplacer(_SampledDualLoss):
             self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor],
-            threshold: float=1e10
-            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+            threshold: float = 1e10
+    ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         r"""
         Thresholds the displacement of the samples to avoid numerical instabilities.
         See :py:method:`~_SampleDisplacer.get_optimal_displacement`.
@@ -49,7 +49,7 @@ class _SampleDisplacer(_SampledDualLoss):
             self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor]
-            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+    ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         r""" Optimal displacement to maximize the adversity of the samples.
         Yields :math:`\nabla_\xi L(\xi)` with backprop algorithm.
 
@@ -76,18 +76,18 @@ class _SampleDisplacer(_SampledDualLoss):
         self.freeze()
 
         # "Dual" samples for forward pass, to get the gradients wrt them
-        diff_xi = diff_tensor(xi) # (1, m, d)
-        diff_xi_l = diff_opt_tensor(xi_labels) # (1, m, d')
+        diff_xi = diff_tensor(xi)  # (1, m, d)
+        diff_xi_l = diff_opt_tensor(xi_labels)  # (1, m, d')
 
         # Forward pass for xi
         out: pt.Tensor = self.primal_loss.value(
-                diff_xi,
-                diff_xi_l if diff_xi_l is not None else None
-            ).squeeze((0, 2)) # (m,)
+            diff_xi,
+            diff_xi_l if diff_xi_l is not None else None
+        ).squeeze((0, 2))  # (m,)
 
         # Backward pass, at all output loss per sample,
         # i.e. one gradient per xi sample, m total
-        out.backward(pt.ones(xi.size(0))) # xi.size = m
+        out.backward(pt.ones(xi.size(0)))  # xi.size = m
 
         # Unfreeze the parameters to allow training
         self.freeze(rg=True)
@@ -100,12 +100,12 @@ class _SampleDisplacer(_SampledDualLoss):
             xi_labels: Optional[pt.Tensor],
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
-            ) -> Tuple[
-                    pt.Tensor,
-                    Optional[pt.Tensor],
-                    pt.Tensor,
-                    Optional[pt.Tensor]
-                ]:
+    ) -> Tuple[
+        pt.Tensor,
+        Optional[pt.Tensor],
+        pt.Tensor,
+        Optional[pt.Tensor]
+    ]:
         r""" Optimal displacement to maximize the adversity of the samples.
         Yields :math:`\frac{\nabla_\xi L(\xi)}{\lambda}` with backprop algorithm.
 
@@ -133,18 +133,19 @@ class _SampleDisplacer(_SampledDualLoss):
         zeta_labels : (n_s, m, d')
         """
         disp, disp_labels = self.get_displacement_direction(
-                xi,
-                xi_labels
-            )
+            xi,
+            xi_labels
+        )
         if disp.isfinite().logical_not().any() or (disp_labels is not None and disp_labels.isfinite().logical_not().any()):
             # Safeguard against NaNs mainly, as well as divergences
             return xi.unsqueeze(0), maybe_unsqueeze(xi_labels, dim=0), zeta, zeta_labels
         else:
             displaced_xi, displaced_xi_labels = self.cost.solve_max_series_exp(
-                    xi.unsqueeze(0),
-                    maybe_unsqueeze(xi_labels, dim=0),
-                    disp,
-                    disp_labels
-                )
-            displaced_zeta, displaced_zeta_labels = self.cost.solve_max_series_exp(zeta, zeta_labels, disp, disp_labels)
+                xi.unsqueeze(0),
+                maybe_unsqueeze(xi_labels, dim=0),
+                disp,
+                disp_labels
+            )
+            displaced_zeta, displaced_zeta_labels = self.cost.solve_max_series_exp(
+                zeta, zeta_labels, disp, disp_labels)
             return displaced_xi, displaced_xi_labels, displaced_zeta, displaced_zeta_labels

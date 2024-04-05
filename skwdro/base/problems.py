@@ -1,3 +1,4 @@
+from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
 from typing import List, Optional, Union
 # from warnings import deprecated # Python 3.12+
 import warnings
@@ -5,29 +6,29 @@ import numpy as np
 
 
 def deprecated(message):
-  def deprecated_decorator(func):
-      def deprecated_func(*args, **kwargs):
-          warnings.warn("{} is a deprecated function. {}".format(func.__name__, message),
-                        category=DeprecationWarning,
-                        stacklevel=2)
-          warnings.simplefilter('default', DeprecationWarning)
-          return func(*args, **kwargs)
-      return deprecated_func
-  return deprecated_decorator
+    def deprecated_decorator(func):
+        def deprecated_func(*args, **kwargs):
+            warnings.warn("{} is a deprecated function. {}".format(func.__name__, message),
+                          category=DeprecationWarning,
+                          stacklevel=2)
+            warnings.simplefilter('default', DeprecationWarning)
+            return func(*args, **kwargs)
+        return deprecated_func
+    return deprecated_decorator
 
-
-from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
 
 Bounds = Optional[List[float]]
 LossType = LossTorch
 
+
 class Distribution:
     empirical: bool
     with_labels: bool
+
     def __init__(self, m: int, name: str) -> None:
         self.m = m
         self.name = name
-        self._samples   = None
+        self._samples = None
         self._samples_x = None
         self._samples_y = None
 

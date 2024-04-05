@@ -8,6 +8,7 @@ from .base_loss import Loss
 from skwdro.base.samplers.torch.base_samplers import NoLabelsSampler
 from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
 
+
 class NewsVendorLoss_torch(Loss):
     r""" Loss associated with the newsvendor problem:
     .. math::
@@ -33,24 +34,25 @@ class NewsVendorLoss_torch(Loss):
         number of journal stocked
     name : Optional[str]
     """
+
     def __init__(
             self,
             sampler: NoLabelsSampler,
             *,
-            k: float=5,
-            u: float=7,
-            l2reg: Optional[float]=None,
-            name: Optional[str]="NewsVendor loss"):
+            k: float = 5,
+            u: float = 7,
+            l2reg: Optional[float] = None,
+            name: Optional[str] = "NewsVendor loss"):
         super(NewsVendorLoss_torch, self).__init__(sampler, l2reg=l2reg)
         self.k = pt.tensor(float(k))
         self.u = pt.tensor(float(u))
         self.name = name
         self._theta = nn.Parameter(pt.rand(1))
 
-    def value_old(self,theta,xi):
-        return self.k*theta-self.u*pt.minimum(theta,xi)
+    def value_old(self, theta, xi):
+        return self.k * theta - self.u * pt.minimum(theta, xi)
 
-    def value(self, xi: pt.Tensor, xi_labels: NoneType=None):
+    def value(self, xi: pt.Tensor, xi_labels: NoneType = None):
         """ Forward pass of the loss on the data
 
         Parameters
@@ -60,7 +62,8 @@ class NewsVendorLoss_torch(Loss):
         xi_labels : NoneType
             placeholder, do not touch
         """
-        return self.k * self.theta - self.u * pt.minimum(self.theta, xi).mean(dim=-1, keepdim=True)
+        return self.k * self.theta - self.u * \
+            pt.minimum(self.theta, xi).mean(dim=-1, keepdim=True)
 
     @property
     def theta(self) -> pt.Tensor:

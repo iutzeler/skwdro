@@ -6,7 +6,7 @@ import numpy as np
 import torch as pt
 
 from sklearn.base import BaseEstimator, RegressorMixin
-from sklearn.exceptions import  DataConversionWarning
+from sklearn.exceptions import DataConversionWarning
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 from skwdro.base.problems import EmpiricalDistributionWithLabels
@@ -20,7 +20,8 @@ from skwdro.base.cost_decoder import cost_from_str
 
 from skwdro.solvers.optim_cond import OptCondTorch
 
-class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
+
+class ShallowNet(BaseEstimator, RegressorMixin):  # ClassifMixin
     """ A Wasserstein Distributionally Robust shallow network.
 
 
@@ -62,26 +63,28 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
                  cost="t-NLC-2-2",
                  solver="entropic_torch",
                  solver_reg=0.01,
-                 n_zeta_samples: int=10,
-                 n_neurons: int=10,
-                 ly1= None,
-                 ly2= None,
-                 random_state: int=0,
+                 n_zeta_samples: int = 10,
+                 n_neurons: int = 10,
+                 ly1=None,
+                 ly2=None,
+                 random_state: int = 0,
                  opt_cond=OptCondTorch(2)
                  ):
 
         if rho is not float:
             try:
                 rho = float(rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(rho)}")
+            except TypeError:
+                raise TypeError(
+                    f"The uncertainty radius rho should be numeric, received {type(rho)}")
 
         if rho < 0:
-            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
+            raise ValueError(
+                f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho    = rho
+        self.rho = rho
         self.l2_reg = l2_reg
-        self.cost   = cost
+        self.cost = cost
         self.fit_intercept = fit_intercept
         self.solver = solver
         self.solver_reg = solver_reg
@@ -114,7 +117,8 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
 
         if len(y.shape) != 1:
             y.flatten()
-            raise DataConversionWarning(f"y expects a shape (n_samples,) but receiced shape {y.shape}")
+            raise DataConversionWarning(
+                f"y expects a shape (n_samples,) but receiced shape {y.shape}")
 
         # Store data
         self.X_ = X
@@ -125,38 +129,42 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
 
         # Setup problem parameters ################
         cost = cost_from_str(self.cost)
-        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
-
+        emp = EmpiricalDistributionWithLabels(
+            m=m, samples_x=X, samples_y=y[:, None])
 
         # #########################################
 
         if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
             _wdro_loss = DualLoss(
-                    ShallowNetLossTorch( n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept, ly1=self.ly1, ly2=self.ly2),
-                    NormLabelCost(2., 1., 1e8),
-                    n_samples=self.n_zeta_samples,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho)
-                )
+                ShallowNetLossTorch(n_neurons=self.n_neurons, d=d,
+                                    fit_intercept=self.fit_intercept, ly1=self.ly1, ly2=self.ly2),
+                NormLabelCost(2., 1., 1e8),
+                n_samples=self.n_zeta_samples,
+                epsilon_0=pt.tensor(self.solver_reg),
+                rho_0=pt.tensor(self.rho)
+            )
 
-            self.coef_, self.intercept_, self.dual_var_,self.robust_loss_ = entTorch.solve_dual_wdro(_wdro_loss,emp,self.opt_cond)
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
+                _wdro_loss, emp, self.opt_cond)
 
             self.parameters_ = _wdro_loss.primal_loss.parameters_iter
         elif self.solver == "entropic_torch_pre":
             _wdro_loss = DualPreSampledLoss(
-                    ShallowNetLossTorch(n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept),
-                    NormLabelCost(2., 1., 1e8),
-                    n_samples=self.n_zeta_samples,
-                    epsilon_0=pt.tensor(self.solver_reg),
-                    rho_0=pt.tensor(self.rho)
-                )
+                ShallowNetLossTorch(n_neurons=self.n_neurons,
+                                    d=d, fit_intercept=self.fit_intercept),
+                NormLabelCost(2., 1., 1e8),
+                n_samples=self.n_zeta_samples,
+                epsilon_0=pt.tensor(self.solver_reg),
+                rho_0=pt.tensor(self.rho)
+            )
 
-            self.coef_, self.intercept_, self.dual_var_,self.robust_loss_  = entTorch.solve_dual_wdro(_wdro_loss,emp,self.opt_cond)
+            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
+                _wdro_loss, emp, self.opt_cond)
 
             self.parameters_ = _wdro_loss.primal_loss.parameters_iter
-        elif self.solver=="entropic":
+        elif self.solver == "entropic":
             raise NotImplementedError
-        elif self.solver=="dedicated":
+        elif self.solver == "dedicated":
             raise NotImplementedError
         else:
             raise NotImplementedError
@@ -186,8 +194,9 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
         # Input validation
         X = check_array(X)
         X = pt.tensor(X, dtype=pt.float32, device="cpu")
-        model = ShallowNetLossTorch(None, n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept)
-        model.load_state_dict(self.parameters_) # load
+        model = ShallowNetLossTorch(
+            None, n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept)
+        model.load_state_dict(self.parameters_)  # load
 
         return model.pred(X).cpu().detach().numpy().flatten()
 
@@ -203,6 +212,7 @@ class ShallowNet(BaseEstimator, RegressorMixin): #ClassifMixin
 
         ly1nb = self.parameters_["linear1.weight"].cpu().detach().numpy()
         ly1b = self.parameters_["linear1.bias"].cpu().detach().numpy()
-        ly1 = np.hstack((ly1nb, ly1b[:,None]))
+        ly1 = np.hstack((ly1nb, ly1b[:, None]))
         ly2 = self.parameters_["linear2.weight"].cpu().detach().numpy()
-        return np.array(ly1), np.array(ly2) # otherwise it's just a pointer to memory...
+        # otherwise it's just a pointer to memory...
+        return np.array(ly1), np.array(ly2)

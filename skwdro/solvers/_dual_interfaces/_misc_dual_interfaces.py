@@ -10,6 +10,7 @@ from skwdro.base.losses_torch import Loss
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 from skwdro.solvers.utils import Steps
 
+
 class _DualLossBase(nn.Module, ABC):
     r""" Base class to register parameters for a dual loss:
     .. math::
@@ -53,6 +54,7 @@ class _DualLossBase(nn.Module, ABC):
     rho_0: (1,)
     epsilon_0: (1,)
     """
+
     def __init__(self,
                  loss: Loss,
                  cost: Cost,
@@ -60,9 +62,9 @@ class _DualLossBase(nn.Module, ABC):
                  epsilon_0: pt.Tensor,
                  rho_0: pt.Tensor,
                  n_iter: Steps,
-                 gradient_hypertuning: bool=False,
+                 gradient_hypertuning: bool = False,
                  *,
-                 imp_samp: bool=True,
+                 imp_samp: bool = True,
                  ) -> None:
         super(_DualLossBase, self).__init__()
         self.primal_loss = loss
@@ -71,8 +73,10 @@ class _DualLossBase(nn.Module, ABC):
 
         # epsilon and rho are parameters so that they can be printed if needed.
         # But they are not included in the autograd graph (requires_grad=False).
-        self.rho = nn.Parameter(pt.as_tensor(rho_0), requires_grad=gradient_hypertuning)
-        self.epsilon = nn.Parameter(pt.as_tensor(epsilon_0), requires_grad=gradient_hypertuning)
+        self.rho = nn.Parameter(pt.as_tensor(
+            rho_0), requires_grad=gradient_hypertuning)
+        self.epsilon = nn.Parameter(pt.as_tensor(
+            epsilon_0), requires_grad=gradient_hypertuning)
 
         # Lambda is tuned during training, and it requires a proxy in its parameter form.
         # _lam is the tuned variable, and softplus(_lam) is the "proxy" that is accessed via
@@ -100,7 +104,7 @@ class _DualLossBase(nn.Module, ABC):
     def forward(self, *args):
         raise NotImplementedError()
 
-    def freeze(self, rg: bool=False, include_hyper=False):
+    def freeze(self, rg: bool = False, include_hyper=False):
         """ Freeze all the primal losse's parameters for some gradients operations.
 
         Parameters
@@ -110,10 +114,12 @@ class _DualLossBase(nn.Module, ABC):
         include_hyper: bool
             Set to ``True`` to freeze the rho and epsilon params as well.
         """
-        frozen_params = self.parameters() if include_hyper else chain(self.primal_loss.parameters(), (self._lam,))
+        frozen_params = self.parameters() if include_hyper else chain(
+            self.primal_loss.parameters(), (self._lam,))
         for param in frozen_params:
             param.requires_grad = rg
         return
+
 
 class _OptimizeableDual(_DualLossBase):
     @property
@@ -126,7 +132,8 @@ class _OptimizeableDual(_DualLossBase):
 
         """
         if self._opti is None:
-            raise AttributeError("Optimizer for:\n"+self.__str__()+"\nis ill defined (None), please set it beforehand")
+            raise AttributeError("Optimizer for:\n"+self.__str__() +
+                                 "\nis ill defined (None), please set it beforehand")
         return self._opti
 
     @optimizer.setter
@@ -140,9 +147,10 @@ class _OptimizeableDual(_DualLossBase):
         """
         self._opti = o
 
+
 class _SampledDualLoss(_OptimizeableDual):
     def generate_zetas(self,
-                       n_samples: Optional[int]=None
+                       n_samples: Optional[int] = None
                        ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         """ Generate zeta samples from the loss-sampler
 

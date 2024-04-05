@@ -17,6 +17,7 @@ SIGMA_FACTOR: float = .5
 EPSILON_SIGMA_FACTOR: float = 1e-2
 DEFAULT_COST_SPEC: Tuple[float, float] = (2, 2)
 
+
 def expert_hyperparams(
         rho: pt.Tensor,
         p: float,
@@ -24,7 +25,7 @@ def expert_hyperparams(
         epsilon_sigma_factor: float,
         sigma: Optional[float],
         sigma_factor: float,
-        ) -> Tuple[pt.Tensor, pt.Tensor]:
+) -> Tuple[pt.Tensor, pt.Tensor]:
     r"""
     Tuning of the hyperparameters for the dual loss.
 
@@ -59,7 +60,7 @@ def expert_hyperparams(
     if epsilon is None:
         epsilon_factor = epsilon_sigma_factor * sigma_factor**p
         expert_epsilon = pt.max(
-            epsilon_factor * rho.pow(p - 1), # epsilon ^ (p/q)
+            epsilon_factor * rho.pow(p - 1),  # epsilon ^ (p/q)
             pt.tensor(1e-7)
         )
     else:
@@ -67,11 +68,13 @@ def expert_hyperparams(
 
     return expert_sigma, expert_epsilon
 
+
 def power_from_parsed_spec(parsed_spec: Optional[ParsedCost]) -> float:
     if parsed_spec is None:
         return 2.
     else:
         return parsed_spec.power
+
 
 def dualize_primal_loss(
         loss_: nn.Module,
@@ -79,17 +82,17 @@ def dualize_primal_loss(
         rho: pt.Tensor,
         xi_batchinit: pt.Tensor,
         xi_labels_batchinit: Optional[pt.Tensor],
-        post_sample: bool=True,
-        cost_spec: Optional[str]=None,
-        n_samples: int=10,
-        seed: int=42,
+        post_sample: bool = True,
+        cost_spec: Optional[str] = None,
+        n_samples: int = 10,
+        seed: int = 42,
         *,
-        epsilon: Optional[float]=None,
-        sigma: Optional[float]=None,
-        l2reg: Optional[float]=None,
-        adapt: str="prodigy",
-        imp_samp: bool=True
-        ) -> _DualLoss:
+        epsilon: Optional[float] = None,
+        sigma: Optional[float] = None,
+        l2reg: Optional[float] = None,
+        adapt: str = "prodigy",
+        imp_samp: bool = True
+) -> _DualLoss:
     r"""
     Provide the wrapped version of the primal loss.
 
@@ -129,20 +132,26 @@ def dualize_primal_loss(
     cost: Cost
 
     has_labels = xi_labels_batchinit is not None
-    if has_labels: assert isinstance(xi_labels_batchinit, pt.Tensor), "Please provide a starting (mini/full)batch of labels to initialize the samplers"
+    if has_labels:
+        assert isinstance(
+            xi_labels_batchinit, pt.Tensor), "Please provide a starting (mini/full)batch of labels to initialize the samplers"
 
     parsed_cost = parse_code_torch(cost_spec, has_labels)
-    expert_sigma, expert_epsilon = expert_hyperparams(rho, power_from_parsed_spec(parsed_cost), epsilon, EPSILON_SIGMA_FACTOR, sigma, SIGMA_FACTOR)
-    expert_sigma, expert_epsilon = expert_sigma.to(xi_batchinit), expert_epsilon.to(xi_batchinit)
+    expert_sigma, expert_epsilon = expert_hyperparams(rho, power_from_parsed_spec(
+        parsed_cost), epsilon, EPSILON_SIGMA_FACTOR, sigma, SIGMA_FACTOR)
+    expert_sigma, expert_epsilon = expert_sigma.to(
+        xi_batchinit), expert_epsilon.to(xi_batchinit)
 
     cost = cost_from_parse_torch(parsed_cost)
 
     if has_labels:
-        sampler = LabeledCostSampler(cost, xi_batchinit, xi_labels_batchinit, expert_sigma, seed)
+        sampler = LabeledCostSampler(
+            cost, xi_batchinit, xi_labels_batchinit, expert_sigma, seed)
     else:
         sampler = NoLabelsCostSampler(cost, xi_batchinit, expert_sigma, seed)
 
-    loss = WrappedPrimalLoss(loss_, transform_, sampler, has_labels, l2reg=l2reg)
+    loss = WrappedPrimalLoss(
+        loss_, transform_, sampler, has_labels, l2reg=l2reg)
 
     kwargs = {
         "rho_0": rho,
@@ -153,15 +162,15 @@ def dualize_primal_loss(
     }
     if post_sample:
         return DualPostSampledLoss(
-                loss,
-                cost,
-                n_iter=(200, 800),
-                **kwargs
-            )
+            loss,
+            cost,
+            n_iter=(200, 800),
+            **kwargs
+        )
     else:
         return DualPreSampledLoss(
-                loss,
-                cost,
-                n_iter=(100, 10),
-                **kwargs
-            )
+            loss,
+            cost,
+            n_iter=(100, 10),
+            **kwargs
+        )

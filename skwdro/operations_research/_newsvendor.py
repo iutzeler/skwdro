@@ -18,6 +18,7 @@ from skwdro.base.cost_decoder import cost_from_str
 from skwdro.wrap_problem import dualize_primal_loss
 from skwdro.solvers.utils import detach_tensor
 
+
 class CustomNewsvendorLoss(nn.Module):
     def __init__(self, k: float, u: float):
         super().__init__()
@@ -29,6 +30,7 @@ class CustomNewsvendorLoss(nn.Module):
         gains = self.k * self.theta_
         losses = self.u * pt.minimum(self.theta_, x)
         return (gains - losses).mean(dim=-1, keepdim=True)
+
 
 class NewsVendor(BaseEstimator):
     r""" A NewsVendor Wasserstein Distributionally Robust Estimator.
@@ -70,25 +72,26 @@ class NewsVendor(BaseEstimator):
 
     def __init__(
             self,
-            rho: float=1e-2,
-            k: float=5,
-            u: float=7,
-            cost: str="t-NC-1-2",
-            l2_reg: float=0.,
-            solver_reg: float=.01,
-            n_zeta_samples: int=10,
-            solver: str="entropic",
-            random_state: int=0,
-            opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
-            ):
+            rho: float = 1e-2,
+            k: float = 5,
+            u: float = 7,
+            cost: str = "t-NC-1-2",
+            l2_reg: float = 0.,
+            solver_reg: float = .01,
+            n_zeta_samples: int = 10,
+            solver: str = "entropic",
+            random_state: int = 0,
+            opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
+    ):
 
         if rho < 0:
-            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
+            raise ValueError(
+                f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho    = rho
-        self.k      = k
-        self.u      = u
-        self.cost   = cost
+        self.rho = rho
+        self.k = k
+        self.u = u
+        self.cost = cost
         self.l2_reg = l2_reg
         self.solver = solver
         self.solver_reg = solver_reg
@@ -114,14 +117,15 @@ class NewsVendor(BaseEstimator):
         X = check_array(X)
         X = np.array(X)
 
-        #Type checking for rho
+        # Type checking for rho
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
             except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+                raise TypeError(
+                    f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
-        m,d = np.shape(X)
+        m, d = np.shape(X)
 
         # if d>1:
         #     raise ValueError(f"The input X should be one-dimensional, got {d}")
@@ -130,34 +134,36 @@ class NewsVendor(BaseEstimator):
 
         self.cost_ = cost_from_str(self.cost)
 
-        emp = EmpiricalDistributionWithoutLabels(m=m,samples=X)
+        emp = EmpiricalDistributionWithoutLabels(m=m, samples=X)
         # #################################
 
         if "torch" in self.solver:
             self._wdro_loss = dualize_primal_loss(
-                    CustomNewsvendorLoss(self.k, self.u),
-                    None,
-                    pt.tensor(self.rho),
-                    xi_batchinit=pt.Tensor(emp.samples),
-                    xi_labels_batchinit=None,
-                    post_sample=self.solver == "entropic_torch_post",
-                    cost_spec=self.cost,
-                    n_samples=self.n_zeta_samples,
-                    seed=self.random_state,
-                    epsilon=self.solver_reg,
+                CustomNewsvendorLoss(self.k, self.u),
+                None,
+                pt.tensor(self.rho),
+                xi_batchinit=pt.Tensor(emp.samples),
+                xi_labels_batchinit=None,
+                post_sample=self.solver == "entropic_torch_post",
+                cost_spec=self.cost,
+                n_samples=self.n_zeta_samples,
+                seed=self.random_state,
+                epsilon=self.solver_reg,
             )
             # Solve dual problem
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
-                    self._wdro_loss,
-                    emp,
-                    self.opt_cond, # type: ignore
-                    )
-            self.coef_ = detach_tensor(self._wdro_loss.primal_loss.loss.assets.weight) # type: ignore
+                self._wdro_loss,
+                emp,
+                self.opt_cond,  # type: ignore
+            )
+            self.coef_ = detach_tensor(
+                self._wdro_loss.primal_loss.loss.assets.weight)  # type: ignore
 
-        elif self.solver=="dedicated":
+        elif self.solver == "dedicated":
             # Use cvx solver to solve Kuhn MP formulation
             # self.problem_.p_hat.samples = self.problem_.p_hat.samples.flatten()[:, None]
-            self.coef_, self.dual_var_ = spS.WDRONewsvendorSpecificSolver(k=self.k, u=self.u, rho=self.rho,samples=emp.samples)
+            self.coef_, self.dual_var_ = spS.WDRONewsvendorSpecificSolver(
+                k=self.k, u=self.u, rho=self.rho, samples=emp.samples)
             if self.coef_ == 0.0:
                 # If theta is 0, so is lambda (constraint non-active)
                 self.dual_var_ = 0.0
@@ -167,9 +173,7 @@ class NewsVendor(BaseEstimator):
         else:
             raise NotImplementedError()
 
-
         self.is_fitted_ = True
-
 
         # `fit` should always return `self`
         return self
@@ -197,9 +201,9 @@ class NewsVendor(BaseEstimator):
             The testing input samples.
         '''
 
-        assert self.is_fitted_ == True #We have to fit before evaluating
+        assert self.is_fitted_ == True  # We have to fit before evaluating
 
-        #Check that X has correct shape
+        # Check that X has correct shape
         X = check_array(X)
 
         if "entropic" in self.solver:
@@ -209,5 +213,4 @@ class NewsVendor(BaseEstimator):
             losses = self.u * np.minimum(self.coef_, X)
             return np.mean(gains - losses)
         else:
-            raise(ValueError("Solver not recognized"))
-
+            raise (ValueError("Solver not recognized"))
