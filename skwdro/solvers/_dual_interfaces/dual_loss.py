@@ -90,6 +90,7 @@ class _DualFormulation(_SampleDisplacer):
                         zeta,
                         zeta_labels
                         )
+                print("\ncorr : {}".format(pt.norm(correction)))
                 integrand += correction # (n_samples, m, 1)
             else:
                 l = self.primal_loss.value(zeta, zeta_labels) # -> (n_samples, m, 1)

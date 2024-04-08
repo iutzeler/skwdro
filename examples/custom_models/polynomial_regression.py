@@ -73,6 +73,7 @@ loss  = nn.MSELoss(reduction='none')        # Our error will be measure in quadr
 def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], epochs: int=10):
 
     lbfgs = pt.optim.LBFGS(dual_loss.parameters())   # LBFGS is used to optimize thanks to the nature of the problem
+    optimizer = pt.optim.SGD(dual_loss.parameters(), lr=1e-6) 
 
     def closure():          # Closure for the LBFGS solver
         lbfgs.zero_grad()
@@ -89,7 +90,19 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
         # Main train loop
         inpbar = tqdm(dataset, leave=False)
         for xi, xi_label in inpbar:
-            lbfgs.step(closure)
+            optimizer.zero_grad()
+
+            # Forward the batch
+            loss = dual_loss(xi, xi_label, reset_sampler=True).mean()
+
+            # Backward pass
+            loss.backward()
+            optimizer.step()
+            
+            inpbar.set_postfix({"loss": f"{loss.item():.2f}"})
+
+            # lbfgs.step(closure)
+
 
         pbar.set_postfix({"lambda": f"{dual_loss.lam.item():.2f}"})
 
@@ -99,17 +112,19 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
 # Training
 # ~~~~~~~~
 
-radius = pt.tensor(0.005)   # Robustness radius
+radius = pt.tensor(0.5)   # Robustness radius
 
 dual_loss = dualize_primal_loss( 
             loss,
             model,
             radius,
             xi.unsqueeze(-1),
-            yi.unsqueeze(-1)
+            yi.unsqueeze(-1),
+            epsilon=1.0,
+            sigma=1.0
         ) # Replaces the loss of the model by the dual WDRO loss
 
-model1 = train(dual_loss, dataset, epochs=5) # type: ignore
+model1 = train(dual_loss, dataset, epochs=3) # type: ignore
 
 model1.eval()  # type: ignore
 
@@ -157,7 +172,7 @@ model2 = train(dualize_primal_loss(
             radius2,
             xi.unsqueeze(-1),
             yi.unsqueeze(-1)
-        ), dataset, epochs=5) # type: ignore
+        ), dataset, epochs=3) # type: ignore
 
 # %%
 # 
