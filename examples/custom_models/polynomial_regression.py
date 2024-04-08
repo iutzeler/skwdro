@@ -120,8 +120,8 @@ dual_loss = dualize_primal_loss(
             radius,
             xi.unsqueeze(-1),
             yi.unsqueeze(-1),
-            epsilon=1.0,
-            sigma=1.0
+            epsilon=1e-2,
+            sigma=1e-7
         ) # Replaces the loss of the model by the dual WDRO loss
 
 model1 = train(dual_loss, dataset, epochs=3) # type: ignore

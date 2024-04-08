@@ -41,7 +41,7 @@ class _SampleDisplacer(_SampledDualLoss):
         xi_labels : (m, d')
         disps: (1, m, d), (1, m, d')
         """
-        grad_xi, grad_xi_l = self.get_optimal_displacement(xi, xi_labels)
+        grad_xi, grad_xi_l = self.get_displacement_direction(xi, xi_labels)
         print(f"{pt.linalg.norm(grad_xi)=} $$ {pt.linalg.norm(grad_xi)=}")
         # Assert type of results and get them returned
         return normalize_just_vects(grad_xi / self._lam, threshold, dim=-1), normalize_maybe_vects(grad_xi_l / self._lam, threshold, dim=-1)
@@ -138,7 +138,7 @@ class _SampleDisplacer(_SampledDualLoss):
         zeta : (n_s, m, d)
         zeta_labels : (n_s, m, d')
         """
-        disp, disp_labels = self.get_displacement_direction(
+        disp, disp_labels = self.get_optimal_displacement(
                 xi,
                 xi_labels
             )
