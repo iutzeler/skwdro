@@ -5,7 +5,7 @@ from typing import Optional
 import numpy as np
 import torch as pt
 import torch.nn as nn
-from sklearn.base import BaseEstimator, ClassifierMixin, ClassifierMixin
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
 from sklearn.preprocessing import LabelEncoder
@@ -133,7 +133,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
-            except:
+            except ValueError:
                 raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
         if len(y.shape) != 1:
@@ -145,8 +145,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         self.le_ = LabelEncoder()
         y = self.le_.fit_transform(y)
-        if y is None: raise ValueError("Problem with labels, none out of label encoder")
-        else: y = np.array(y, dtype=X.dtype)
+        if y is None:
+            raise ValueError("Problem with labels, none out of label encoder")
+        else:
+            y = np.array(y, dtype=X.dtype)
         y[y==0.] = -1.
 
         if len(self.classes_)>2:
@@ -198,7 +200,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                     sigma=self.sampler_reg,
                     epsilon=self.solver_reg,
                     imp_samp=_post_sample, # hard set
-                    adapt=None,
+                    adapt="prodigy",
                     l2reg=self.l2_reg
                 )
 
