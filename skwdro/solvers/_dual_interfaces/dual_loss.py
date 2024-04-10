@@ -135,9 +135,9 @@ class _DualFormulation(_SampleDisplacer):
                             .pow(1. / q)
                            ) / (p * rho_N)
                     self._lam.data.mul_(0.).add_(lam0)
-                print(f"{lam0.item()=}")
                 return lam0
-            else: raise
+            else:
+                raise
         else:
             self._lam.data.mul_(0.)
 
