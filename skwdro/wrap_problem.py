@@ -87,7 +87,7 @@ def dualize_primal_loss(
         epsilon: Optional[float]=None,
         sigma: Optional[float]=None,
         l2reg: Optional[float]=None,
-        adapt: str="prodigy",
+        adapt: Optional[str]="prodigy",
         imp_samp: bool=True
         ) -> _DualLoss:
     r"""
@@ -155,13 +155,13 @@ def dualize_primal_loss(
         return DualPostSampledLoss(
                 loss,
                 cost,
-                n_iter=(200, 800),
+                n_iter=(200, 2800),
                 **kwargs
             )
     else:
         return DualPreSampledLoss(
                 loss,
                 cost,
-                n_iter=(100, 10),
+                n_iter=(1, 10),
                 **kwargs
             )

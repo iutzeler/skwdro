@@ -11,8 +11,8 @@ L2_REG = 1e-5 #Don't change
 def fit_estimator(my_rho_norm, reg, sigma, X, y):
     rho_norm = my_rho_norm# ** 2 # because no 0.5 in cost
     estimator = LogisticRegression(
-            # rho=np.sqrt(2) * rho_norm,
-            rho=rho_norm,
+            rho=np.sqrt(2) * rho_norm,
+            # rho=2.*rho_norm,
             l2_reg=L2_REG,
             cost="t-NC-2-2",
             # cost="t-NLC-2-2-1",
@@ -20,7 +20,7 @@ def fit_estimator(my_rho_norm, reg, sigma, X, y):
             solver="entropic_torch",
             solver_reg=reg,
             sampler_reg=sigma,
-            n_zeta_samples=20,
+            n_zeta_samples=50,
         )
     estimator.fit(X, y)
     return estimator.coef_, estimator.robust_loss_

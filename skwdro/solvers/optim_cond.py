@@ -1,11 +1,4 @@
-L_AND_T = {"both", "theta_and_lambda", "t&l", "lambda_and_theta", "l&t"}
-L_OR_T  = {"one", "theta_or_lambda", "tUl", "lambda_or_theta", "lUt"}
-JUST_T  = {"theta", "t"}
-JUST_L  = {"lambda", "l"}
-
-
-# ########### TORCH code #############
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Union, Tuple
 
 import torch as pt
 
@@ -13,11 +6,20 @@ from skwdro.solvers._dual_interfaces import _DualLoss as BaseDualLoss
 from skwdro.solvers.utils import maybe_flatten_grad_else_raise, NoneGradError
 
 LazyTensor = Callable[[], pt.Tensor]
+ValidAndError = Tuple[bool, float]
 
-def combine(a, b):
+L_AND_T = {"both", "theta_and_lambda", "t&l", "lambda_and_theta", "l&t"}
+L_OR_T  = {"one", "theta_or_lambda", "tUl", "lambda_or_theta", "lUt"}
+JUST_T  = {"theta", "t"}
+JUST_L  = {"lambda", "l"}
+
+def combine_intersect(a: ValidAndError, b: ValidAndError) -> ValidAndError:
     return a[0] and b[0], a[1] + b[1]
 
-def wrap(b):
+def combine_union(a: ValidAndError, b: ValidAndError) -> ValidAndError:
+    return a[0] or b[0], a[1] + b[1]
+
+def wrap(b: bool) -> ValidAndError:
     return b, 0.
 
 class OptCondTorch:
@@ -54,24 +56,30 @@ class OptCondTorch:
         either ``"grad"`` for gradient improvement/change over time, or ``"param"`` for parameter-space improvement/change over time
     """
     def __init__(
-            self,
-            order: Union[int, str],
-            tol_theta: float=1e-8,
-            tol_lambda: float=1e-8,
-            *,
-            monitoring: str="theta",
-            mode: str="rel",
-            metric: str="grad"
-            ):
-        if isinstance(order, str): assert order == 'inf'
+        self,
+        order: Union[int, str],
+        tol_theta: float=1e-8,
+        tol_lambda: float=1e-8,
+        *,
+        monitoring: str="theta",
+        mode: str="rel",
+        metric: str="grad",
+        verbose=False
+    ):
+        """
+        """
+        if isinstance(order, str):
+            assert order == 'inf'
         self.order: float = float(order)
-        assert self.order > 0., "Please provide an UINT order for the parameters grad norm, or the 'inf' string"
+        assert self.order > 0., "Please provide a UINT order for the parameters grad norm, or the 'inf' string"
         self.tol_theta = tol_theta
         self.tol_lambda = tol_lambda
         self.monitoring = monitoring
         self.mode = mode
         self.metric = metric
         self.max_iter: int = 0
+
+        self.verbose = verbose
 
         self.l_mem: Optional[pt.Tensor] = None
         self.t_mem: Optional[pt.Tensor] = None
@@ -99,14 +107,18 @@ class OptCondTorch:
             green light to stop algorithm
         """
         self.max_iter: int = dual_loss.n_iter if isinstance(dual_loss.n_iter, int) else dual_loss.n_iter[1]
-        flattheta: LazyTensor = lambda: self.get_flat_param(dual_loss.primal_loss)
-        flatgrad: LazyTensor = lambda: self.get_flat_grad(dual_loss.primal_loss)
-        lam: LazyTensor = lambda: dual_loss.lam
-        lamgrad: LazyTensor = lambda: maybe_flatten_grad_else_raise(dual_loss._lam)
+        def flattheta() -> pt.Tensor:
+            return self.get_flat_param(dual_loss.primal_loss)
+        def flatgrad() -> pt.Tensor:
+            return self.get_flat_grad(dual_loss.primal_loss)
+        def lam() -> pt.Tensor:
+            return dual_loss.lam
+        def lamgrad() -> pt.Tensor:
+            return maybe_flatten_grad_else_raise(dual_loss._lam)
 
         ci = self.check_iter(it_number)
         cp, err = self.check_all_params(lam, lamgrad, flattheta, flatgrad)
-        if it_number % 100 == 0:
+        if self.verbose and it_number % 100 == 0:
             print(f"[{it_number = }] {ci = } {cp = } {err = }")
         return ci or cp
 
@@ -115,7 +127,7 @@ class OptCondTorch:
             lam: LazyTensor,
             lamgrad: LazyTensor,
             flattheta: LazyTensor,
-            flatgrad: LazyTensor) -> bool:
+            flatgrad: LazyTensor) -> ValidAndError:
         r"""
         Checks the dual and primal parameters for convergence by using functional monads on the tensors,
         see :py:func:`~OptCondTorch.check_t` and :py:func:`~OptCondTorch.check_l`
@@ -137,9 +149,9 @@ class OptCondTorch:
             green light to stop algorithm
         """
         if self.monitoring in L_AND_T:
-            return combine(self.check_l(lam, lamgrad), self.check_t(flattheta, flatgrad))
+            return combine_intersect(self.check_l(lam, lamgrad), self.check_t(flattheta, flatgrad))
         elif self.monitoring in L_OR_T:
-            return self.check_l(lam, lamgrad) or self.check_t(flattheta, flatgrad)
+            return combine_union(self.check_l(lam, lamgrad), self.check_t(flattheta, flatgrad))
         elif self.monitoring in JUST_L:
             return self.check_l(lam, lamgrad)
         elif self.monitoring in JUST_T:
@@ -147,7 +159,7 @@ class OptCondTorch:
         else:
             raise ValueError("Please provide a valid value for the monitoring")
 
-    def check_t(self, flat_theta: LazyTensor, flat_theta_grad: LazyTensor) -> bool:
+    def check_t(self, flat_theta: LazyTensor, flat_theta_grad: LazyTensor) -> ValidAndError:
         r"""
         Check the convergence of the theta parameter, either in gradient or in parameter value.
         The parameters are ``LazyTensor``s which means that they must be called as functions to be evaluated
@@ -166,7 +178,7 @@ class OptCondTorch:
         """
         cond = False
         if self.tol_theta <= 0.:
-            return cond
+            return cond, 0.
         else:
             if self.metric == "grad":
                 mem = self.t_grad_0 # nabla_theta first iteration
@@ -209,7 +221,7 @@ class OptCondTorch:
             else:
                 return wrap(False)
 
-    def check_l(self, lam: LazyTensor, lam_grad: LazyTensor) -> bool:
+    def check_l(self, lam: LazyTensor, lam_grad: LazyTensor) -> ValidAndError:
         r"""
         Check the convergence of the theta parameter, either in gradient or in parameter value.
         The parameters are ``LazyTensor``s which means that they must be called as functions to be evaluated
@@ -268,7 +280,7 @@ class OptCondTorch:
             else:
                 return wrap(False)
 
-    def check_metric(self, new_obs: pt.Tensor, memory: pt.Tensor, tol: float) -> bool:
+    def check_metric(self, new_obs: pt.Tensor, memory: pt.Tensor, tol: float) -> ValidAndError:
         r"""
         Helper function to get the tolerance check in both the relative and absolute error cases
 
@@ -303,8 +315,7 @@ class OptCondTorch:
         cond: bool
             green light to stop algorithm
         """
-        if self.max_iter <= 0: return False
-        else: return it_number >= self.max_iter
+        return False if self.max_iter <= 0 else it_number >= self.max_iter
 
     @classmethod
     def get_flat_param(cls, module: pt.nn.Module) -> pt.Tensor:
