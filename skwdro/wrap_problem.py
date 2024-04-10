@@ -90,9 +90,9 @@ def dualize_primal_loss(
         epsilon: Optional[float] = None,
         sigma: Optional[float] = None,
         l2reg: Optional[float] = None,
-        adapt: str = "prodigy",
+        adapt: Optional[str] = "prodigy",
         imp_samp: bool = True
-) -> _DualLoss:
+    ) -> _DualLoss:
     r"""
     Provide the wrapped version of the primal loss.
 
@@ -164,7 +164,7 @@ def dualize_primal_loss(
         return DualPostSampledLoss(
             loss,
             cost,
-            n_iter=(200, 800),
+            n_iter=(200, 2800),
             **kwargs
         )
     else:

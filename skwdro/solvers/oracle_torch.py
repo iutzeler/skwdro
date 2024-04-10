@@ -110,7 +110,8 @@ class DualPostSampledLoss(_DualLoss):
                 betas=(.99, .999),
                 weight_decay=0.,
                 amsgrad=True,
-                foreach=True)
+                foreach=True
+            )
 
     def reset_sampler_mean(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None):
         """ Prepare the sampler for a new batch of :math:`xi` data.
