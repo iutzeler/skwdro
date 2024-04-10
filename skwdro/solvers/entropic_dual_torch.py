@@ -1,4 +1,3 @@
-import numpy as np
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 from skwdro.base.problems import Distribution
 from skwdro.solvers.optim_cond import OptCondTorch
@@ -6,7 +5,7 @@ from skwdro.solvers.utils import detach_tensor, interpret_steps_struct
 from skwdro.solvers.result import wrap_solver_result
 from skwdro.solvers.oracle_torch import _DualLoss
 import torch as pt
-from typing import List, Optional, Union
+from typing import List, Optional
 
 # from warnings import deprecated # Python 3.12+
 import warnings

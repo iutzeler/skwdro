@@ -5,8 +5,7 @@ WDRO Estimators
 import numpy as np
 import torch as pt
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_array, check_is_fitted, check_random_state
-from torch import Tensor
+from sklearn.utils.validation import check_array
 
 from typing import Optional
 
@@ -38,7 +37,7 @@ class Portfolio(BaseEstimator):
 
         \ell(x,\tau;\xi) =  - \langle x ; \xi \rangle + \eta \tau + \frac{1}{\alpha} \max( - \langle x ; \xi \rangle - \tau ; 0)
 
-    where :math:`\tau` is an extra real parameter accounting for the threshold of the CVaR (see [Rockafellar and Uryasev (2000)]). The parameter :math:`x` is constrained to live in the simplex (This is encoded in the constraints of the problem in [Esfahani et al. (2018)] and by an exponential reparametrization for the entropy-regularized version). 
+    where :math:`\tau` is an extra real parameter accounting for the threshold of the CVaR (see [Rockafellar and Uryasev (2000)]). The parameter :math:`x` is constrained to live in the simplex (This is encoded in the constraints of the problem in [Esfahani et al. (2018)] and by an exponential reparametrization for the entropy-regularized version).
 
     Parameters
     ----------
@@ -133,6 +132,7 @@ class Portfolio(BaseEstimator):
             The prediction. Always none for a portfolio estimator.
 
         """
+        del y
 
         # Conversion to float to prevent torch.nn conversion errors
         self.rho_ = float(self.rho)
@@ -183,7 +183,7 @@ class Portfolio(BaseEstimator):
                 pt.tensor(self.rho_),
                 pt.Tensor(emp.samples),
                 None,
-                not "post" in self.solver,
+                "post" not in self.solver,
                 self.cost,
                 self.n_zeta_samples,
                 self.seed,
@@ -217,6 +217,7 @@ class Portfolio(BaseEstimator):
         y : None
             The prediction. Always None for a Portfolio estimator.
         '''
+        del y
         return -self.eval(X)
 
     def eval(self, X):
@@ -232,7 +233,7 @@ class Portfolio(BaseEstimator):
         # Check that X has correct shape
         X = check_array(X)
 
-        assert self.is_fitted_ == True  # We have to fit before evaluating
+        assert self.is_fitted_  # We have to fit before evaluating
 
         if "entropic" in self.solver:
             return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()

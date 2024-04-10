@@ -1,6 +1,5 @@
 from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
-from typing import List, Optional, Union
-# from warnings import deprecated # Python 3.12+
+from typing import List, Optional
 import warnings
 import numpy as np
 
@@ -8,9 +7,14 @@ import numpy as np
 def deprecated(message):
     def deprecated_decorator(func):
         def deprecated_func(*args, **kwargs):
-            warnings.warn("{} is a deprecated function. {}".format(func.__name__, message),
-                          category=DeprecationWarning,
-                          stacklevel=2)
+            warnings.warn(
+                "{} is a deprecated function. {}".format(
+                    func.__name__,
+                    message
+                ),
+                category=DeprecationWarning,
+                stacklevel=2
+            )
             warnings.simplefilter('default', DeprecationWarning)
             return func(*args, **kwargs)
         return deprecated_func
@@ -28,9 +32,9 @@ class Distribution:
     def __init__(self, m: int, name: str) -> None:
         self.m = m
         self.name = name
-        self._samples = None
-        self._samples_x = None
-        self._samples_y = None
+        self._samples: Optional[np.ndarray] = None
+        self._samples_x: Optional[np.ndarray] = None
+        self._samples_y: Optional[np.ndarray] = None
 
     @property
     def samples(self):
@@ -39,12 +43,12 @@ class Distribution:
         else:
             return self._samples
 
-    @property
-    def samples_y(self):
-        if self.with_labels:
-            return self._samples_y
+    @samples.setter
+    def samples(self, data):
+        if isinstance(data, np.ndarray):
+            self._samples = data
         else:
-            raise AttributeError()
+            raise TypeError()
 
     @property
     def samples_x(self):
@@ -53,19 +57,19 @@ class Distribution:
         else:
             raise AttributeError()
 
-    @samples.setter
-    def samples(self, data):
-        if isinstance(data, np.ndarray):
-            self._samples = data
-        else:
-            raise TypeError()
-
     @samples_x.setter
     def samples_x(self, data):
         if isinstance(data, np.ndarray):
             self._samples_x = data
         else:
             raise TypeError()
+
+    @property
+    def samples_y(self):
+        if self.with_labels:
+            return self._samples_y
+        else:
+            raise AttributeError()
 
     @samples_y.setter
     def samples_y(self, labels):
@@ -75,76 +79,18 @@ class Distribution:
             raise TypeError()
 
 
-# @deprecated("The WDRO Problem class is being deprecated")
-# class WDROProblem:
-#     """ Base class for WDRO problem """
-
-#     def __init__(
-#             self,
-#             cost: Cost|TorchCost,
-#             loss: LossType,
-#             p_hat: Distribution,
-#             n: int=0,
-#             d: int=0,
-#             d_labels: int=0,
-#             theta_bounds: Bounds=None,
-#             xi_bounds: Bounds=None,
-#             xi_labels_bounds: Bounds=None,
-#             rho: float=0.,
-#             *,
-#             order_stop: int=2,
-#             tol_theta_stop: float=1e-6,
-#             tol_lambda_stop: float=1e-10,
-#             monitoring_stop: str="t&l",
-#             mode_stop: str="rel",
-#             metric_stop: str="param",
-#             name="WDRO Problem"):
-
-#         ## Optimization variable
-#         self.n = n # size of Theta
-#         self.theta_bounds = theta_bounds
-
-#         ## Uncertain variable
-#         self.d = d # size of Xi
-#         self.xi_bounds = xi_bounds
-
-#         ## Uncertain labels
-#         self.d_label = d_labels # size of Xi
-#         self.xi_labels_bounds = xi_labels_bounds
-
-#         ## Problem loss
-#         self.loss = loss
-
-#         ## Radius
-#         self.rho = rho
-
-#         ## Transport cost
-#         self.c = cost.value
-
-#         ## Base distribution
-#         self.p_hat = p_hat
-
-#         ## Problem name
-#         self.name = name
-
-#         ## Optimality conditions
-#         self.opt_cond = OptCondTorch(
-#                 order_stop,
-#                 tol_theta_stop,
-#                 tol_lambda_stop,
-#                 monitoring=monitoring_stop,
-#                 mode=mode_stop,
-#                 metric=metric_stop
-#             )
-
-
 class EmpiricalDistributionWithoutLabels(Distribution):
     """ Empirical Probability distribution """
 
     empirical = True
     with_labels = False
 
-    def __init__(self, m: int, samples: np.ndarray, name="Empirical distribution"):
+    def __init__(
+        self,
+        m: int,
+        samples: np.ndarray,
+        name="Empirical distribution"
+    ):
         super(EmpiricalDistributionWithoutLabels, self).__init__(m, name)
         self._samples = samples
 
@@ -155,7 +101,13 @@ class EmpiricalDistributionWithLabels(Distribution):
     empirical = True
     with_labels = True
 
-    def __init__(self, m: int, samples_x: np.ndarray, samples_y: np.ndarray, name="Empirical distribution"):
+    def __init__(
+        self,
+        m: int,
+        samples_x: np.ndarray,
+        samples_y: np.ndarray,
+        name="Empirical distribution"
+    ):
         super(EmpiricalDistributionWithLabels, self).__init__(m, name)
         self._samples_x = samples_x.copy('K')
         self._samples_y = samples_y.copy('K')

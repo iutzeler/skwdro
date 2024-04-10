@@ -5,7 +5,7 @@ import numpy as np
 import torch as pt
 import torch.nn as nn
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_array, check_is_fitted
+from sklearn.utils.validation import check_array
 
 from typing import Optional
 
@@ -112,6 +112,7 @@ class NewsVendor(BaseEstimator):
         self : object
             Returns self.
         """
+        del y
 
         # Input validation
         X = check_array(X)
@@ -121,7 +122,7 @@ class NewsVendor(BaseEstimator):
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
-            except:
+            except ValueError:
                 raise TypeError(
                     f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
@@ -189,6 +190,7 @@ class NewsVendor(BaseEstimator):
         y : None
             The prediction. Always None for a Newsvendor estimator.
         '''
+        del y
         return -self.eval(X)
 
     def eval(self, X):
@@ -201,7 +203,7 @@ class NewsVendor(BaseEstimator):
             The testing input samples.
         '''
 
-        assert self.is_fitted_ == True  # We have to fit before evaluating
+        assert self.is_fitted_  # We have to fit before evaluating
 
         # Check that X has correct shape
         X = check_array(X)

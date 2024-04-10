@@ -1,12 +1,9 @@
-from abc import ABC, abstractclassmethod, abstractmethod, abstractproperty
-from types import NoneType
 from typing import Optional
 
 import torch as pt
 import torch.nn as nn
 
-from skwdro.base.samplers.torch.base_samplers import LabeledSampler, BaseSampler, NoLabelsSampler
-from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSampler
+from skwdro.base.samplers.torch.base_samplers import LabeledSampler
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 
 from skwdro.base.losses_torch import Loss
@@ -22,6 +19,7 @@ class ShallowNetLoss(Loss):
             ly1=None,
             ly2=None,
             fit_intercept: bool = False) -> None:
+        assert sampler is not None
         super(ShallowNetLoss, self).__init__(sampler)
         assert n_neurons is not None and n_neurons > 0, "Please provide a valid layer height n_neurons>0"
         assert d > 0, "Please provide a valid data dimension d>0"
@@ -42,22 +40,22 @@ class ShallowNetLoss(Loss):
             self.linear2.weight.data = pt.tensor(
                 ly2, dtype=dtype, device=device, requires_grad=True)
 
-        # self.linear1 = nn.Linear(d, 1, bias=fit_intercept) # debug=linearreg
-
     def pred(self, X):
         li = pt.relu(self.linear1(X))
         return self.linear2(li)
 
-    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+    def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]):
+        assert xi_labels is not None
         xi_labels_pred = self.pred(xi)
 
         return self.L(
             xi_labels_pred,
-            xi_labels)
+            xi_labels
+        )
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon):
-        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon)
+    def default_sampler(cls, xi, xi_labels, epsilon, seed=0):
+        return ClassificationNormalNormalSampler(xi, xi_labels, sigma=epsilon, l_sigma=epsilon, seed=seed)
 
     @property
     def theta(self) -> pt.Tensor:

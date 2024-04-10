@@ -5,7 +5,7 @@ from torch._functorch.apis import vmap, grad
 from torch._functorch import functional_call
 
 from ._misc_dual_interfaces import _SampledDualLoss
-from ..utils import diff_opt_tensor, diff_tensor, normalize_just_vects, normalize_maybe_vects, maybe_unsqueeze
+from ..utils import normalize_just_vects, normalize_maybe_vects, maybe_unsqueeze
 
 
 class _SampleDisplacer(_SampledDualLoss):

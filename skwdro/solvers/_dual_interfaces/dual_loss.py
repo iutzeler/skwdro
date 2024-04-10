@@ -1,7 +1,6 @@
 from typing import Optional
 
 import torch as pt
-import torch.nn.functional as F
 
 from ._impsamp_interface import _SampleDisplacer
 from skwdro.solvers.utils import maybe_unsqueeze
@@ -50,6 +49,9 @@ class _DualFormulation(_SampleDisplacer):
         elif self.rho > 0.:
             p = pt.tensor(self.cost.power)
             first_term = self.lam * self.rho.pow(p)  # (1,)
+            loss_estimate: pt.Tensor
+            cost_estimate: pt.Tensor
+            integrand: pt.Tensor
 
             if self.imp_samp:
                 # For importance sampling, we displace all the samples.
@@ -64,15 +66,16 @@ class _DualFormulation(_SampleDisplacer):
                 # -----------
                 # L(zeta) - lambda*V(zeta|xi)
                 # NOTE: Beware of the shape of the loss, we need a trailing dim
-                l = self.primal_loss.value(
-                    zeta, zeta_labels)  # -> (n_samples, m, 1)
-                c = self.cost(
+                loss_estimate = self.primal_loss.value(
+                    zeta, zeta_labels
+                )  # -> (n_samples, m, 1)
+                cost_estimate = self.cost(
                     xi.unsqueeze(0),  # (1, m, d)
                     zeta,  # (n_samples, m, d)
                     maybe_unsqueeze(xi_labels, dim=0),  # (1, m, d') or None
                     zeta_labels  # (n_samples, m, d') or None
                 )  # -> (n_samples, m, 1)
-                integrand = l - self.lam * c  # -> (n_samples, m, 1)
+                integrand = loss_estimate - self.lam * cost_estimate  # -> (n_samples, m, 1)
                 integrand /= self.epsilon  # -> (n_samples, m, 1)
 
                 # Importance sampling terms:
@@ -94,15 +97,15 @@ class _DualFormulation(_SampleDisplacer):
                 )
                 integrand += correction # (n_samples, m, 1)
             else:
-                l = self.primal_loss.value(
+                loss_estimate = self.primal_loss.value(
                     zeta, zeta_labels)  # -> (n_samples, m, 1)
-                c = self.cost(
+                cost_estimate = self.cost(
                     xi.unsqueeze(0),  # (1, m, d)
                     zeta,  # (n_samples, m, d)
                     maybe_unsqueeze(xi_labels, dim=0),  # (1, m, d') or None
                     zeta_labels  # (n_samples, m, d') or None
                 )  # -> (n_samples, m, 1)
-                integrand = l - self.lam * c  # -> (n_samples, m, 1)
+                integrand = loss_estimate - self.lam * cost_estimate  # -> (n_samples, m, 1)
                 integrand /= self.epsilon  # -> (n_samples, m, 1)
 
             # Expectation on the zeta samples (collapse 1st dim)

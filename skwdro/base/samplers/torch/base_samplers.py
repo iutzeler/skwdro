@@ -1,6 +1,5 @@
-from types import NoneType
 from typing import Dict, Optional, Union
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 import random
 import torch as pt
@@ -28,7 +27,8 @@ class BaseSampler(ABC):
     def __next__(self):
         return self.sample(1)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def produces_labels(self) -> bool:
         raise NotImplementedError()
 

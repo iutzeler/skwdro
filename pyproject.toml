@@ -112,3 +112,7 @@ dev-mode = false
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+
+[tool.ruff]
+extend-exclude=["*tune*", "*specific*"]

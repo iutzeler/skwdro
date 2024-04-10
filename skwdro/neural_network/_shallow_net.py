@@ -16,7 +16,6 @@ from skwdro.base.costs_torch import NormLabelCost
 
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.oracle_torch import DualLoss, DualPreSampledLoss
-from skwdro.base.cost_decoder import cost_from_str
 
 from skwdro.solvers.optim_cond import OptCondTorch
 
@@ -128,7 +127,6 @@ class ShallowNet(BaseEstimator, RegressorMixin):  # ClassifMixin
         self.n_features_in_ = d
 
         # Setup problem parameters ################
-        cost = cost_from_str(self.cost)
         emp = EmpiricalDistributionWithLabels(
             m=m, samples_x=X, samples_y=y[:, None])
 
@@ -195,7 +193,7 @@ class ShallowNet(BaseEstimator, RegressorMixin):  # ClassifMixin
         X = check_array(X)
         X = pt.tensor(X, dtype=pt.float32, device="cpu")
         model = ShallowNetLossTorch(
-            None, n_neurons=self.n_neurons, d=d, fit_intercept=self.fit_intercept)
+            None, n_neurons=self.n_neurons, d=self.n_features_in_, fit_intercept=self.fit_intercept)
         model.load_state_dict(self.parameters_)  # load
 
         return model.pred(X).cpu().detach().numpy().flatten()

@@ -3,8 +3,6 @@ from typing import Tuple, Optional
 import torch as pt
 import torch.nn as nn
 
-from skwdro.base.costs_torch.normcost import NormCost
-from skwdro.base.costs_torch.normlabelcost import NormLabelCost
 from skwdro.base.costs_torch import Cost
 from skwdro.base.cost_decoder import ParsedCost, cost_from_parse_torch, parse_code_torch
 from skwdro.base.losses_torch import WrappedPrimalLoss
@@ -19,12 +17,12 @@ DEFAULT_COST_SPEC: Tuple[float, float] = (2, 2)
 
 
 def expert_hyperparams(
-        rho: pt.Tensor,
-        p: float,
-        epsilon: Optional[float],
-        epsilon_sigma_factor: float,
-        sigma: Optional[float],
-        sigma_factor: float,
+    rho: pt.Tensor,
+    p: float,
+    epsilon: Optional[float],
+    epsilon_sigma_factor: float,
+    sigma: Optional[float],
+    sigma_factor: float,
 ) -> Tuple[pt.Tensor, pt.Tensor]:
     r"""
     Tuning of the hyperparameters for the dual loss.
@@ -77,22 +75,22 @@ def power_from_parsed_spec(parsed_spec: Optional[ParsedCost]) -> float:
 
 
 def dualize_primal_loss(
-        loss_: nn.Module,
-        transform_: Optional[nn.Module],
-        rho: pt.Tensor,
-        xi_batchinit: pt.Tensor,
-        xi_labels_batchinit: Optional[pt.Tensor],
-        post_sample: bool = True,
-        cost_spec: Optional[str] = None,
-        n_samples: int = 10,
-        seed: int = 42,
-        *,
-        epsilon: Optional[float] = None,
-        sigma: Optional[float] = None,
-        l2reg: Optional[float] = None,
-        adapt: Optional[str] = "prodigy",
-        imp_samp: bool = True
-    ) -> _DualLoss:
+    loss_: nn.Module,
+    transform_: Optional[nn.Module],
+    rho: pt.Tensor,
+    xi_batchinit: pt.Tensor,
+    xi_labels_batchinit: Optional[pt.Tensor],
+    post_sample: bool = True,
+    cost_spec: Optional[str] = None,
+    n_samples: int = 10,
+    seed: int = 42,
+    *,
+    epsilon: Optional[float] = None,
+    sigma: Optional[float] = None,
+    l2reg: Optional[float] = None,
+    adapt: Optional[str] = "prodigy",
+    imp_samp: bool = True
+) -> _DualLoss:
     r"""
     Provide the wrapped version of the primal loss.
 
