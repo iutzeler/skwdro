@@ -90,7 +90,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  sampler_reg: Optional[float]=None,
                  n_zeta_samples: int=10,
                  random_state: int=0,
-                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
+                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2, 1e-4, 0.)
                  ):
 
         if rho < 0:
