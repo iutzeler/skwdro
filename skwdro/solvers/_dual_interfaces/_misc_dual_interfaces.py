@@ -149,7 +149,7 @@ class _DualLossBase(nn.Module, ABC):
     ) -> Optional[pt.Tensor]:
         raise NotImplementedError()
 
-    def freeze(self, rg: bool = False, include_hyper = False):
+    def freeze(self, rg: bool = False, include_hyper: bool = False):
         """ Freeze all the primal losse's parameters for some
         gradients operations.
 

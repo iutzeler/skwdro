@@ -257,8 +257,7 @@ def optim_postsample(
     # Init lambda
     loss.get_initial_guess_at_dual(xi, xi_labels)
 
-    # if isinstance(optimizer, CompositeOptimizer) and loss.erm_mode:
-    if hasattr(optimizer, "reset_lbd_state") and loss.erm_mode:
+    if isinstance(optimizer, CompositeOptimizer) and loss.erm_mode:
         optimizer.reset_lbd_state()
 
     # Train WDRO
