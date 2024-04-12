@@ -9,4 +9,5 @@ from . import base_loss
 
 NewsVendorLoss = NewsVendorLoss_torch
 
-__all__ = ["LogisticLoss", "NewsVendorLoss", "NewsVendorLoss_torch", "QuadraticLoss", "WeberLoss", "Loss", "base_loss", "WrappedPrimalLoss"]
+__all__ = ["LogisticLoss", "NewsVendorLoss", "NewsVendorLoss_torch",
+           "QuadraticLoss", "WeberLoss", "Loss", "base_loss", "WrappedPrimalLoss"]

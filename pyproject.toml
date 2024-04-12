@@ -57,6 +57,9 @@ docs = [
 test = [
     "pytest",
     "pytest-cov",
+	"ruff",
+	"pycodestyle",
+	"mypy"
 ]
 monitor = [
     "wandb",
@@ -83,6 +86,8 @@ features = ["test"]
 test-custom = "pytest -v ./tests/torch_tests -W ignore::FutureWarning"
 test-sklearn = "pytest -v ./skwdro/tests -W ignore::FutureWarning"
 test-misc = "sh ./tests/misc/launchall.sh -W ignore::FutureWarning"
+ruff-test = "ruff check -q ./skwdro"
+pycodestyle-test = "pycodestyle --exclude=skwdro/solvers/specific_solvers.py,skwdro/base/rho_tuners.py,skwdro/base/rho_tuners_computations.py --ignore=E501 skwdro/"
 
 [tool.hatch.envs.env-examples]
 pre-install-commands = [
@@ -112,3 +117,7 @@ dev-mode = false
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+
+[tool.ruff]
+extend-exclude=["*tune*", "*specific*"]

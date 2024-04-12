@@ -6,10 +6,13 @@ import torch as pt
 from .base_cost import TorchCost
 import skwdro.distributions as dst
 
+
 class NormCost(TorchCost):
     """ p-norm to some power, with torch arguments
     """
-    def __init__(self, p: float=1., power: float=1., name: Optional[str]=None):
+
+    def __init__(self, p: float = 1., power: float = 1.,
+                 name: Optional[str] = None):
         r"""
         Norm to represent the ground cost of type :math:`p`.
         It represents a distance depending on :math:`p`:
@@ -21,7 +24,8 @@ class NormCost(TorchCost):
         self.p = p
         self.power = power
 
-    def value(self, xi: pt.Tensor, zeta: pt.Tensor, xi_labels: NoneType=None, zeta_labels: NoneType=None):
+    def value(self, xi: pt.Tensor, zeta: pt.Tensor,
+              xi_labels: NoneType = None, zeta_labels: NoneType = None):
         r"""
         Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
 
@@ -41,24 +45,27 @@ class NormCost(TorchCost):
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
-                            loc=xi,
-                            scale=epsilon
-                        )
+                    loc=xi,
+                    scale=epsilon
+                )
             elif self.p == pt.inf:
                 Warning("For sup norm, we use a gaussian sampler by default.")
                 return dst.MultivariateNormal(
-                        loc=xi,
-                        scale_tril=epsilon*pt.eye(xi.size(-1))
-                    )
-            else: raise NotImplementedError()
+                    loc=xi,
+                    scale_tril=epsilon * pt.eye(xi.size(-1))
+                )
+            else:
+                raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
                 return dst.MultivariateNormal(
-                        loc=xi,
-                        scale_tril=epsilon*pt.eye(xi.size(-1))
-                    )
-            else: raise NotImplementedError()
-        else: raise NotImplementedError()
+                    loc=xi,
+                    scale_tril=epsilon * pt.eye(xi.size(-1))
+                )
+            else:
+                raise NotImplementedError()
+        else:
+            raise NotImplementedError()
 
     def _sampler_labels(self, xi_labels, epsilon):
         if xi_labels is None:
@@ -72,10 +79,10 @@ class NormCost(TorchCost):
             xi_labels: Optional[pt.Tensor],
             rhs: pt.Tensor,
             rhs_labels: Optional[pt.Tensor]
-            ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+    ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         if xi_labels is not None and rhs_labels is not None:
             if self.p == 2 == self.power:
-                return xi + .5 * rhs, xi_labels # NO adding + .5 * rhs_labels
+                return xi + .5 * rhs, xi_labels  # NO adding + .5 * rhs_labels
             else:
                 raise NotImplementedError()
         else:

@@ -6,15 +6,17 @@ import torch.nn as nn
 
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
+
 class Loss(nn.Module, ABC):
     """ Base class for loss functions """
     _sampler: BaseSampler
+
     def __init__(
             self,
             sampler: BaseSampler,
             *,
-            l2reg: Optional[float]=None
-            ):
+            l2reg: Optional[float] = None
+    ):
         super(Loss, self).__init__()
         self._sampler = sampler
         self.l2reg = None if l2reg is None or l2reg <= 0. else pt.tensor(l2reg)
@@ -27,9 +29,9 @@ class Loss(nn.Module, ABC):
         if self.l2reg is None:
             return loss
         else:
-            return loss + .5 * self.l2reg * (self.theta*self.theta).sum()
+            return loss + .5 * self.l2reg * (self.theta * self.theta).sum()
 
-    def value_old(self,theta,xi):
+    def value_old(self, theta, xi):
         """
         DEPRECATED, DO NOT USE
         """
