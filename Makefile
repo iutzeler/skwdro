@@ -7,6 +7,11 @@ reset_env:
 shell:
 	@hatch -v -e $(ENV) shell
 
+styletest:
+	@echo "Style test:"
+	@hatch -e $(TEST_ENV) run env-test:ruff-test
+	@hatch -e $(TEST_ENV) run env-test:pycodestyle-test
+
 test: test_gen test_sk test_misc
 
 test_gen:

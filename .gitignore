@@ -8,6 +8,7 @@ __pycache__/
 
 # Types
 .pytype*
+.mypy*
 
 # C extensions
 *.so
