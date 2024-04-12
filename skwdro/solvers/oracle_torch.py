@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Callable, Dict, Tuple, Optional, overload
 from itertools import chain
 
 import torch as pt
@@ -17,62 +17,91 @@ IMP_SAMP = True
 class CompositeOptimizer(pt.optim.Optimizer):
     def __init__(self, params, lbd, n_iter, optimizer):
         self.lbd = lbd
-        if optimizer == 'mechanic':
-            def make_optim(params):
+
+        def make_optim(params):
+            if optimizer == 'mechanic':
                 return mechanize(
-                    pt.optim.Adam)(params, lr=1.0, weight_decay=0.)
-            self.opts = {
-                'params': make_optim(params),
-                'lbd': make_optim([lbd])
-            }
-            self.schedulers = {}
-        elif optimizer == 'prodigy':
-            def make_optim(params):
+                    pt.optim.Adam
+                )(params, lr=1.0, weight_decay=0.)
+            elif optimizer == 'prodigy':
                 return Prodigy(
-                    params, lr=1.0, weight_decay=0, safeguard_warmup=True, use_bias_correction=True)
-            self.opts = {
-                'params': make_optim(params),
-                'lbd': make_optim([lbd])
-            }
+                    params,
+                    lr=1.0,
+                    weight_decay=0,
+                    safeguard_warmup=True,
+                    use_bias_correction=True
+                )
+            else:
+                raise NotImplementedError(
+                    "No composite optimizer by that name"
+                )
+
+        self.opts = {
+            'params': make_optim(params),
+            'lbd': make_optim([lbd])
+        }
+        if optimizer == 'prodigy':
             pretrain_iters, train_iters = interpret_steps_struct(n_iter)
             T = {'params': pretrain_iters + train_iters, 'lbd': train_iters}
-            self.schedulers = {k: pt.optim.lr_scheduler.CosineAnnealingLR(
-                opt, T_max=T[k]) for (k, opt) in self.opts.items()}
+            self.schedulers = {
+                k: pt.optim.lr_scheduler.CosineAnnealingLR(
+                    opt, T_max=T[k]
+                ) for (k, opt) in self.opts.items()
+            }
+        else:
+            self.schedulers = {}
 
         self.init_state_lbd = self.opts['lbd'].state_dict()
         super(CompositeOptimizer, self).__init__(chain(params, [lbd]), {})
 
-    def __getstate__(self) -> object:
+    def __getstate__(self) -> Dict[str, object]:
         s = {key: val.__getstate__() for key, val in self.opts.items()}
         s['init_state_lbd'] = self.init_state_lbd
         s["defaults"] = {}
         return s
 
-    def step(self):
+    @overload
+    def step(self, closure: None = None) -> None:
+        del closure
         for opt in self.opts.values():
             opt.step()
         for scheduler in self.schedulers.values():
             scheduler.step()
         with pt.no_grad():
             self.lbd.clamp_(0., None)
+        return
 
-    def zero_grad(self):
+    @overload
+    def step(self, closure: Callable) -> float:
+        raise NotImplementedError(
+            "Please provide a null callable to the step f°"
+        )
+
+    def step(self, closure=None) -> Optional[float]:
+        del closure
+        return None
+
+    def zero_grad(self, *args, **kwargs):
+        del args
+        del kwargs
         for opt in self.opts.values():
             opt.zero_grad()
 
     def state_dict(self):
         return {k: opt.state_dict() for (k, opt) in self.opts.items()}
 
-    def load_state_dict(self, d):
+    def load_state_dict(self, state_dict):
         for (k, opt) in self.opts.items():
-            opt.load_state_dict(d[k])
+            opt.load_state_dict(state_dict[k])
 
     def reset_lbd_state(self):
         self.opts['lbd'].load_state_dict(self.init_state_lbd)
 
 
 class DualPostSampledLoss(_DualLoss):
-    r""" Dual loss implementing a sampling of the :math:`\zeta` vectors at each forward pass.
+    r"""
+    Dual loss implementing a sampling of the :math:`\zeta` vectors at
+    each forward pass.
 
     Parameters
     ----------
@@ -96,8 +125,16 @@ class DualPostSampledLoss(_DualLoss):
                  imp_samp: bool = IMP_SAMP,
                  adapt="prodigy",
                  ) -> None:
-        super(DualPostSampledLoss, self).__init__(loss, cost, n_samples,
-                                                  epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
+        super(DualPostSampledLoss, self).__init__(
+            loss,
+            cost,
+            n_samples,
+            epsilon_0,
+            rho_0,
+            n_iter,
+            gradient_hypertuning,
+            imp_samp=imp_samp
+        )
         if adapt:
             assert adapt in ("mechanic", "prodigy")
             self._opti = CompositeOptimizer(
@@ -113,7 +150,11 @@ class DualPostSampledLoss(_DualLoss):
                 foreach=True
             )
 
-    def reset_sampler_mean(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None):
+    def reset_sampler_mean(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None
+    ):
         """ Prepare the sampler for a new batch of :math:`xi` data.
 
         Parameters
@@ -125,8 +166,18 @@ class DualPostSampledLoss(_DualLoss):
         """
         self.primal_loss.sampler.reset_mean(xi, xi_labels)
 
-    def forward(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None, reset_sampler: bool = False) -> pt.Tensor:
-        """ Forward pass for the dual loss, with the sampling of the adversarial samples
+    @overload
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta: None = None,
+        zeta_labels: None = None,
+        reset_sampler: bool = False
+    ) -> pt.Tensor:
+        """
+        Forward pass for the dual loss, with the sampling of the
+        adversarial samples
 
         Parameters
         ----------
@@ -150,8 +201,11 @@ class DualPostSampledLoss(_DualLoss):
         if reset_sampler:
             self.reset_sampler_mean(xi, xi_labels)
         if self.rho < 0.:
-            raise ValueError("Rho < 0 detected: -> " + str(self.rho.item()
-                                                           ) + ", please provide a positive rho value")
+            raise ValueError(' '.join([
+                "Rho < 0 detected: ->",
+                str(self.rho.item()),
+                ", please provide a positive rho value"
+            ]))
         elif self.rho == 0.:
             return self.rho * self.lam + self.primal_loss(
                 xi.unsqueeze(0),  # (1, m, d)
@@ -159,11 +213,37 @@ class DualPostSampledLoss(_DualLoss):
                 xi_labels.unsqueeze(0) if xi_labels is not None else None
             ).mean()  # (1,)
         else:
-            zeta, zeta_labels = self.generate_zetas(self.n_samples)
-            return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
+            zeta_, zeta_labels_ = self.generate_zetas(self.n_samples)
+            return self.compute_dual(xi, xi_labels, zeta_, zeta_labels_)
+
+    @overload
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        zeta: pt.Tensor,
+        zeta_labels: Optional[pt.Tensor] = None,
+        reset_sampler: bool = False
+    ) -> pt.Tensor:
+        raise ValueError(
+            "This class does not support forwarding pre-sampled zetas"
+        )
+
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None,
+        reset_sampler: bool = False
+    ) -> pt.Tensor:
+        del xi, xi_labels, zeta, zeta_labels, reset_sampler
+        raise NotImplementedError()
 
     def __str__(self):
-        return "Dual loss (sample IN for loop)\n" + 10 * "-" + "\n".join(map(str, self.parameters()))
+        return "Dual loss (sample IN for loop)\n" + 10 * "-" + "\n".join(
+            map(str, self.parameters())
+        )
 
     @property
     def presample(self):
@@ -171,7 +251,8 @@ class DualPostSampledLoss(_DualLoss):
 
 
 class DualPreSampledLoss(_DualLoss):
-    r""" Dual loss implementing a forward pass without resampling the :math:`\zeta` vectors.
+    r""" Dual loss implementing a forward pass without resampling the
+    :math:`\zeta` vectors.
 
     Parameters
     ----------
@@ -180,7 +261,8 @@ class DualPreSampledLoss(_DualLoss):
     cost : Cost
         ground-distance function
     n_samples : int
-        number of :math:`\zeta` samples to draw before the gradient descent begins (can be changed if needed between inferences)
+        number of :math:`\zeta` samples to draw before the gradient
+        descent begins (can be changed if needed between inferences).
     """
     zeta: Optional[pt.Tensor]
     zeta_labels: Optional[pt.Tensor]
@@ -197,8 +279,17 @@ class DualPreSampledLoss(_DualLoss):
                  imp_samp: bool = IMP_SAMP,
                  adapt="prodigy",
                  ) -> None:
-        super(DualPreSampledLoss, self).__init__(loss, cost, n_samples,
-                                                 epsilon_0, rho_0, n_iter, gradient_hypertuning, imp_samp=imp_samp)
+        del adapt
+        super(DualPreSampledLoss, self).__init__(
+            loss,
+            cost,
+            n_samples,
+            epsilon_0,
+            rho_0,
+            n_iter,
+            gradient_hypertuning,
+            imp_samp=imp_samp
+        )
 
         self._opti = pt.optim.LBFGS(
             self.parameters(),
@@ -207,13 +298,36 @@ class DualPreSampledLoss(_DualLoss):
             max_eval=10,
             tolerance_grad=1e-4,
             tolerance_change=1e-6,
-            history_size=30)
+            history_size=30
+        )
 
         self.zeta = None
         self.zeta_labels = None
 
-    def forward(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None, zeta: Optional[pt.Tensor] = None, zeta_labels: Optional[pt.Tensor] = None):
-        r""" Forward pass for the dual loss, wrt the already sampled :math:`\zeta` values
+    @overload
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta: None = None,
+        zeta_labels: None = None,
+        reset_sampler: bool = False
+    ) -> pt.Tensor:
+        raise NotImplementedError(
+            "This class must forward pre-sampled zeta values"
+        )
+
+    @overload
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        zeta: pt.Tensor,
+        zeta_labels: Optional[pt.Tensor] = None,
+        reset_sampler: bool = False
+    ):
+        r""" Forward pass for the dual loss, wrt the already sampled
+        :math:`\zeta` values
 
         Parameters
         ----------
@@ -236,132 +350,60 @@ class DualPreSampledLoss(_DualLoss):
         xi_labels : (m, d')
         dl : (1,)
         """
+        del reset_sampler
         if zeta is None:
             if self.zeta is None:
                 # No previously registered samples, fail
-                raise ValueError(
-                    "Please provide a zeta value for the forward pass of DualPreSampledLoss, else switch to an instance of DualPostSampledLoss.")
+                raise ValueError(' '.join([
+                    "Please provide a zeta value for the forward pass of",
+                    "DualPreSampledLoss, else switch to",
+                    "an instance of DualPostSampledLoss."
+                ]))
             else:
                 # Reuse the same samples as last forward pass
-                return self.compute_dual(xi, xi_labels, self.zeta, self.zeta_labels)
+                return self.compute_dual(
+                    xi,
+                    xi_labels,
+                    self.zeta,
+                    self.zeta_labels
+                )
         else:
             self.zeta = zeta
             self.zeta_labels = zeta_labels
             return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
 
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None,
+        reset_sampler: bool = False
+    ) -> pt.Tensor:
+        del xi, xi_labels, zeta, zeta_labels, reset_sampler
+        raise NotImplementedError()
+
     def __str__(self):
-        return "Dual loss (sample BEFORE for loop)\n" + 10 * "-" + "\n".join(map(str, self.parameters()))
+        return "Dual loss (sample BEFORE for loop)\n" + 10 * "-" + "\n".join(
+            map(str, self.parameters())
+        )
 
     @property
     def presample(self):
         return True
 
     @property
-    def current_samples(self) -> Tuple[Optional[pt.Tensor], Optional[pt.Tensor]]:
+    def current_samples(
+        self
+    ) -> Tuple[
+        Optional[pt.Tensor],
+        Optional[pt.Tensor]
+    ]:
         return self.zeta, self.zeta_labels
 
 
 """
-DualLoss is an alias for the "post sampled loss" (resample at every forward pass)
+DualLoss is an alias for the "post sampled loss"
+(resample at every forward pass)
 """
 DualLoss = DualPostSampledLoss
-
-
-# ### [WIP] DO NOT TOUCH, HIGH RISK OF EXPLOSION ###
-# def entropic_loss_oracle(
-#         lam,
-#         zeta,
-#         zeta_labels,
-#         xi,
-#         xi_labels,
-#         rho,
-#         epsilon,
-#         loss,
-#         cost
-#         ):
-#     result, _, _ = EntropicLossOracle.apply(
-#             lam, zeta, zeta_labels, xi, xi_labels, rho, epsilon, loss, cost
-#             )
-#     return result
-#
-# class EntropicLossOracle(ptag.Function):
-#
-#     @staticmethod
-#     def forward(
-#             lam,
-#             zeta,
-#             zeta_labels,
-#             xi,
-#             xi_labels,
-#             rho,
-#             epsilon,
-#             loss,
-#             cost
-#             ):
-#         first_term = lam * rho
-#
-#         l = loss.value(zeta, zeta_labels)
-#         c = cost(xi.unsqueeze(-1), zeta, xi_labels, zeta_labels)
-#         integrand = l - lam * c
-#         integrand /= epsilon
-#
-#         # Expectation on the zeta samples
-#         second_term = pt.logsumexp(integrand, 0).mean(dim=0)
-#         second_term -= pt.log(pt.tensor(zeta.size(0)))
-#         # second_term *= epsilon
-#         print(c.shape, l.shape)
-#         return first_term + epsilon*second_term.mean(), c, l
-#
-#     @staticmethod
-#     def setup_context(ctx: Any, inputs: Tuple, output: Any):
-#         lam, _, _, xi, xi_labels, rho, epsilon, _, _ = inputs
-#         _, c, l = output
-#         ctx.save_for_backward(lam, xi, xi_labels, rho, epsilon, c, l)
-#
-#     @staticmethod
-#     def backward(ctx, grad_result, grad_c, grad_l):
-#         if grad_result is None:
-#             return 9*(None,)
-#         grad_theta = grad_lam = None
-#         grad_xi = grad_xi_labels = None
-#         grad_rho = grad_epsilon = None
-#
-#         lam, xi, xi_labels, rho, epsilon, c, l = ctx.saved_tensors
-#
-#         print("# gradl #####")
-#         print(grad_l)
-#         print("# gradc #####")
-#         print(grad_c)
-#         grad_l_theta, grad_l_zeta, grad_l_zeta_labels = grad_l
-#         grad_c_xi, grad_c_zeta, grad_c_xi_labels, grad_c_zeta_labels = grad_c
-#         if ctx.needs_input_grad[0]:
-#             grad_theta = EntropicLossOracle.grad_theta(
-#                     lam,
-#                     epsilon,
-#                     c,
-#                     l,
-#                     grad_l_theta
-#                 )
-#         if ctx.needs_input_grad[1]:
-#             grad_lam = EntropicLossOracle.grad_lam(
-#                     lam,
-#                     rho,
-#                     epsilon,
-#                     c,
-#                     l
-#                 )
-#
-#
-#         return grad_theta, grad_lam, None, None, grad_xi, grad_xi_labels, grad_rho, grad_epsilon, None, None
-#
-#     @staticmethod
-#     def grad_lam(lam, rho, epsilon, c, l):
-#         integrand = l - lam * c
-#         integrand /= epsilon
-#         return rho - (c * F.softmax(integrand, dim=0)).sum(dim=0).mean()
-#
-#     @staticmethod
-#     def grad_theta(lam, epsilon, c, l, grad_l_theta):
-#         integrand = l - lam * c
-#         integrand /= epsilon
-#         return (grad_l_theta * F.softmax(integrand, dim=0)).sum(dim=0).mean()

@@ -78,22 +78,24 @@ class Portfolio(BaseEstimator):
 
     """
 
-    def __init__(self,
-                 rho=1e-2,
-                 eta=0.,
-                 alpha=.95,
-                 C=None,
-                 d=None,
-                 fit_intercept=None,
-                 cost="t-NC-1-1",
-                 solver="dedicated",
-                 solver_reg=1e-3,
-                 reparam="softmax",
-                 n_zeta_samples: int = 10,
-                 seed: int = 0,
-                 opt_cond: Optional[OptCondTorch] = OptCondTorch(
-                     2)  # type: ignore
-                 ):
+    def __init__(
+        self,
+        rho=1e-2,
+        eta=0.,
+        alpha=.95,
+        C=None,
+        d=None,
+        fit_intercept=None,
+        cost="t-NC-1-1",
+        solver="dedicated",
+        solver_reg=1e-3,
+        reparam="softmax",
+        n_zeta_samples: int = 10,
+        seed: int = 0,
+        opt_cond: Optional[OptCondTorch] = OptCondTorch(
+            2
+        )  # type: ignore
+    ):
 
         # Verifying conditions on rho, eta and alpha
         if rho < 0:
@@ -166,16 +168,31 @@ class Portfolio(BaseEstimator):
         # Check that the matrix-vector product is well-defined
         if np.shape(self.C_)[1] != m:
             raise ValueError(
-                "The number of columns of C don't match the number of lines of any xi")
+                ' '.join([
+                    "The number of columns",
+                    "of C don't match the",
+                    "number of lines of",
+                    "any xi"
+                ])
+            )
 
         if self.solver == "entropic":
             raise (DeprecationWarning(
-                "The entropic (numpy) solver is now deprecated"))
+                "The entropic (numpy) solver is now deprecated"
+            ))
         elif self.solver == "dedicated":
-            self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(
-                C=self.C_, d=self.d_, m=self.n_features_in_, p=p, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
+            _res = spS.WDROPortfolioSpecificSolver(
+                C=self.C_,
+                d=self.d_,
+                m=self.n_features_in_,
+                p=p,
+                eta=self.eta,
+                alpha=self.alpha,
+                rho=self.rho,
+                samples=emp.samples
+            )
+            self.coef_, self.tau_, self.dual_var_, self.result_ = _res
         elif "torch" in self.solver:
-
             self._wdro_loss = dualize_primal_loss(
                 SimplePortfolio(m, risk_aversion=self.eta_,
                                 risk_level=self.alpha_),
@@ -190,13 +207,20 @@ class Portfolio(BaseEstimator):
                 epsilon=self.solver_reg_,
                 l2reg=0.
             )
-            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
+            _res = entTorch.solve_dual_wdro(
                 self._wdro_loss,
                 emp,
                 self.opt_cond,  # type: ignore
             )
+            (
+                self.coef_,
+                self.intercept_,
+                self.dual_var_,
+                self.robust_loss_
+            ) = _res
             self.coef_ = detach_tensor(
-                self._wdro_loss.primal_loss.loss.assets.weight)  # type: ignore
+                self._wdro_loss.primal_loss.loss.assets.weight  # type: ignore
+            )
 
         else:
             raise NotImplementedError("Designation for solver not recognized")
@@ -238,6 +262,6 @@ class Portfolio(BaseEstimator):
         if "entropic" in self.solver:
             return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()
         elif self.solver == "dedicated":
-            return -np.mean(X, axis=0)@self.coef_
+            return -np.mean(X, axis=0) @ self.coef_
         else:
             raise (ValueError("Solver not recognized"))

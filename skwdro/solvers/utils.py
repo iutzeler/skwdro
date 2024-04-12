@@ -53,7 +53,14 @@ def maybe_flatten_grad_else_raise(tensor: pt.Tensor) -> pt.Tensor:
         return tensor.grad.flatten()
 
 
-def interpret_steps_struct(steps_spec: Steps, default_split: float = .3) -> Tuple[int, int]:
+def check_tensor_validity(tensor: pt.Tensor) -> bool:
+    return bool(tensor.isfinite().logical_not().any().item())
+
+
+def interpret_steps_struct(
+    steps_spec: Steps,
+    default_split: float = .3
+) -> Tuple[int, int]:
     if isinstance(steps_spec, int):
         assert 0 <= default_split <= 1.
         pretrain_iters = int(steps_spec * default_split)

@@ -2,7 +2,11 @@ from typing import Optional
 from dataclasses import dataclass
 
 
-from .costs_torch import Cost as TorchCost, NormCost as ptNormCost, NormLabelCost as ptNormLabelCost
+from .costs_torch import (
+    Cost as TorchCost,
+    NormCost as ptNormCost,
+    NormLabelCost as ptNormLabelCost
+)
 
 DEFAULT_KAPPA: float = 1e8
 
@@ -13,9 +17,18 @@ def cost_from_str(code: str) -> TorchCost:
     kappa = float(splitted[4]) if len(splitted) >= 5 else DEFAULT_KAPPA
     if engine_ == 't':
         if id_ == "NC":
-            return ptNormCost(p=float(type_), power=float(power_), name=code)
+            return ptNormCost(
+                p=float(type_),
+                power=float(power_),
+                name=code
+            )
         elif id_ == "NLC":
-            return ptNormLabelCost(p=float(type_), power=float(power_), kappa=kappa, name=code)
+            return ptNormLabelCost(
+                p=float(type_),
+                power=float(power_),
+                kappa=kappa,
+                name=code
+            )
         else:
             raise ValueError("Cost code invalid: " + code)
     else:
@@ -41,9 +54,18 @@ class ParsedCost:
         yield self.kappa
 
 
-def parse_code_torch(code: Optional[str], has_labels: bool = False) -> ParsedCost:
+def parse_code_torch(
+    code: Optional[str],
+    has_labels: bool = False
+) -> ParsedCost:
     if code is None:
-        return ParsedCost('t', 'NLC' if has_labels else 'NC', 2., 2., DEFAULT_KAPPA)
+        return ParsedCost(
+            't',
+            'NLC' if has_labels else 'NC',
+            2.,
+            2.,
+            DEFAULT_KAPPA
+        )
     else:
         splitted = code.split('-')
         if len(splitted) == 4:
@@ -68,6 +90,10 @@ def cost_from_parse_torch(parsed: ParsedCost) -> TorchCost:
     if id_ == "NC":
         return ptNormCost(p=float(type_), power=float(power_))
     elif id_ == "NLC":
-        return ptNormLabelCost(p=float(type_), power=float(power_), kappa=float(kappa))
+        return ptNormLabelCost(
+            p=float(type_),
+            power=float(power_),
+            kappa=float(kappa)
+        )
     else:
         raise ValueError("Cost code invalid (ID): " + str(id_))

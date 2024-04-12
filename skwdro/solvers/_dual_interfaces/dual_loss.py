@@ -56,11 +56,18 @@ class _DualFormulation(_SampleDisplacer):
             if self.imp_samp:
                 # For importance sampling, we displace all the samples.
                 # They are now sampled around xi*, the displaced xi values.
-                xi_star, xi_labels_star, zeta, zeta_labels = self.displace_samples(
-                    xi, xi_labels, zeta, zeta_labels)
+                (
+                    xi_star,
+                    xi_labels_star,
+                    zeta,
+                    zeta_labels
+                ) = self.displace_samples(
+                    xi, xi_labels, zeta, zeta_labels
+                )
 
-                # The dual loss contains the sampled terms (in the exponential) and the importance sampling part
-                # ##############################################################################################
+                # The dual loss contains the sampled terms (in the exponential)
+                # and the importance sampling part
+                # #############################################################
 
                 # Main terms:
                 # -----------
@@ -70,12 +77,17 @@ class _DualFormulation(_SampleDisplacer):
                     zeta, zeta_labels
                 )  # -> (n_samples, m, 1)
                 cost_estimate = self.cost(
-                    xi.unsqueeze(0),  # (1, m, d)
-                    zeta,  # (n_samples, m, d)
-                    maybe_unsqueeze(xi_labels, dim=0),  # (1, m, d') or None
-                    zeta_labels  # (n_samples, m, d') or None
+                    # (1, m, d)
+                    xi.unsqueeze(0),
+                    # (n_samples, m, d)
+                    zeta,
+                    # (1, m, d') or None
+                    maybe_unsqueeze(xi_labels, dim=0),
+                    # (n_samples, m, d') or None
+                    zeta_labels
                 )  # -> (n_samples, m, 1)
-                integrand = loss_estimate - self.lam * cost_estimate  # -> (n_samples, m, 1)
+                # -> (n_samples, m, 1)
+                integrand = loss_estimate - self.lam * cost_estimate
                 integrand /= self.epsilon  # -> (n_samples, m, 1)
 
                 # Importance sampling terms:
@@ -95,7 +107,7 @@ class _DualFormulation(_SampleDisplacer):
                     zeta,
                     zeta_labels
                 )
-                integrand += correction # (n_samples, m, 1)
+                integrand += correction  # (n_samples, m, 1)
             else:
                 loss_estimate = self.primal_loss.value(
                     zeta, zeta_labels)  # -> (n_samples, m, 1)
@@ -105,20 +117,28 @@ class _DualFormulation(_SampleDisplacer):
                     maybe_unsqueeze(xi_labels, dim=0),  # (1, m, d') or None
                     zeta_labels  # (n_samples, m, d') or None
                 )  # -> (n_samples, m, 1)
-                integrand = loss_estimate - self.lam * cost_estimate  # -> (n_samples, m, 1)
+                # -> (n_samples, m, 1)
+                integrand = loss_estimate - self.lam * cost_estimate
                 integrand /= self.epsilon  # -> (n_samples, m, 1)
 
             # Expectation on the zeta samples (collapse 1st dim)
             second_term = pt.logsumexp(integrand, 0).mean(dim=0)  # -> (m, 1)
             second_term -= pt.log(pt.tensor(zeta.size(0)))  # -> (m, 1)
-            return first_term + self.epsilon*second_term.mean()  # (1,)
+            return first_term + self.epsilon * second_term.mean()  # (1,)
         elif self.rho.isnan().any():
             return pt.tensor(pt.nan, requires_grad=True)
         else:
-            raise ValueError("Rho < 0 detected: -> " + str(self.rho.item()
-                                                           ) + ", please provide a positive rho value")
+            raise ValueError(' '.join([
+                "Rho < 0 detected: -> ",
+                str(self.rho.item()),
+                ", please provide a positive rho value"
+            ]))
 
-    def get_initial_guess_at_dual(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]):
+    def get_initial_guess_at_dual(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ):
         if self.rho > 0.:
             c = self.cost
             if issubclass(type(c), NormCost):
@@ -129,7 +149,7 @@ class _DualFormulation(_SampleDisplacer):
                 grads, grads_labels = self.get_displacement_direction(
                     xi,
                     xi_labels
-                ) # (1, m, d), (1, m, d')
+                )  # (1, m, d), (1, m, d')
                 with pt.no_grad():
                     grads_norms = c.value(
                         grads,
@@ -156,13 +176,17 @@ class _DualLoss(_DualFormulation):
 
     @property
     def theta(self):
-        """ Any inner parameters that are not considered an intercept or a lagrangian parameter.
+        """
+        Any inner parameters that are not considered an intercept
+        or a lagrangian parameter.
         """
         return self.primal_loss.theta
 
     @property
     def intercept(self):
-        """ Any inner parameters from the primal loss that could be interpreted as an "intercept" or "bias".
+        """
+        Any inner parameters from the primal loss that could be
+        interpreted as an "intercept" or "bias".
         """
         return self.primal_loss.intercept
 

@@ -79,7 +79,7 @@ def SAANewsvendorSpecificSolver(k=5., u=7., samples=None):
     solvers.options['show_progress'] = False
     solution = solvers.lp(c, G, h)
     theta = np.array(solution['x'])[0]
-    s = np.array(solution['x'])[1:n]
+    # s = np.array(solution['x'])[1:n]
     dual_fun = np.array(solution['primal objective'])
 
     return theta, dual_fun
