@@ -93,6 +93,8 @@ class _DualLossBase(nn.Module, ABC):
         # that is accessed via
         # self.lam in the code (see the parameter decorated method).
         self._lam = nn.Parameter(1e-3 / rho_0 if rho_0 > 0. else pt.tensor(0.))
+        if rho_0 <= 0.:
+            self._lam.requires_grad_(False)
 
         # Private sampler points to the loss l_theta
         self._sampler = loss._sampler
@@ -144,10 +146,10 @@ class _DualLossBase(nn.Module, ABC):
         zeta: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None,
         reset_sampler: bool = False
-    ) -> pt.Tensor:
+    ) -> Optional[pt.Tensor]:
         raise NotImplementedError()
 
-    def freeze(self, rg: bool = False, include_hyper=False):
+    def freeze(self, rg: bool = False, include_hyper = False):
         """ Freeze all the primal losse's parameters for some
         gradients operations.
 

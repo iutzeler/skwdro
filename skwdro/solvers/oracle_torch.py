@@ -62,14 +62,7 @@ class CompositeOptimizer(pt.optim.Optimizer):
 
     @overload
     def step(self, closure: None = None) -> None:
-        del closure
-        for opt in self.opts.values():
-            opt.step()
-        for scheduler in self.schedulers.values():
-            scheduler.step()
-        with pt.no_grad():
-            self.lbd.clamp_(0., None)
-        return
+        ...
 
     @overload
     def step(self, closure: Callable) -> float:
@@ -77,8 +70,14 @@ class CompositeOptimizer(pt.optim.Optimizer):
             "Please provide a null callable to the step f°"
         )
 
-    def step(self, closure=None) -> Optional[float]:
+    def step(self, closure: Optional[Callable] = None) -> Optional[float]:
         del closure
+        for opt in self.opts.values():
+            opt.step()
+        for scheduler in self.schedulers.values():
+            scheduler.step()
+        with pt.no_grad():
+            self.lbd.clamp_(0., None)
         return None
 
     def zero_grad(self, *args, **kwargs):
@@ -175,6 +174,29 @@ class DualPostSampledLoss(_DualLoss):
         zeta_labels: None = None,
         reset_sampler: bool = False
     ) -> pt.Tensor:
+        pass
+
+    @overload
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        zeta: pt.Tensor,
+        zeta_labels: Optional[pt.Tensor] = None,
+        reset_sampler: bool = False
+    ) -> pt.Tensor:
+        raise ValueError(
+            "This class does not support forwarding pre-sampled zetas"
+        )
+
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None,
+        reset_sampler: bool = False
+    ) -> Optional[pt.Tensor]:
         """
         Forward pass for the dual loss, with the sampling of the
         adversarial samples
@@ -198,6 +220,7 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels : (m, d')
         dl : (1,)
         """
+        del zeta, zeta_labels
         if reset_sampler:
             self.reset_sampler_mean(xi, xi_labels)
         if self.rho < 0.:
@@ -215,30 +238,6 @@ class DualPostSampledLoss(_DualLoss):
         else:
             zeta_, zeta_labels_ = self.generate_zetas(self.n_samples)
             return self.compute_dual(xi, xi_labels, zeta_, zeta_labels_)
-
-    @overload
-    def forward(
-        self,
-        xi: pt.Tensor,
-        xi_labels: Optional[pt.Tensor],
-        zeta: pt.Tensor,
-        zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
-    ) -> pt.Tensor:
-        raise ValueError(
-            "This class does not support forwarding pre-sampled zetas"
-        )
-
-    def forward(
-        self,
-        xi: pt.Tensor,
-        xi_labels: Optional[pt.Tensor] = None,
-        zeta: Optional[pt.Tensor] = None,
-        zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
-    ) -> pt.Tensor:
-        del xi, xi_labels, zeta, zeta_labels, reset_sampler
-        raise NotImplementedError()
 
     def __str__(self):
         return "Dual loss (sample IN for loop)\n" + 10 * "-" + "\n".join(
@@ -326,6 +325,16 @@ class DualPreSampledLoss(_DualLoss):
         zeta_labels: Optional[pt.Tensor] = None,
         reset_sampler: bool = False
     ):
+        del xi, xi_labels, zeta, zeta_labels, reset_sampler
+
+    def forward(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None,
+        reset_sampler: bool = False
+    ) -> pt.Tensor:
         r""" Forward pass for the dual loss, wrt the already sampled
         :math:`\zeta` values
 
@@ -371,17 +380,6 @@ class DualPreSampledLoss(_DualLoss):
             self.zeta = zeta
             self.zeta_labels = zeta_labels
             return self.compute_dual(xi, xi_labels, zeta, zeta_labels)
-
-    def forward(
-        self,
-        xi: pt.Tensor,
-        xi_labels: Optional[pt.Tensor] = None,
-        zeta: Optional[pt.Tensor] = None,
-        zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
-    ) -> pt.Tensor:
-        del xi, xi_labels, zeta, zeta_labels, reset_sampler
-        raise NotImplementedError()
 
     def __str__(self):
         return "Dual loss (sample BEFORE for loop)\n" + 10 * "-" + "\n".join(
