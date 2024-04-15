@@ -33,6 +33,10 @@ clean:
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
+ifeq (,$(wildcard API/skwdro.distributions.rst))
 	@$(SPHINXAPI) -o "$(APIDIR)" "$(PROJDIR)" 
 	@echo "   :ignore-module-all:" >> API/skwdro.distributions.rst
+else 
+	@$(SPHINXAPI) -o "$(APIDIR)" "$(PROJDIR)" 
+endif
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

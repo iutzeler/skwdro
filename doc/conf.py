@@ -145,7 +145,7 @@ html_style = 'css/project-template.css'
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
-
+suppress_warnings = ['autosectionlabel.*']
 
 # -- Options for HTML output ----------------------------------------------
 

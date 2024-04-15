@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**04:03.815** total execution time for 6 files **from all galleries**:
+**05:54.752** total execution time for 5 files **from all galleries**:
 
 .. container::
 
@@ -33,20 +33,17 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_Builtin_logistic_regression.py` (``../examples/builtin_models/logistic_regression.py``)
-     - 02:36.325
+     - 02:59.742
      - 0.0
    * - :ref:`sphx_glr_examples_Builtin_spatial_perturbation_logistic_regression.py` (``../examples/builtin_models/spatial_perturbation_logistic_regression.py``)
-     - 00:40.577
+     - 01:56.336
      - 0.0
    * - :ref:`sphx_glr_examples_Builtin_linear_regression.py` (``../examples/builtin_models/linear_regression.py``)
-     - 00:38.812
-     - 0.0
-   * - :ref:`sphx_glr_examples_Custom_polynomial_regression.py` (``../examples/custom_models/polynomial_regression.py``)
-     - 00:04.296
+     - 00:47.001
      - 0.0
    * - :ref:`sphx_glr_examples_Builtin_portfolio.py` (``../examples/builtin_models/portfolio.py``)
-     - 00:03.437
+     - 00:08.354
      - 0.0
-   * - :ref:`sphx_glr_examples_Custom_shallow_network.py` (``../examples/custom_models/shallow_network.py``)
-     - 00:00.368
+   * - :ref:`sphx_glr_examples_Custom_polynomial_regression.py` (``../examples/custom_models/polynomial_regression.py``)
+     - 00:03.319
      - 0.0

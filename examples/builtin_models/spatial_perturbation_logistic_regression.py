@@ -1,6 +1,7 @@
 r"""
 Spatial perturbations and logistic regression
-=====================
+=============================================
+
 This example illustrates the use of the :class:`skwdro.linear_models.LogisticRegression` class on datasets that are shifted at test time.
 
 """
