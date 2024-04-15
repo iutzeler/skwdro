@@ -91,7 +91,7 @@ test-sklearn = "pytest -v ./skwdro/tests -W ignore::FutureWarning"
 test-misc = "sh ./tests/misc/launchall.sh -W ignore::FutureWarning"
 ruff-test = "ruff check -q ./skwdro"
 pycodestyle-test = "pycodestyle --exclude=skwdro/solvers/specific_solvers.py,skwdro/base/rho_tuners.py,skwdro/base/rho_tuners_computations.py --ignore=E501 skwdro/"
-doc-test = "make -f ./doc/Makefile html"
+doc-test = "cd ./doc && make html"
 
 [tool.hatch.envs.env-examples]
 pre-install-commands = [
