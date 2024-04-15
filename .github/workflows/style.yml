@@ -5,12 +5,10 @@ on:
     branches:
     - main
     - dev
-    - cleanup
   pull_request:
     branches:
     - main
     - dev
-    - cleanup
 
 concurrency:
   group: ${{ github.ref }}
