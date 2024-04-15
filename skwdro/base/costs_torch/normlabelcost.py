@@ -95,7 +95,7 @@ class NormLabelCost(NormCost):
     ) -> pt.distributions.Distribution:
         d = xi_labels.size(-1)
         if epsilon is None:
-            epsilon = 1e-3
+            epsilon = pt.tensor(1e-3)
         if self.kappa == float('inf'):
             return dst.Dirac(xi_labels)
         assert isinstance(epsilon, pt.Tensor)

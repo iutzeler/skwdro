@@ -48,7 +48,7 @@ class NormCost(TorchCost):
     def _sampler_data(self, xi, epsilon) -> pt.distributions.Distribution:
         # d = xi.size(-1)
         if epsilon is None:
-            epsilon = 1e-3
+            epsilon = pt.tensor(1e-3)
         assert isinstance(epsilon, pt.Tensor)
         if self.power == 1:
             if self.p == 1:
