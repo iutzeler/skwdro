@@ -33,4 +33,4 @@ jobs:
       run: pip install -r doc/requirements.txt
 
     - name: Run tests
-      run: cd doc && make html
+      run: make doctest
