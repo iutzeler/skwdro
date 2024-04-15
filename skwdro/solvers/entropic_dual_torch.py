@@ -1,29 +1,31 @@
-from typing import List, Optional, Union
+from skwdro.base.samplers.torch.base_samplers import BaseSampler
+from skwdro.base.problems import Distribution
+from skwdro.solvers.optim_cond import OptCondTorch
+from skwdro.solvers.utils import detach_tensor, interpret_steps_struct
+from skwdro.solvers.result import wrap_solver_result
+from skwdro.solvers.oracle_torch import _DualLoss, CompositeOptimizer
+import torch as pt
+from typing import List, Optional
 
-# from warnings import deprecated # Python 3.12+
 import warnings
 
+
 def deprecated(message):
-  def deprecated_decorator(func):
-      def deprecated_func(*args, **kwargs):
-          warnings.warn("{} is a deprecated function. {}".format(func.__name__, message),
-                        category=DeprecationWarning,
-                        stacklevel=2)
-          warnings.simplefilter('default', DeprecationWarning)
-          return func(*args, **kwargs)
-      return deprecated_func
-  return deprecated_decorator
+    def deprecated_decorator(func):
+        def deprecated_func(*args, **kwargs):
+            warnings.warn(
+                "{} is a deprecated function. {}".format(
+                    func.__name__,
+                    message
+                ),
+                category=DeprecationWarning,
+                stacklevel=2
+            )
+            warnings.simplefilter('default', DeprecationWarning)
+            return func(*args, **kwargs)
+        return deprecated_func
+    return deprecated_decorator
 
-import numpy as np
-import torch as pt
-
-from skwdro.solvers.oracle_torch import _DualLoss
-
-from skwdro.solvers.result import wrap_solver_result
-from skwdro.solvers.utils import detach_tensor, interpret_steps_struct
-from skwdro.solvers.optim_cond import OptCondTorch
-from skwdro.base.problems import Distribution
-from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
 def extract_data(dist: Distribution):
     """
@@ -48,79 +50,18 @@ def extract_data(dist: Distribution):
     """
     if dist.with_labels:
         xi = pt.Tensor(dist.samples_x)
-        xi_labels  = pt.Tensor(dist.samples_y)
+        xi_labels = pt.Tensor(dist.samples_y)
         return xi, xi_labels
     else:
         xi = pt.Tensor(dist.samples)
         return xi, None
 
 
-# @wrap_solver_result
-# @deprecated("The function solve_dual (using a WDROProblem class as input) is being deprecated in favor of solve_dual_wdro")
-# def solve_dual(wdro_problem: WDROProblem):
-#     r""" Solve the dual problem with the loss-dependant grandient descent algorithm.
-
-#     Parameters
-#     ----------
-#     wdro_problem : WDROProblem
-#         Whole WDRO problem containing relevant parameters and data
-#     sigma_ : Union[float, pt.Tensor]
-#         variance of the :math:`\pi_0` adversarial sampler
-
-#     Returns
-#     -------
-#     theta: np.ndarray
-#         Concatenated array of the parameters of the model, except the intercept if there is one
-#     intercept: Optional[np.ndarray]
-#         If the model has specificaly an intercept as one of its parameters, it is stacked in this output
-#         tensor
-#     lambd: Union[np.ndarray, float]
-#         Dual variable :math:`\lambda` of the problem
-
-#     Shapes
-#     ------
-#     sigma_: (1,) or (d, d)
-#     theta: (n_params,)
-#     intercept: (n_intercepts,) or None
-#     lambd: (1,)
-#     """
-
-#     # Cast our raw data into tensors
-#     xi, xi_labels = extract_data(wdro_problem.p_hat)
-
-#     loss = wdro_problem.loss
-
-#     # If user provides a numpy loss, fail.
-#     assert loss is not None
-#     assert isinstance(loss, _DualLoss)
-
-#     # Initialize sampler.
-#     assert isinstance(loss.sampler, BaseSampler)
-
-#     # If user wants to specify a custom optimizer, they need to register an instance
-#     # of a subclass of torch optimizers in the relevant attribute.
-#     optimizer: pt.optim.Optimizer = loss.optimizer
-
-
-#     # _DualLoss.presample determines the way the optimization is performed
-#     optim_ = optim_presample if loss.presample else optim_postsample
-
-#     opt_cond: OptCond = wdro_problem.opt_cond
-
-#     losses = optim_(optimizer, xi, xi_labels, loss, opt_cond)
-#     theta = detach_tensor(loss.theta)
-#     intercept = loss.intercept
-#     if intercept is not None:
-#         intercept = detach_tensor(intercept)
-#     lambd = detach_tensor(loss.lam) if loss.rho > 0. else [0.]
-#     robust_loss = losses[-1]
-#     return theta, intercept, lambd, robust_loss
-
-
-
 @wrap_solver_result
-def solve_dual_wdro(loss : _DualLoss, p_hat : Distribution, opt: OptCondTorch):
-    r""" Solve the dual problem with the loss-dependant grandient descent algorithm.
+def solve_dual_wdro(loss: _DualLoss, p_hat: Distribution, opt: OptCondTorch):
+    r"""
+    Solve the dual problem with the loss-dependant
+    grandient descent algorithm.
 
     Parameters
     ----------
@@ -134,9 +75,11 @@ def solve_dual_wdro(loss : _DualLoss, p_hat : Distribution, opt: OptCondTorch):
     Returns
     -------
     theta: np.ndarray
-        Concatenated array of the parameters of the model, except the intercept if there is one
+        Concatenated array of the parameters of the model, except
+        the intercept if there is one
     intercept: Optional[np.ndarray]
-        If the model has specificaly an intercept as one of its parameters, it is stacked in this output
+        If the model has specificaly an intercept as one of its parameters,
+        it is stacked in this output
         tensor
     lambd: Union[np.ndarray, float]
         Dual variable :math:`\lambda` of the problem
@@ -159,10 +102,10 @@ def solve_dual_wdro(loss : _DualLoss, p_hat : Distribution, opt: OptCondTorch):
     # Initialize sampler.
     assert isinstance(loss.sampler, BaseSampler)
 
-    # If user wants to specify a custom optimizer, they need to register an instance
-    # of a subclass of torch optimizers in the relevant attribute.
+    # If user wants to specify a custom optimizer, they need to register
+    # an instance of a subclass of torch optimizers in the
+    # relevant attribute.
     optimizer: pt.optim.Optimizer = loss.optimizer
-
 
     # _DualLoss.presample determines the way the optimization is performed
     optim_ = optim_presample if loss.presample else optim_postsample
@@ -185,9 +128,11 @@ def optim_presample(
         xi_labels: Optional[pt.Tensor],
         loss: _DualLoss,
         opt_cond: OptCondTorch
-        ) -> List[float]:
-    r""" Optimize the dual loss by sampling the :math:`zeta` values once at the begining of
-    the optimization, the performing a deterministic gradient descent (e.g. BFGS style algorithm).
+) -> List[float]:
+    r"""
+    Optimize the dual loss by sampling the :math:`zeta` values once at
+    the begining of the optimization, then performing a deterministic
+    gradient descent (e.g. BFGS style algorithm).
 
     Parameters
     ----------
@@ -213,7 +158,9 @@ def optim_presample(
     zeta, zeta_labels = loss.generate_zetas()
 
     def closure(back=True) -> float:
-        """ Loss evaluation function, performing the forward pass for the autograd engine.
+        """
+        Loss evaluation function, performing the forward pass for
+        the autograd engine.
         """
         optimizer.zero_grad()
 
@@ -222,7 +169,8 @@ def optim_presample(
         assert isinstance(objective, pt.Tensor)
 
         # Backward pass
-        if back: objective.backward()
+        if back:
+            objective.backward()
         return objective.item()
 
     losses = []
@@ -238,21 +186,23 @@ def optim_presample(
     loss.erm_mode = False
 
     if hasattr(optimizer, "reset_lbd_state"):
-        optimizer.reset_lbd_state() # type: ignore
+        optimizer.reset_lbd_state()  # type: ignore
 
     # Train WDRO
     for iteration in range(train_iters):
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
-        if opt_cond(loss, iteration): break
+        if opt_cond(loss, iteration):
+            break
         with pt.no_grad():
             _is = loss.imp_samp
-            loss.imp_samp = False # Shut down IS if it is on.
+            loss.imp_samp = False  # Shut down IS if it is on.
             losses.append(closure(False))
-            loss.imp_samp = _is # Put it back on if it used to be.
+            loss.imp_samp = _is  # Put it back on if it used to be.
             del _is
 
     return losses
+
 
 def optim_postsample(
         optimizer: pt.optim.Optimizer,
@@ -260,8 +210,9 @@ def optim_postsample(
         xi_labels: Optional[pt.Tensor],
         loss: _DualLoss,
         opt_cond: OptCondTorch
-        ) -> List[pt.Tensor]:
-    r""" Optimize the dual loss by resampling the :math:`\zeta` values at each gradient descent step.
+) -> List[float]:
+    r""" Optimize the dual loss by resampling the :math:`\zeta` values at each
+    gradient descent step.
 
     Parameters
     ----------
@@ -306,7 +257,7 @@ def optim_postsample(
     # Init lambda
     loss.get_initial_guess_at_dual(xi, xi_labels)
 
-    if hasattr(optimizer, "reset_lbd_state") and loss.erm_mode:
+    if isinstance(optimizer, CompositeOptimizer) and loss.erm_mode:
         optimizer.reset_lbd_state()
 
     # Train WDRO
@@ -321,7 +272,8 @@ def optim_postsample(
         objective.backward()
         # Perform the stochastic step
         optimizer.step()
-        if opt_cond(loss, iteration): break
+        if opt_cond(loss, iteration):
+            break
         losses.append(objective.item())
 
     return losses

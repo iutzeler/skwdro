@@ -13,7 +13,6 @@ from sklearn.exceptions import DataConversionWarning
 from scipy.special import expit
 
 
-
 from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.losses_torch.logistic import BiDiffSoftMarginLoss
 from skwdro.solvers.optim_cond import OptCondTorch
@@ -23,6 +22,7 @@ import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
 from skwdro.wrap_problem import dualize_primal_loss
+
 
 class LogisticRegression(BaseEstimator, ClassifierMixin):
     r""" A Wasserstein Distributionally Robust logistic regression classifier.
@@ -78,36 +78,33 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
     0.9393939393939394
     """
 
-
-
     def __init__(self,
-                 rho: float=1e-2,
-                 l2_reg: float=0.,
-                 fit_intercept: bool=True,
-                 cost: str="t-NLC-2-2",
+                 rho: float = 1e-2,
+                 l2_reg: float = 0.,
+                 fit_intercept: bool = True,
+                 cost: str = "t-NLC-2-2",
                  solver="entropic_torch",
-                 solver_reg: Optional[float]=None,
-                 sampler_reg: Optional[float]=None,
-                 n_zeta_samples: int=10,
-                 random_state: int=0,
-                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2, 1e-4, 0.)
+                 solver_reg: Optional[float] = None,
+                 sampler_reg: Optional[float] = None,
+                 n_zeta_samples: int = 10,
+                 random_state: int = 0,
+                 opt_cond: Optional[OptCondTorch] = OptCondTorch(2, 1e-4, 0.)
                  ):
 
         if rho < 0:
-            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
+            raise ValueError(
+                f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho            = rho
-        self.l2_reg         = l2_reg
-        self.cost           = cost
-        self.fit_intercept  = fit_intercept
-        self.solver         = solver
-        self.solver_reg     = solver_reg
-        self.sampler_reg    = sampler_reg # sigma
-        self.opt_cond       = opt_cond
+        self.rho = rho
+        self.l2_reg = l2_reg
+        self.cost = cost
+        self.fit_intercept = fit_intercept
+        self.solver = solver
+        self.solver_reg = solver_reg
+        self.sampler_reg = sampler_reg  # sigma
+        self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
-        self.random_state   = random_state
-
-
+        self.random_state = random_state
 
     def fit(self, X, y):
         """Fits the WDRO classifier.
@@ -129,16 +126,18 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = np.array(X)
         y = np.array(y)
 
-        #Type checking for rho
+        # Type checking for rho
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
-            except ValueError:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+            except BaseException:
+                raise TypeError(
+                    f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
         if len(y.shape) != 1:
             y = y.ravel()
-            raise DataConversionWarning(f"Given y is {y.shape}, while expected shape is (n_sample,)")
+            raise DataConversionWarning(
+                f"Given y is {y.shape}, while expected shape is (n_sample,)")
 
         # Store the classes seen during fit
         self.classes_ = unique_labels(y)
@@ -149,13 +148,15 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             raise ValueError("Problem with labels, none out of label encoder")
         else:
             y = np.array(y, dtype=X.dtype)
-        y[y==0.] = -1.
+        y[y == 0.] = -1.
 
-        if len(self.classes_)>2:
-            raise NotImplementedError(f"Multiclass classificaion is not implemented. ({len(self.classes_)} classes were found : {self.classes_})")
+        if len(self.classes_) > 2:
+            raise NotImplementedError(
+                f"Multiclass classificaion is not implemented. ({len(self.classes_)} classes were found : {self.classes_})")
 
-        if len(self.classes_)<2:
-            raise ValueError(f"Found {len(self.classes_)} classes, while 2 are expected.")
+        if len(self.classes_) < 2:
+            raise ValueError(
+                f"Found {len(self.classes_)} classes, while 2 are expected.")
 
         if not np.issubdtype(X.dtype, np.number):
             raise ValueError(f"Input X has dtype  {X.dtype}")
@@ -167,52 +168,56 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Setup problem parameters ################
         m, d = np.shape(X)
         self.n_features_in_ = d
-        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
+        emp = EmpiricalDistributionWithLabels(
+            m=m, samples_x=X, samples_y=y[:, None])
 
         # Define cleanly the hyperparameters of the problem.
         self.cost_ = cost_from_str(self.cost)
         # #########################################
 
-        if self.solver=="entropic":
-            raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
-        elif self.solver=="dedicated":
+        if self.solver == "entropic":
+            raise (DeprecationWarning(
+                "The entropic (numpy) solver is now deprecated"))
+        elif self.solver == "dedicated":
             # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
             # One may use it by specifying this option
-            self.coef_ , self.intercept_, self.dual_var_, self.result_ = spS.WDROLogisticSpecificSolver(
-                    rho=self.rho,
-                    kappa=1000,
-                    X=X,
-                    y=y,
-                    fit_intercept=self.fit_intercept
+            self.coef_, self.intercept_, self.dual_var_, self.result_ = spS.WDROLogisticSpecificSolver(
+                rho=self.rho,
+                kappa=1000,
+                X=X,
+                y=y,
+                fit_intercept=self.fit_intercept
             )
         elif "torch" in self.solver:
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
             self.wdro_loss_ = dualize_primal_loss(
-                    BiDiffSoftMarginLoss(reduction='none'),
-                    nn.Linear(self.n_features_in_, 1, bias=self.fit_intercept),
-                    pt.tensor(self.rho),
-                    pt.Tensor(emp.samples_x),
-                    pt.Tensor(emp.samples_y),
-                    _post_sample,
-                    self.cost,
-                    self.n_zeta_samples,
-                    self.random_state,
-                    sigma=self.sampler_reg,
-                    epsilon=self.solver_reg,
-                    imp_samp=_post_sample, # hard set
-                    adapt="prodigy",
-                    l2reg=self.l2_reg
-                )
+                BiDiffSoftMarginLoss(reduction='none'),
+                nn.Linear(self.n_features_in_, 1, bias=self.fit_intercept),
+                pt.tensor(self.rho),
+                pt.Tensor(emp.samples_x),
+                pt.Tensor(emp.samples_y),
+                _post_sample,
+                self.cost,
+                self.n_zeta_samples,
+                self.random_state,
+                sigma=self.sampler_reg,
+                epsilon=self.solver_reg,
+                imp_samp=_post_sample,  # hard set
+                adapt="prodigy",
+                l2reg=self.l2_reg
+            )
 
             # The problem is solved with the new "dual loss"
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
-                    self.wdro_loss_,
-                    emp,
-                    self.opt_cond # type: ignore
-                    )
+                self.wdro_loss_,
+                emp,
+                self.opt_cond  # type: ignore
+            )
 
-            self.coef_ = detach_tensor(self.wdro_loss_.primal_loss.transform.weight).flatten() # type: ignore
-            self.intercept_ = maybe_detach_tensor(self.wdro_loss_.primal_loss.transform.bias) # type: ignore
+            self.coef_ = detach_tensor(
+                self.wdro_loss_.primal_loss.transform.weight).flatten()  # type: ignore
+            self.intercept_ = maybe_detach_tensor(
+                self.wdro_loss_.primal_loss.transform.bias)  # type: ignore
             # # TODO: deprecate ?
             # # Stock the robust loss result
             # Problems w/ dtypes (f32->f64 for some reason)
@@ -233,7 +238,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Return the classifier
         return self
 
-    def predict_proba_2Class(self,X):
+    def predict_proba_2Class(self, X):
         """ Robust prediction probability for class +1.
 
         Parameters
@@ -253,13 +258,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = check_array(X)
 
         if self.intercept_ is not None:
-            p = expit(X.dot(self.coef_)+self.intercept_)
+            p = expit(X.dot(self.coef_) + self.intercept_)
         else:
             p = expit(X.dot(self.coef_))
         # p = 1 / (1 + np.exp(-(X.dot(self.coef_)+self.intercept_)))
         return p
 
-    def predict_proba(self,X):
+    def predict_proba(self, X):
         """ Robust prediction probability for classes -1 and +1.
 
         Parameters
@@ -277,8 +282,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Input validation
         X = check_array(X)
-        p = expit(X.dot(self.coef_)+self.intercept_)
-        return np.vstack((1-p,p)).T
+        p = expit(X.dot(self.coef_) + self.intercept_)
+        return np.vstack((1 - p, p)).T
 
     def predict(self, X):
         """ Robust prediction.
@@ -302,12 +307,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = np.array(X)
 
         proba = self.predict_proba_2Class(X)
-        out =  self.le_.inverse_transform((proba>=0.5).astype('uint8'))
+        out = self.le_.inverse_transform((proba >= 0.5).astype('uint8'))
         return out
 
-
     def _more_tags(self):
-        return {'poor_score': True, # In order to pass with any rho...
-                'binary_only': True, # Only binary classification
-               # 'non_deterministic': True # For stochastic methods
+        return {'poor_score': True,  # In order to pass with any rho...
+                'binary_only': True,  # Only binary classification
+                # 'non_deterministic': True # For stochastic methods
                 }

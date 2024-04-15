@@ -8,14 +8,15 @@ from .base_loss import Loss
 from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler
 
+
 class QuadraticLoss(Loss):
     def __init__(
             self,
             sampler: LabeledSampler,
             *,
-            d: int=0,
-            l2reg: Optional[float]=None,
-            fit_intercept: bool=False) -> None:
+            d: int = 0,
+            l2reg: Optional[float] = None,
+            fit_intercept: bool = False) -> None:
         super(QuadraticLoss, self).__init__(sampler, l2reg=l2reg)
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)

@@ -22,7 +22,7 @@ dict_wdro_estimators["Weber (entropic presampled)"] = Weber(solver="entropic_tor
 
 dict_wdro_estimators["Portfolio"] = Portfolio(cost="t-NC-1-1")
 
-#dict_wdro_estimators["Portfolio_entropic"] = Portfolio(solver="entropic_torch")
+# dict_wdro_estimators["Portfolio_entropic"] = Portfolio(solver="entropic_torch")
 
 dict_wdro_estimators["NewsVendor"] = NewsVendor(solver="dedicated")
 

@@ -21,6 +21,7 @@ from skwdro.solvers.optim_cond import OptCondTorch
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.wrap_problem import dualize_primal_loss
 
+
 class LinearRegression(BaseEstimator, RegressorMixin):
     r""" A Wasserstein Distributionally Robust linear regression.
 
@@ -86,26 +87,25 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  solver="entropic_torch",
                  solver_reg=None,
                  sampler_reg=None,
-                 n_zeta_samples: int=10,
-                 random_state: int=0,
-                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
+                 n_zeta_samples: int = 10,
+                 random_state: int = 0,
+                 opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
                  ):
 
         if rho < 0:
-            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
+            raise ValueError(
+                f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho            = rho
-        self.l2_reg         = l2_reg
-        self.cost           = cost
-        self.fit_intercept  = fit_intercept
-        self.solver         = solver
-        self.solver_reg     = solver_reg
-        self.sampler_reg    = sampler_reg
-        self.opt_cond       = opt_cond
+        self.rho = rho
+        self.l2_reg = l2_reg
+        self.cost = cost
+        self.fit_intercept = fit_intercept
+        self.solver = solver
+        self.solver_reg = solver_reg
+        self.sampler_reg = sampler_reg
+        self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
-        self.random_state   = random_state
-
-
+        self.random_state = random_state
 
     def fit(self, X, y):
         """Fits the WDRO classifier.
@@ -127,16 +127,18 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         X = np.array(X)
         y = np.array(y)
 
-        #Type checking for rho
+        # Type checking for rho
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+            except BaseException:
+                raise TypeError(
+                    f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
         if len(y.shape) != 1:
             y.flatten()
-            warnings.warn(f"y expects a shape (n_samples,) but receiced shape {y.shape}", DataConversionWarning)
+            warnings.warn(
+                f"y expects a shape (n_samples,) but receiced shape {y.shape}", DataConversionWarning)
 
         # Store data
         self.X_ = X
@@ -146,13 +148,15 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.n_features_in_ = d
 
         # Setup problem parameters ################
-        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y[:,None])
+        emp = EmpiricalDistributionWithLabels(
+            m=m, samples_x=X, samples_y=y[:, None])
 
         self.cost_ = cost_from_str(self.cost)
-      
+
         # #########################################
-        if self.solver=="entropic":
-            raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
+        if self.solver == "entropic":
+            raise (DeprecationWarning(
+                "The entropic (numpy) solver is now deprecated"))
         elif "torch" in self.solver:
             assert isinstance(self.cost_, TorchCost)
 
@@ -161,32 +165,33 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
             _wdro_loss = dualize_primal_loss(
-                    nn.MSELoss(reduction="none"),
-                    nn.Linear(d, 1),
-                    pt.tensor(self.rho),
-                    pt.Tensor(emp.samples_x),
-                    pt.Tensor(emp.samples_y),
-                    _post_sample,
-                    self.cost,
-                    self.n_zeta_samples,
-                    self.random_state,
-                    l2reg=self.l2_reg
-                )
-
+                nn.MSELoss(reduction="none"),
+                nn.Linear(d, 1),
+                pt.tensor(self.rho),
+                pt.Tensor(emp.samples_x),
+                pt.Tensor(emp.samples_y),
+                _post_sample,
+                self.cost,
+                self.n_zeta_samples,
+                self.random_state,
+                l2reg=self.l2_reg
+            )
 
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
-                    _wdro_loss,
-                    emp,
-                    self.opt_cond # type: ignore
-                    )
-            self.coef_ = detach_tensor(_wdro_loss.primal_loss.transform.weight) # type: ignore
-            self.intercept_ = maybe_detach_tensor(_wdro_loss.primal_loss.transform.bias) # type: ignore
-        elif self.solver=="dedicated":
-            self.coef_ , self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(
-                    rho=self.rho,
-                    X=X,
-                    y=y,
-                    fit_intercept=self.fit_intercept
+                _wdro_loss,
+                emp,
+                self.opt_cond  # type: ignore
+            )
+            self.coef_ = detach_tensor(
+                _wdro_loss.primal_loss.transform.weight)  # type: ignore
+            self.intercept_ = maybe_detach_tensor(
+                _wdro_loss.primal_loss.transform.bias)  # type: ignore
+        elif self.solver == "dedicated":
+            self.coef_, self.intercept_, self.dual_var_ = spS.WDROLinRegSpecificSolver(
+                rho=self.rho,
+                X=X,
+                y=y,
+                fit_intercept=self.fit_intercept
             )
         else:
             raise NotImplementedError
@@ -215,6 +220,4 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         # Input validation
         X = check_array(X)
 
-
-        return self.intercept_ + X@self.coef_
-
+        return self.intercept_ + X @ self.coef_

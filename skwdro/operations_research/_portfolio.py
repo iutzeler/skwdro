@@ -5,8 +5,7 @@ WDRO Estimators
 import numpy as np
 import torch as pt
 from sklearn.base import BaseEstimator
-from sklearn.utils.validation import check_array, check_is_fitted, check_random_state
-from torch import Tensor
+from sklearn.utils.validation import check_array
 
 from typing import Optional
 
@@ -38,7 +37,7 @@ class Portfolio(BaseEstimator):
 
         \ell(x,\tau;\xi) =  - \langle x ; \xi \rangle + \eta \tau + \frac{1}{\alpha} \max( - \langle x ; \xi \rangle - \tau ; 0)
 
-    where :math:`\tau` is an extra real parameter accounting for the threshold of the CVaR (see [Rockafellar and Uryasev (2000)]). The parameter :math:`x` is constrained to live in the simplex (This is encoded in the constraints of the problem in [Esfahani et al. (2018)] and by an exponential reparametrization for the entropy-regularized version). 
+    where :math:`\tau` is an extra real parameter accounting for the threshold of the CVaR (see [Rockafellar and Uryasev (2000)]). The parameter :math:`x` is constrained to live in the simplex (This is encoded in the constraints of the problem in [Esfahani et al. (2018)] and by an exponential reparametrization for the entropy-regularized version).
 
     Parameters
     ----------
@@ -79,29 +78,33 @@ class Portfolio(BaseEstimator):
 
     """
 
-    def __init__(self,
-                 rho=1e-2,
-                 eta=0.,
-                 alpha=.95,
-                 C=None,
-                 d=None,
-                 fit_intercept=None,
-                 cost="t-NC-1-1",
-                 solver="dedicated",
-                 solver_reg=1e-3,
-                 reparam="softmax",
-                 n_zeta_samples: int=10,
-                 seed: int=0, 
-                 opt_cond: Optional[OptCondTorch]=OptCondTorch(2) # type: ignore
-                 ):
+    def __init__(
+        self,
+        rho=1e-2,
+        eta=0.,
+        alpha=.95,
+        C=None,
+        d=None,
+        fit_intercept=None,
+        cost="t-NC-1-1",
+        solver="dedicated",
+        solver_reg=1e-3,
+        reparam="softmax",
+        n_zeta_samples: int = 10,
+        seed: int = 0,
+        opt_cond: Optional[OptCondTorch] = OptCondTorch(
+            2
+        )  # type: ignore
+    ):
 
-        #Verifying conditions on rho, eta and alpha
+        # Verifying conditions on rho, eta and alpha
         if rho < 0:
             raise ValueError("The Wasserstein radius cannot be negative")
         elif eta < 0:
             raise ValueError("Risk-aversion error eta cannot be negative")
         elif alpha <= 0 or alpha > 1:
-            raise ValueError("Confidence level alpha needs to be in the (0,1] interval")
+            raise ValueError(
+                "Confidence level alpha needs to be in the (0,1] interval")
         elif solver_reg < 0:
             raise ValueError("The regularization parameter cannot be negative")
         elif n_zeta_samples < 0:
@@ -131,71 +134,100 @@ class Portfolio(BaseEstimator):
             The prediction. Always none for a portfolio estimator.
 
         """
+        del y
 
-        #Conversion to float to prevent torch.nn conversion errors
+        # Conversion to float to prevent torch.nn conversion errors
         self.rho_ = float(self.rho)
         self.eta_ = float(self.eta)
         self.alpha_ = float(self.alpha)
         self.solver_reg_ = float(self.solver_reg)
 
-        #Check that X has correct shape
+        # Check that X has correct shape
         X = check_array(X)
 
-        #Store data
+        # Store data
         self.X_ = X
 
-        #Setup problem parameters
-        N = np.shape(X)[0] #N samples for the empirical distribution
-        m = np.shape(X)[1] #m assets
+        # Setup problem parameters
+        N = np.shape(X)[0]  # N samples for the empirical distribution
+        m = np.shape(X)[1]  # m assets
         self.n_features_in_ = m
         emp = EmpiricalDistributionWithoutLabels(m=N, samples=X)
 
-        self.cost_ = cost_from_str(self.cost) #NormCost(1, 1., "L1 cost")
+        self.cost_ = cost_from_str(self.cost)  # NormCost(1, 1., "L1 cost")
         p = self.cost_.power
-        
-        #Setup values C and d that define the polyhedron of xi_maj
+
+        # Setup values C and d that define the polyhedron of xi_maj
         if (self.C is None or self.d is None):
-            self.C_ = np.zeros((1,m))
-            self.d_ = np.zeros((1,1))
+            self.C_ = np.zeros((1, m))
+            self.d_ = np.zeros((1, 1))
         else:
             self.C_ = self.C
             self.d_ = self.d
 
-        if np.shape(self.C_)[1] != m: #Check that the matrix-vector product is well-defined
-            raise ValueError("The number of columns of C don't match the number of lines of any xi")
+        # Check that the matrix-vector product is well-defined
+        if np.shape(self.C_)[1] != m:
+            raise ValueError(
+                ' '.join([
+                    "The number of columns",
+                    "of C don't match the",
+                    "number of lines of",
+                    "any xi"
+                ])
+            )
 
         if self.solver == "entropic":
-            raise(DeprecationWarning("The entropic (numpy) solver is now deprecated"))
+            raise (DeprecationWarning(
+                "The entropic (numpy) solver is now deprecated"
+            ))
         elif self.solver == "dedicated":
-            self.coef_, self.tau_, self.dual_var_, self.result_ = spS.WDROPortfolioSpecificSolver(C=self.C_, d=self.d_, m=self.n_features_in_, p=p, eta=self.eta, alpha=self.alpha, rho=self.rho, samples=emp.samples)
+            _res = spS.WDROPortfolioSpecificSolver(
+                C=self.C_,
+                d=self.d_,
+                m=self.n_features_in_,
+                p=p,
+                eta=self.eta,
+                alpha=self.alpha,
+                rho=self.rho,
+                samples=emp.samples
+            )
+            self.coef_, self.tau_, self.dual_var_, self.result_ = _res
         elif "torch" in self.solver:
-
             self._wdro_loss = dualize_primal_loss(
-                        SimplePortfolio(m, risk_aversion=self.eta_, risk_level=self.alpha_),
-                        None,
-                        pt.tensor(self.rho_),
-                        pt.Tensor(emp.samples),
-                        None,
-                        not "post" in self.solver,
-                        self.cost,
-                        self.n_zeta_samples,
-                        self.seed,
-                        epsilon=self.solver_reg_,
-                        l2reg=0.
-                    )
-            self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
-                    self._wdro_loss,
-                    emp,
-                    self.opt_cond, # type: ignore
-                    )
-            self.coef_ = detach_tensor(self._wdro_loss.primal_loss.loss.assets.weight) # type: ignore
+                SimplePortfolio(m, risk_aversion=self.eta_,
+                                risk_level=self.alpha_),
+                None,
+                pt.tensor(self.rho_),
+                pt.Tensor(emp.samples),
+                None,
+                "post" not in self.solver,
+                self.cost,
+                self.n_zeta_samples,
+                self.seed,
+                epsilon=self.solver_reg_,
+                l2reg=0.
+            )
+            _res = entTorch.solve_dual_wdro(
+                self._wdro_loss,
+                emp,
+                self.opt_cond,  # type: ignore
+            )
+            (
+                self.coef_,
+                self.intercept_,
+                self.dual_var_,
+                self.robust_loss_
+            ) = _res
+            self.coef_ = detach_tensor(
+                self._wdro_loss.primal_loss.loss.assets.weight  # type: ignore
+            )
 
         else:
             raise NotImplementedError("Designation for solver not recognized")
 
         self.is_fitted_ = True
 
-        #Return the estimator
+        # Return the estimator
         return self
 
     def score(self, X, y=None):
@@ -209,6 +241,7 @@ class Portfolio(BaseEstimator):
         y : None
             The prediction. Always None for a Portfolio estimator.
         '''
+        del y
         return -self.eval(X)
 
     def eval(self, X):
@@ -221,18 +254,14 @@ class Portfolio(BaseEstimator):
             The testing input samples.
         '''
 
-        #Check that X has correct shape
+        # Check that X has correct shape
         X = check_array(X)
 
-        assert self.is_fitted_ == True #We have to fit before evaluating
+        assert self.is_fitted_  # We have to fit before evaluating
 
         if "entropic" in self.solver:
             return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()
         elif self.solver == "dedicated":
-            return -np.mean(X,axis=0)@self.coef_
+            return -np.mean(X, axis=0) @ self.coef_
         else:
-            raise(ValueError("Solver not recognized"))
-    
-
-
-
+            raise (ValueError("Solver not recognized"))
