@@ -329,7 +329,7 @@ sphinx_gallery_conf = {
     'reference_url': {
         'skwdro': None},
     'filename_pattern': '',
-    'ignore_pattern' : '*utils*' ,
+    'ignore_pattern' : 'utils' ,
     'capture_repr': ('_repr_html_', '__repr__'),
     'examples_dirs': ['../examples/builtin_models/', '../examples/custom_models/'],
     'gallery_dirs': ['examples/Builtin', 'examples/Custom'],

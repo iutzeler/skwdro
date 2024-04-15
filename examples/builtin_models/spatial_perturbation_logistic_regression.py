@@ -32,8 +32,8 @@ centers = [np.array([-pos,-pos]), np.array([pos,pos])]
 # Create datasets with variance that is shifted at test time
 datasets = []
 for (sdev_1, sdev_2) in sdevs:
-    train_dataset = make_blobs(n_samples=n_train, centers=centers, cluster_std=(sdev_1, sdev_2))
-    test_dataset = make_blobs(n_samples=n_test, centers=centers, cluster_std=(sdev_2, sdev_1))
+    train_dataset = make_blobs(n_samples=n_train, centers=centers, cluster_std=(sdev_1, sdev_2)) # type: ignore
+    test_dataset = make_blobs(n_samples=n_test, centers=centers, cluster_std=(sdev_2, sdev_1)) # type: ignore
     datasets.append((train_dataset, test_dataset))
 
 # %%
@@ -64,4 +64,4 @@ for rho in rhos:
 
 names = ["Logistic Regression", "WDRO Logistic Regression"]
 levels = [0., 0.25, 0.45, 0.5, 0.55, 0.75, 1.]
-plot_classifier_comparison(names, classifiers, datasets, levels=levels)
+plot_classifier_comparison(names, classifiers, datasets, levels=levels) # type: ignore
