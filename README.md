@@ -1,5 +1,7 @@
 [![CI tests](https://github.com/iutzeler/skwdro/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/iutzeler/skwdro/actions/workflows/test.yml)
 [![style tests](https://github.com/iutzeler/skwdro/actions/workflows/style.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/style.yml)
+[![doc tests](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml)
+
 
 ## skwdro - Wasserstein Distributionaly Robust Optimization
 
