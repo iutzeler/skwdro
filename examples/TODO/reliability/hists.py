@@ -70,8 +70,8 @@ def fit_portfolio(rho_norm, X, X_test, n_zeta, epsilon):
             alpha=2e-1
         )
     estimator.fit(X)
-    robust_loss = estimator.robust_loss_
-    test_loss = estimator.problem_.loss.primal_loss(pt.tensor(X_test, dtype=pt.float32)).mean()
+    robust_loss = estimator.wdro_loss_.primal_loss(pt.tensor(X, dtype=pt.float32)).mean()
+    test_loss = estimator.wdro_loss_.primal_loss(pt.tensor(X_test, dtype=pt.float32)).mean()
     return robust_loss, test_loss
 
 def one_portfolio_run(rho, d, n_train, X_test, n_zeta, epsilon):

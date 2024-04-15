@@ -8,6 +8,7 @@ __pycache__/
 
 # Types
 .pytype*
+.mypy*
 
 # C extensions
 *.so
@@ -68,6 +69,8 @@ coverage.xml
 # Sphinx documentation
 doc/_build/
 doc/generated/
+doc/API/
+doc/examples/
 
 # PyBuilder
 target/

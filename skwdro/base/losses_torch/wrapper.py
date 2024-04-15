@@ -6,7 +6,10 @@ import torch.nn as nn
 from skwdro.base.losses_torch import Loss
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 
-class WrappingError(ValueError): pass
+
+class WrappingError(ValueError):
+    pass
+
 
 class WrappedPrimalLoss(Loss):
     def __init__(
@@ -16,8 +19,8 @@ class WrappedPrimalLoss(Loss):
             sampler: BaseSampler,
             has_labels: bool,
             *,
-            l2reg: Optional[float]=None
-            ) -> None:
+            l2reg: Optional[float] = None
+    ) -> None:
         super(WrappedPrimalLoss, self).__init__(sampler, l2reg=l2reg)
         self.loss = loss
         self.transform = transform if transform is not None else nn.Identity()
@@ -25,7 +28,8 @@ class WrappedPrimalLoss(Loss):
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
-        raise WrappingError("No default sampler can be attributed by default by a wrapped loss.")
+        raise WrappingError(
+            "No default sampler can be attributed by default by a wrapped loss.")
 
     @property
     def theta(self):
@@ -40,11 +44,12 @@ class WrappedPrimalLoss(Loss):
         return pt.tensor(0.)
 
     def _flat_value_w_labels(self, xi, xi_labels):
-            return self.regularize(self.loss(self.transform(xi), xi_labels))
-    def _flat_value_wo_labels(self, xi):
-            return self.regularize(self.loss(self.transform(xi)))
+        return self.regularize(self.loss(self.transform(xi), xi_labels))
 
-    def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor]=None):
+    def _flat_value_wo_labels(self, xi):
+        return self.regularize(self.loss(self.transform(xi)))
+
+    def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None):
         print(f"{xi.size()=}")
         if self.has_labels:
             assert xi_labels is not None
@@ -57,7 +62,8 @@ class WrappedPrimalLoss(Loss):
                 return self._flat_value_w_labels(xi.flatten(start_dim=0, end_dim=-2), xi_labels.squeeze()).view(*b, 1)
             elif xi.dim() == 2 and xi_labels.dim() <= 2:
                 return self._flat_value_w_labels(xi, xi_labels).unsqueeze(-1)
-            else: raise NotImplementedError()
+            else:
+                raise NotImplementedError()
         else:
             assert xi_labels is None
             if xi.dim() > 2:
@@ -65,4 +71,5 @@ class WrappedPrimalLoss(Loss):
                 return self._flat_value_wo_labels(xi.flatten(start_dim=0, end_dim=-2)).view(*b, 1)
             elif xi.dim() == 2:
                 return self._flat_value_wo_labels(xi).unsqueeze(-1)
-            else: raise NotImplementedError()
+            else:
+                raise NotImplementedError()

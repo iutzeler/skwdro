@@ -13,11 +13,9 @@ from skwdro.solvers.optim_cond import OptCondTorch
 
 from skwdro.solvers.utils import detach_tensor
 from skwdro.base.problems import EmpiricalDistributionWithLabels
-from skwdro.base.costs_torch import NormLabelCost as NormLabelCostTorch
 from skwdro.base.losses_torch.weber import SimpleWeber
 from skwdro.wrap_problem import dualize_primal_loss
 import skwdro.solvers.entropic_dual_torch as entTorch
-
 
 
 class Weber(BaseEstimator):
@@ -57,24 +55,25 @@ class Weber(BaseEstimator):
     """
 
     def __init__(
-            self,
-            rho: float=1e-1,
-            kappa: float=10.0,
-            solver_reg: float=1e-2,
-            sampler_reg: float=1e-2,
-            l2_reg: float=0.,
-            n_zeta_samples: int=10,
-            cost: str="t-NLC-2-2",
-            solver="entropic_torch",
-            random_state: int=0,
-            opt_cond: Optional[OptCondTorch]=OptCondTorch(2)
-            ):
+        self,
+        rho: float = 1e-1,
+        kappa: float = 10.0,
+        solver_reg: float = 1e-2,
+        sampler_reg: float = 1e-2,
+        l2_reg: float = 0.,
+        n_zeta_samples: int = 10,
+        cost: str = "t-NLC-2-2",
+        solver="entropic_torch",
+        random_state: int = 0,
+        opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
+    ):
 
         if rho < 0:
-            raise ValueError(f"The uncertainty radius rho should be non-negative, received {rho}")
+            raise ValueError(
+                f"The uncertainty radius rho should be non-negative, received {rho}")
 
-        self.rho    = rho
-        self.kappa  = kappa
+        self.rho = rho
+        self.kappa = kappa
         self.solver = solver
         self.solver_reg = solver_reg
         self.sampler_reg = sampler_reg
@@ -105,109 +104,43 @@ class Weber(BaseEstimator):
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
-            except:
-                raise TypeError(f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+            except ValueError:
+                raise TypeError(
+                    f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
-        m,d = np.shape(X)
+        m, d = np.shape(X)
 
-        emp = EmpiricalDistributionWithLabels(m=m,samples_x=X,samples_y=y.reshape(-1,1))
-        cost = NormLabelCostTorch(p=2,power=2,kappa=self.kappa)
-
-
-
-        # custom_sampler = LabeledCostSampler(
-        #                 cost,
-        #                 pt.Tensor(emp.samples_x),
-        #                 pt.Tensor(emp.samples_y),
-        #                 sigma=pt.tensor(self.rho),
-        #                 seed=self.random_state
-        #             )
-
-
+        emp = EmpiricalDistributionWithLabels(
+            m=m, samples_x=X, samples_y=y.reshape(-1, 1))
 
         if "torch" in self.solver:
+            assert self.opt_cond is not None
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
             self._wdro_loss = dualize_primal_loss(
-                    SimpleWeber(d),
-                    None,
-                    pt.tensor(self.rho),
-                    pt.Tensor(emp.samples_x),
-                    pt.Tensor(emp.samples_y),
-                    _post_sample,
-                    self.cost,
-                    self.n_zeta_samples,
-                    self.random_state,
-                    epsilon=self.solver_reg,
-                    sigma=self.sampler_reg,
-                    l2reg=self.l2_reg
-                )
-            # self.problem_ = WDROProblem(
-            #     loss=l,
-            #     cost = cost,
-            #     xi_bounds=[0,20],
-            #     theta_bounds=[0,np.inf],
-            #     rho=self.rho,
-            #     p_hat=emp,
-            #     d=d,
-            #     d_labels=1,
-            #     n=d
-            # )
+                SimpleWeber(d),
+                None,
+                pt.tensor(self.rho),
+                pt.Tensor(emp.samples_x),
+                pt.Tensor(emp.samples_y),
+                _post_sample,
+                self.cost,
+                self.n_zeta_samples,
+                self.random_state,
+                epsilon=self.solver_reg,
+                sigma=self.sampler_reg,
+                l2reg=self.l2_reg
+            )
             self._wdro_loss.n_iter = 300
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
-                    self._wdro_loss,
-                    emp,
-                    self.opt_cond, # type: ignore
-                    )
-            self.coef_ = detach_tensor(self.problem_.loss.primal_loss.loss.pos).flatten() # type: ignore
+                self._wdro_loss,
+                emp,
+                self.opt_cond,
+            )
+            self.coef_ = detach_tensor(
+                self.problem_.loss.primal_loss.loss.pos).flatten()  # type: ignore
 
-            # if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            #     self.problem_ = WDROProblem(
-            #                         loss=DualLoss(
-            #                             WeberLoss(custom_sampler, d=d, l2reg=self.l2_reg),
-            #                             cost,
-            #                             n_samples=self.n_zeta_samples,
-            #                             epsilon_0=pt.tensor(self.solver_reg),
-            #                             rho_0=pt.tensor(self.rho)),
-            #                         cost = cost,
-            #                         xi_bounds=[0,20],
-            #                         theta_bounds=[0,np.inf],
-            #                         rho=self.rho,
-            #                         p_hat=emp,
-            #                         d=d,
-            #                         d_labels=1,
-            #                         n=d
-            #                         )
-
-            # elif self.solver == "entropic_torch_pre":
-            #     self.problem_ = WDROProblem(
-            #                         loss=DualPreSampledLoss(
-            #                             WeberLoss(custom_sampler, d=d, l2reg=self.l2_reg),
-            #                             cost,
-            #                             n_samples=self.n_zeta_samples,
-            #                             epsilon_0=pt.tensor(self.solver_reg),
-            #                             rho_0=pt.tensor(self.rho)),
-            #                         cost = cost,
-            #                         xi_bounds=[0,20],
-            #                         theta_bounds=[0,np.inf],
-            #                         rho=self.rho,
-            #                         p_hat=emp,
-            #                         d=d,
-            #                         d_labels=1,
-            #                         n=d
-            #                         )
-
-            # else:
-            #     raise NotImplementedError
-
-            # self.coef_, self.intercept_, self.dual_var_ = entTorch.solve_dual(
-            #         self.problem_,
-            #         seed=self.random_state,
-            #         sigma_=self.solver_reg,
-            #     )
         else:
             raise NotImplementedError
-        
-
 
         self.is_fitted_ = True
 
@@ -217,7 +150,7 @@ class Weber(BaseEstimator):
 
         # `fit` should always return `self`
         return self
-    
+
     def score(self, X, y=None):
         '''
         Score method to estimate the quality of the model.
@@ -229,6 +162,7 @@ class Weber(BaseEstimator):
         y : None
             The prediction. Always None for a Newsvendor estimator.
         '''
+        del y
         return -self.eval(X)
 
     def eval(self, X):
@@ -241,34 +175,12 @@ class Weber(BaseEstimator):
             The testing input samples.
         '''
 
-        assert self.is_fitted_ == True #We have to fit before evaluating
+        assert self.is_fitted_  # We have to fit before evaluating
 
-
-        #Check that X has correct shape
+        # Check that X has correct shape
         X = check_array(X)
 
         if "entropic" in self.solver:
             return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()
         else:
-            raise(ValueError("Solver not recognized"))
-
-
-        # def entropic_case(X):
-        #     if isinstance(X, (np.ndarray,np.generic)):
-        #         X = pt.from_numpy(X)
-
-        #     return self.problem_.loss.primal_loss.value(xi=X).mean()
-
-        # match self.solver:
-        #     case "dedicated":
-        #         return self.problem_.loss.value(theta=self.coef_, xi=X)
-        #     case "entropic":
-        #         return NotImplementedError("Entropic solver for Portfolio not implemented yet")
-        #     case "entropic_torch":
-        #         return entropic_case(X)
-        #     case "entropic_torch_pre":
-        #         return entropic_case(X)
-        #     case "entropic_torch_post":
-        #         return entropic_case(X)            
-        #     case _:
-        #         return ValueError("Solver not recognized")
+            raise (ValueError("Solver not recognized"))

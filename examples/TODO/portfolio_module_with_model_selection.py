@@ -21,7 +21,7 @@ def main():
     X = pt.tile(X,(N,1)) #Duplicate the above line N times
 
     #Creating the estimator and solving the problem
-    estimator = Portfolio(solver="entropic_torch_post", cost="t-NC-1-1", reparam="softmax", n_zeta_samples=10*N)
+    estimator = Portfolio(n_zeta_samples=10*N)
 
     rho_tuner = RhoTunedEstimator(estimator)
     rho_tuner.fit(X=X, y=None)

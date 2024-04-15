@@ -20,3 +20,5 @@ Module contents
    :undoc-members:
    :show-inheritance:
    :ignore-module-all:
+   :ignore-module-all:
+   :ignore-module-all:

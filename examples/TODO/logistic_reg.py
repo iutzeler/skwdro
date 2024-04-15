@@ -37,7 +37,7 @@ estimator = LogisticRegression(
         rho=RHO,
         l2_reg=0.,
         fit_intercept=True,
-        cost="n-NC-2-2",
+        cost="t-NC-2-2",
         solver="dedicated"
         )
 print(".", end='')
