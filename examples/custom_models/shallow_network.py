@@ -36,7 +36,8 @@ class MyShallowNet(nn.Module):
         elif signal.dim() == 3:
             n, m, d = signal.shape
             return self.layers(signal.flatten(start_dim=0, end_dim=1)).reshape(n, m, d)
-        else: raise
+        else:
+            raise NotImplementedError("Please flatten your data appropriately")
 
 
 def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], epochs: int=10):
