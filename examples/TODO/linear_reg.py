@@ -47,7 +47,7 @@ estimator = LinearRegression(
         l2_reg=0.,
         solver_reg=EPSILON,
         fit_intercept=True,
-        cost="n-NC-2-2",
+        cost="t-NC-2-2",
         solver="dedicated"
         )
 print(".", end='')
@@ -61,7 +61,7 @@ print("Elapsed time: ", time()-t)
 print("#######")
 
 # ENTROPIC SOLVER
-print("Sinkhorn solver #####")
+print("\n\nSinkhorn solver #####")
 t = time()
 print(".", end='')
 estimator_ent = LinearRegression(
@@ -84,7 +84,7 @@ print("Theta: ", estimator_ent.coef_, estimator_ent.intercept_)
 print("Elapsed time: ", time()-t)
 
 # ENTROPIC SOLVER
-print("Sinkhorn pre-sampled solver #####")
+print("\n\nSinkhorn pre-sampled solver #####")
 t = time()
 print(".", end='')
 estimator_pre = LinearRegression(
