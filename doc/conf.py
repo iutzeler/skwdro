@@ -330,7 +330,6 @@ sphinx_gallery_conf = {
         'skwdro': None},
     'filename_pattern': '',
     # 'ignore_pattern' : '/examples/TODO/' ,
-    'ignore_pattern' : '/examples/builtin_models/classifier_comparison.py',
     'capture_repr': ('_repr_html_', '__repr__'),
     'examples_dirs': ['../examples/builtin_models/', '../examples/custom_models/'],
     'gallery_dirs': ['examples/Builtin', 'examples/Custom'],

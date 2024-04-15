@@ -99,7 +99,7 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
 # Training
 # ~~~~~~~~
 
-radius = pt.tensor(0.005)   # Robustness radius
+radius = pt.tensor(0.001)   # Robustness radius
 
 dual_loss = dualize_primal_loss( 
             loss,

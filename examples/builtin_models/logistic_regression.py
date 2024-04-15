@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 
 from skwdro.linear_models import LogisticRegression
 
-from classifier_comparison import plot_classifier_comparison
+from examples.utils.classifier_comparison import plot_classifier_comparison
 
 # %%
 # Setup
