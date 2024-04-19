@@ -6,11 +6,11 @@ on:
 #    - main
 #    - dev
     - doc/cleanup
-  pull_request:
-    branches:
-#    - main
-#    - dev
-    - doc/cleanup
+#   pull_request:
+#     branches:
+# #    - main
+# #    - dev
+
 
 concurrency:
   group: ${{ github.ref }}
