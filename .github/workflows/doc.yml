@@ -3,16 +3,17 @@ name: doc
 on:
   push:
     branches:
-    - main
-    - dev
+#    - main
+#    - dev
+    - doc/cleanup
   pull_request:
     branches:
-    - main
-    - dev
+#    - main
+#    - dev
 
 concurrency:
   group: ${{ github.ref }}
-  cancel-in-progress: true
+#  cancel-in-progress: true
 
 jobs:
   run:
