@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 
 from skwdro.linear_models import LogisticRegression
 
-from examples.utils.classifier_comparison import plot_classifier_comparison
+from utils.classifier_comparison import plot_classifier_comparison
 
 # %%
 # Setup
@@ -32,7 +32,7 @@ train_dataset, test_dataset = (Xtrain, ytrain), (Xtest, ytest)
 datasets.append((train_dataset, test_dataset))
 
 # Fix centers for blobs dataset
-_, _, centers = make_blobs(centers=2, return_centers=True)
+_, _, centers = make_blobs(centers=2, return_centers=True) # type: ignore
 
 # Blobs dataset with std=2
 dataset = make_blobs(n_samples=n, centers=centers, cluster_std=2)

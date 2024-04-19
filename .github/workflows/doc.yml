@@ -1,14 +1,16 @@
-name: test
+name: doc
 
 on:
   push:
     branches:
-    - main
-    - dev
-  pull_request:
-    branches:
-    - main
-    - dev
+#    - main
+#    - dev
+    - doc/cleanup
+#   pull_request:
+#     branches:
+# #    - main
+# #    - dev
+
 
 concurrency:
   group: ${{ github.ref }}
@@ -24,10 +26,13 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-          python-version: '3.11' 
+          python-version: '3.11'
 
     - name: Install Hatch
       run: pip install hatch
 
+    - name: Install requirements
+      run: pip install -r doc/requirements.txt
+
     - name: Run tests
-      run: make test
+      run: make doctest
