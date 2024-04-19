@@ -10,6 +10,7 @@ on:
     branches:
 #    - main
 #    - dev
+    - doc/cleanup
 
 concurrency:
   group: ${{ github.ref }}
