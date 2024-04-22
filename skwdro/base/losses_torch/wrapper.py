@@ -50,10 +50,8 @@ class WrappedPrimalLoss(Loss):
         return self.regularize(self.loss(self.transform(xi)))
 
     def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None):
-        print(f"{xi.size()=}")
         if self.has_labels:
             assert xi_labels is not None
-            print(f"{xi_labels.size()=}")
             if xi.dim() > 2 and xi_labels.dim() > 2:
                 *b, _ = xi.size()
                 return self._flat_value_w_labels(xi.flatten(start_dim=0, end_dim=-2), xi_labels.flatten(start_dim=0, end_dim=-2)).view(*b, 1)
@@ -62,6 +60,8 @@ class WrappedPrimalLoss(Loss):
                 return self._flat_value_w_labels(xi.flatten(start_dim=0, end_dim=-2), xi_labels.squeeze()).view(*b, 1)
             elif xi.dim() == 2 and xi_labels.dim() <= 2:
                 return self._flat_value_w_labels(xi, xi_labels).unsqueeze(-1)
+            elif xi.dim() == xi_labels.dim() == 1:
+                return self._flat_value_w_labels(xi, xi_labels)
             else:
                 raise NotImplementedError()
         else:
@@ -71,5 +71,7 @@ class WrappedPrimalLoss(Loss):
                 return self._flat_value_wo_labels(xi.flatten(start_dim=0, end_dim=-2)).view(*b, 1)
             elif xi.dim() == 2:
                 return self._flat_value_wo_labels(xi).unsqueeze(-1)
+            elif xi.dim() == 1:
+                return self._flat_value_wo_labels(xi)
             else:
                 raise NotImplementedError()

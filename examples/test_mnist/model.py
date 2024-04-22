@@ -1,6 +1,5 @@
 import torch as pt
 import torch.nn as nn
-from math import isqrt
 import torchvision
 from torchvision.transforms import v2 as transforms
 
@@ -9,8 +8,10 @@ class TestAlexnet(nn.Module):
         super().__init__()
         self.device = device
         self.net = net
+        for p in net.parameters():
+            p.requires_grad_(False)
 
-        last_layer = self.net.classifier[6]
+        last_layer = self.net.classifier[-1]#[6]
         nn.init.kaiming_normal_(last_layer.weight.data, nonlinearity='relu') # type: ignore
         _ = [*map(
             lambda p: p.requires_grad_(True),
@@ -31,6 +32,7 @@ class TestAlexnet(nn.Module):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
 
+    @pt.no_grad()
     def preprocess(self, x):
         x = self.preprocesspipe(x).unsqueeze(0)
         x = self.net.features(
@@ -42,8 +44,9 @@ class TestAlexnet(nn.Module):
         return self.net.classifier[:-1](x).squeeze(0)
 
     def forward(self, x):
+        x = self.net.classifier[-1](x)
         return self.classif(
-            self.net.classifier[-1](x)
+            x
         )
 
     def train(self, mode: bool = True):

@@ -1,4 +1,5 @@
 from typing import Optional, Tuple
+import subprocess as sp
 
 import torch as pt
 from torch._functorch.apis import vmap, grad
@@ -52,8 +53,16 @@ class _SampleDisplacer(_SampledDualLoss):
         grad_xi, grad_xi_l = self.get_displacement_direction(xi, xi_labels)
         # Assert type of results and get them returned
         return (
-            normalize_just_vects(grad_xi / self._lam, threshold, dim=-1),
-            normalize_maybe_vects(grad_xi_l / self._lam, threshold, dim=-1)
+            normalize_just_vects(
+                grad_xi / self._lam,
+                threshold,
+                dim=-1
+            ),
+            normalize_maybe_vects(
+                grad_xi_l / self._lam,
+                threshold,
+                dim=-1
+            )
         )
 
     def compute_functional_grads(
@@ -87,6 +96,7 @@ class _SampleDisplacer(_SampledDualLoss):
         disps: (1, m, d), (1, m, d')
         """
         model = self.primal_loss
+        model.eval()  # Deactivate batch-norms & dropouts
         thetas = {k: v.detach() for k, v in model.named_parameters()}
         _internal_states = {k: v.detach() for k, v in model.named_buffers()}
 
@@ -97,7 +107,7 @@ class _SampleDisplacer(_SampledDualLoss):
                 # pass in current params and state buffers
                 (params, states,),
                 # give as inputs xi and xi_labels
-                (data, target,)
+                (data.unsqueeze(0), maybe_unsqueeze(target, dim=0),)
             )
             return loss.squeeze()
 
@@ -134,6 +144,7 @@ class _SampleDisplacer(_SampledDualLoss):
             )
         )
         psg = per_sample_grad_func(xi, xi_labels, thetas, _internal_states)
+        model.train()
         if xi_labels is None:
             return psg[0], None
         else:
@@ -230,6 +241,7 @@ class _SampleDisplacer(_SampledDualLoss):
 
         if _check:
             # Safeguard against NaNs mainly, as well as divergences
+            sp.run(["notify-send", "=== ! NAN ALERT ! ====", f"Nans: {disp.isnan().sum()}", "-u", "critcal"])
             return (
                 xi.unsqueeze(0),
                 maybe_unsqueeze(xi_labels, dim=0),

@@ -1,8 +1,8 @@
+import tqdm
+import numpy as np
 import torch as pt
 from torch.utils.data import DataLoader, Subset
 from torchvision.datasets import MNIST
-import tqdm
-import numpy as np
 
 from model import make_alexnet
 
@@ -10,8 +10,19 @@ root = "examples/test_mnist/data/"
 device = "cuda" if pt.cuda.is_available() else "cpu"
 pt.set_float32_matmul_precision('high')
 
+
 def accuracy(output, target):
-    return output.detach().cpu().argmax(dim=1).eq(target.cpu()).float().mean().item()*100
+    return (
+        output
+        .detach()
+        .cpu()
+        .argmax(dim=1)
+        .eq(target.cpu())
+        .float()
+        .mean()
+        .item()*100
+    )
+
 
 def step(model, features, target, criterion, optimizer):
     features = features.to(device)
@@ -27,7 +38,8 @@ def step(model, features, target, criterion, optimizer):
     optimizer.step()
     return loss.detach().item()
 
-@pt.no_grad
+
+@pt.no_grad()
 def evalnet(model, features, target, criterion):
     features = features.to(device)
     target = target.to(device)
@@ -35,7 +47,11 @@ def evalnet(model, features, target, criterion):
     model.eval()
     classes = model(features)
     model.train()
-    return accuracy(classes, target), criterion(classes, target).mean().detach().item()
+    return (
+        accuracy(classes, target),
+        criterion(classes, target).mean().detach().item()
+    )
+
 
 def traineval_loop(model, train_loader, test_loader, criterion, optimizer):
     # === Train ===
@@ -46,10 +62,15 @@ def traineval_loop(model, train_loader, test_loader, criterion, optimizer):
 
     # === Eval ===
     nested_it = tqdm.tqdm(test_loader, position=1, leave=False)
-    acc, l = list(zip(*[evalnet(model, features, target, criterion) for features, target in nested_it]))
-    return np.mean(acc), np.mean(l)
+    acc, ls = list(zip(*[
+        evalnet(
+            model, features, target, criterion
+        ) for features, target in nested_it
+    ]))
+    return np.mean(acc), np.mean(ls)
 
-def train_alexnet(model, dataset_train, dataset_test, n_epochs: int=100):
+
+def train_alexnet(model, dataset_train, dataset_test, n_epochs: int = 100):
     optimizer = pt.optim.Adam(model.parameters(), lr=1e-2)
     criterion = pt.nn.CrossEntropyLoss(reduction='none')
 
@@ -69,7 +90,13 @@ def train_alexnet(model, dataset_train, dataset_test, n_epochs: int=100):
     mean_losses = []
     max_acc = 0.
     for epoch in it:
-        acc, avgloss = traineval_loop(model, train_loader, test_loader, criterion, optimizer)
+        acc, avgloss = traineval_loop(
+            model,
+            train_loader,
+            test_loader,
+            criterion,
+            optimizer
+        )
         if acc > max_acc:
             max_acc = acc
             pt.save(model.state_dict(), root+"weights.pt")
@@ -77,13 +104,24 @@ def train_alexnet(model, dataset_train, dataset_test, n_epochs: int=100):
         mean_losses.append(avgloss)
     return mean_losses
 
+
 def main():
     model = make_alexnet(device).to(device)
-    #model.load_state_dict(pt.load(root+"weights.pt"), strict=False)
+    model.load_state_dict(pt.load(root+"weights.pt"), strict=False)
 
-    dataset_train = MNIST(root, download=True, train=True, transform=model.preprocess)
-    dataset_test = Subset(MNIST(root, download=True, train=False, transform=model.preprocess), range(0, 10000, 100))
+    dataset_train = MNIST(
+        root, download=True, train=True, transform=model.preprocess
+    )
+    dataset_test = Subset(
+        MNIST(root, download=True, train=False, transform=model.preprocess),
+        range(0, 10000, 100)
+    )
 
-    np.save(root+"losses.npy", train_alexnet(pt.compile(model), dataset_train, dataset_test, 10))
+    np.save(
+        root+"losses.npy",
+        train_alexnet(pt.compile(model), dataset_train, dataset_test, 10)
+    )
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+    main()

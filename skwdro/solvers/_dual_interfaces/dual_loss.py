@@ -110,7 +110,8 @@ class _DualFormulation(_SampleDisplacer):
                 integrand += correction  # (n_samples, m, 1)
             else:
                 loss_estimate = self.primal_loss.value(
-                    zeta, zeta_labels)  # -> (n_samples, m, 1)
+                    zeta, zeta_labels
+                )  # -> (n_samples, m, 1)
                 cost_estimate = self.cost(
                     xi.unsqueeze(0),  # (1, m, d)
                     zeta,  # (n_samples, m, d)
