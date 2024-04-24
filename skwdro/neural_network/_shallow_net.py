@@ -128,8 +128,8 @@ class ShallowNet(BaseEstimator, RegressorMixin):  # ClassifMixin
 
         # Setup problem parameters ################
         emp = EmpiricalDistributionWithLabels(
-            m=m, samples_x=X, samples_y=y[:, None])
-
+            m=m, samples_x=X, samples_y=y[:, None]
+        )
         # #########################################
 
         if self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
