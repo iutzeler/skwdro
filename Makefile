@@ -11,6 +11,7 @@ styletest:
 	@echo "Style test:"
 	@hatch -e $(TEST_ENV) run env-test:ruff-test
 	@hatch -e $(TEST_ENV) run env-test:pycodestyle-test
+	@hatch -e $(TEST_ENV) run env-test:mypy-test
 
 test: test_gen test_sk test_misc
 

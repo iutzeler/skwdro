@@ -76,7 +76,9 @@ class NormCost(TorchCost):
     ) -> pt.Tensor:
         del xi_labels, zeta_labels
         diff = xi - zeta
-        return pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
+        diff = pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
+        assert isinstance(diff, pt.Tensor)
+        return diff
 
     def _sampler_data(self, xi, epsilon):
         if epsilon is None:

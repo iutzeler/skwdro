@@ -88,6 +88,7 @@ test-sklearn = "pytest -v ./skwdro/tests -W ignore::FutureWarning"
 test-misc = "sh ./tests/misc/launchall.sh -W ignore::FutureWarning"
 ruff-test = "ruff check -q ./skwdro"
 pycodestyle-test = "pycodestyle --exclude=skwdro/solvers/specific_solvers.py,skwdro/base/rho_tuners.py,skwdro/base/rho_tuners_computations.py --ignore=E501 skwdro/"
+mypy-test = "mypy skwdro/"
 
 [tool.hatch.envs.env-examples]
 pre-install-commands = [
@@ -121,3 +122,12 @@ allow-direct-references = true
 
 [tool.ruff]
 extend-exclude=["*tune*", "*specific*"]
+
+[tool.mypy]
+warn_return_any = true
+warn_unused_configs = true
+exclude = [
+    '^.*_epsilon\.py$',
+    '^.*rho.*\.py$',
+]
+ignore_missing_imports = true

@@ -17,7 +17,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  run:
+  prepare:
     name: Test
     runs-on: ubuntu-latest
     steps:
@@ -31,5 +31,16 @@ jobs:
     - name: Install Hatch
       run: pip install hatch
 
-    - name: Run tests
-      run: make styletest
+  style:
+    needs: prepare
+    - name: Run style test
+      run: hatch -e env-dev run env-test:pycodestyle-test
+
+  pep8:
+    - name: Run pep8 verifications
+      run: hatch -e env-dev run env-test:ruff-test
+
+  types:
+    needs: [style, pep8]
+    - name: Run types tests
+      run: hatch -e env-dev run env-test:mypy-test

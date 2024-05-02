@@ -1,15 +1,18 @@
-from typing import Optional
+from typing import Callable, Optional, overload
 
 import torch as pt
 import torch.nn as nn
 
 from .base_loss import Loss
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler
-from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+from skwdro.base.samplers.torch.classif_sampler import (
+    ClassificationNormalNormalSampler
+)
 
 
 class BiDiffSoftMarginLoss(nn.Module):
     def __init__(self, *args, **kwargs) -> None:
+        del args, kwargs
         super(BiDiffSoftMarginLoss, self).__init__()
 
     def forward(self, input, target):
@@ -52,7 +55,7 @@ class LogisticLoss(Loss):
         nn.init.zeros_(self.linear.weight)
         if fit_intercept:
             nn.init.zeros_(self.linear.bias)
-        self.classif = nn.Tanh()
+        self.classif: Callable[[pt.Tensor], pt.Tensor] = nn.Tanh()
         self.l2reg = None if l2reg is None or l2reg <= 0. else pt.tensor(l2reg)
         self.L = BiDiffSoftMarginLoss(reduction='none')
 
@@ -72,9 +75,11 @@ class LogisticLoss(Loss):
 
         """
         coefs = self.linear(X)
+        assert isinstance(coefs, pt.Tensor)
         return self.classif(coefs)
 
-    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor):
+    @overload
+    def value(self, xi: pt.Tensor, xi_labels: pt.Tensor) -> pt.Tensor:
         """ Forward pass of the loss
 
         Parameters
@@ -84,12 +89,31 @@ class LogisticLoss(Loss):
         xi_labels : pt.Tensor
             labels
         """
+        pass
+
+    @overload
+    def value(self, xi: pt.Tensor, xi_labels: None) -> pt.Tensor:
+        raise TypeError()
+
+    def value(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ) -> pt.Tensor:
+        assert xi_labels is not None
         coefs = self.linear(xi)
+        assert isinstance(coefs, pt.Tensor)
         return self.regularize(self.L(coefs, xi_labels))
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
-        return ClassificationNormalNormalSampler(xi, xi_labels, seed, sigma=epsilon, l_sigma=epsilon)
+        return ClassificationNormalNormalSampler(
+            xi,
+            xi_labels,
+            seed,
+            sigma=epsilon,
+            l_sigma=epsilon
+        )
 
     @property
     def theta(self) -> pt.Tensor:

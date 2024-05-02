@@ -7,9 +7,15 @@ from .normcost import NormCost
 
 
 class NormLabelCost(NormCost):
-    """ p-norm of the ground metric to change data + label
-    """
+    r""" p-norm of the ground metric to change data + label
 
+    Norm used to add cost to switching labels:
+
+    .. math::
+        d_\kappa\left(\left[\begin{array}{c}\bm{X}\\y\end{array}\right],
+            \left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]\right) :=
+        \|\bm{X}-\bm{X'}\|+\kappa |y-y'|
+    """
     def __init__(
         self,
         p: float = 2.,
@@ -17,17 +23,21 @@ class NormLabelCost(NormCost):
         kappa: float = 1e4,
         name: Optional[str] = None
     ):
-        r"""
-        Norm used to add cost to switching labels:
-
-        .. math::
-            d_\kappa\left(\left[\begin{array}{c}\bm{X}\\y\end{array}\right],
-                \left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]\right) :=
-            \|\bm{X}-\bm{X'}\|+\kappa |y-y'|
+        r""" Constructor
         """
-        super().__init__(power=power, p=p, name="Kappa-norm" if name is None else name)
+        super().__init__(
+            power=power,
+            p=p,
+            name="Kappa-norm" if name is None else name
+        )
         self.kappa = kappa
-        assert kappa >= 0, f"Input kappa={kappa}<0 is illicit since it 'encourages' flipping labels in the database, and thus makes no sense wrt the database in terms of 'trust' to the labels."
+        assert kappa >= 0, ' '.join([
+            f"Input kappa={kappa}<0",
+            "is illicit since it 'encourages'",
+            "flipping labels in the database,",
+            "and thus makes no sense wrt the database",
+            "in terms of 'trust' to the labels."
+        ])
 
     @classmethod
     def _label_penalty(cls, y: pt.Tensor, y_prime: pt.Tensor, p: float):
@@ -83,7 +93,7 @@ class NormLabelCost(NormCost):
         xi_labels: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None
     ) -> pt.Tensor:
-        pass
+        raise AssertionError()
 
     def value(
         self,
@@ -93,22 +103,29 @@ class NormLabelCost(NormCost):
         zeta_labels: Optional[pt.Tensor] = None
     ) -> pt.Tensor:
         assert xi_labels is not None and zeta_labels is not None
+        _c: pt.Tensor
         if float(self.kappa) is float("inf"):
-            # Writing convention: if kappa=+oo we put all cost on switching labels
-            #  so the cost is reported on y.
+            # Writing convention: if kappa=+oo we put all cost on switching
+            # labels so the cost is reported on y.
             # To provide a tractable computation, we yield the y-penalty alone.
-            return self._label_penalty(
-                xi_labels, zeta_labels, self.p)**self.power
+            _c = self._label_penalty(
+                xi_labels, zeta_labels, self.p
+            )**self.power
         elif self.kappa == 0.:
-            # Writing convention: if kappa is null we put all cost on moving the data itself, so the worst-case distribution is free to switch the labels.
+            # Writing convention: if kappa is null we put all cost on moving
+            # the data itself, so the worst-case distribution is free to switch
+            # the labels.
             # Warning : this usecase should not make sense anyway.
-            return self._data_penalty(xi, zeta, self.p)**self.power
+            _c = self._data_penalty(xi, zeta, self.p)**self.power
         else:
             distance = self._data_penalty(xi, zeta, self.p) \
                 + self.kappa * \
                 self._label_penalty(xi_labels, zeta_labels, self.p)
             distance /= 1. + self.kappa
-            return distance**self.power
+            _c = distance**self.power
+            del distance
+
+        return _c
 
     @overload
     def _sampler_labels(
