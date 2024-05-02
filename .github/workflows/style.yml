@@ -1,16 +1,6 @@
 name: style
 
 on:
-  push:
-    branches:
-    - main
-    - dev
-    - cleanup
-  pull_request:
-    branches:
-    - main
-    - dev
-    - cleanup
   workflow_call:
 
 concurrency:
