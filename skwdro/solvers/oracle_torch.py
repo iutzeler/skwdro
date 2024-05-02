@@ -280,7 +280,7 @@ class DualPreSampledLoss(_DualLoss):
         gradient_hypertuning: bool = False,
         *,
         imp_samp: bool = IMP_SAMP,
-        adapt: Optional[str]="prodigy",
+        adapt: Optional[str] = "prodigy",
     ) -> None:
         del adapt
         super(DualPreSampledLoss, self).__init__(
