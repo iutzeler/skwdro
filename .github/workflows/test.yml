@@ -3,10 +3,6 @@ name: test
 on:
   workflow_call:
 
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   run:
     name: Test
@@ -19,8 +15,17 @@ jobs:
       with:
           python-version: '3.11'
 
-    - name: Install Hatch
-      run: pip install hatch
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+            #
+            # - name: Install Hatch
+            #   run: pip install hatch
 
     - name: Run tests
       run: make test
