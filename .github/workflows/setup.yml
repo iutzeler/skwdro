@@ -46,8 +46,8 @@ jobs:
 
   tests:
     needs: run
-    uses: ./.github/workflows/test.yml
+    uses: ./.github/workflows/test.yml@main
 
   style:
     needs: run
-    uses: ./github/workflows/style.yml
+    uses: ./.github/workflows/style.yml@main
