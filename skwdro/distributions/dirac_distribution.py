@@ -8,9 +8,7 @@ import torch.distributions.constraints as cstr
 class Dirac(dst.ExponentialFamily):
     @property
     def arg_constraints(self) -> Dict[str, cstr.Constraint]:
-        return {
-            "loc": cstr.real_vector
-        }
+        return {"loc": cstr.real_vector}
 
     @property
     def support(self) -> Optional[cstr.Constraint]:

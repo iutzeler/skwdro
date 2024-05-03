@@ -23,25 +23,6 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 .. toctree::
    :maxdepth: 3
    :hidden:
-   :caption: Custom Estimators
-
-   custom
-
-.. toctree::
-   :maxdepth: 3
-   :hidden:
-   :caption: API
-
-   API/skwdro
-   API/skwdro.solvers
-   API/skwdro.linear_models
-   API/skwdro.operations_research
-   API/skwdro.neural_network
-   API/skwdro.distributions
-
-.. toctree::
-   :maxdepth: 3
-   :hidden:
    :caption: Optimization
 
    losses
@@ -55,6 +36,22 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 
    examples/Builtin/index
    examples/Custom/index
+   
+
+.. toctree::
+   :maxdepth: 3
+   :hidden:
+   :caption: API
+
+   API/modules
+   API/skwdro
+   API/skwdro.solvers
+   API/skwdro.linear_models
+   API/skwdro.operations_research
+   API/skwdro.neural_network
+   API/skwdro.distributions
+
+
 
 `Getting started <quick_start.html>`_
 -------------------------------------

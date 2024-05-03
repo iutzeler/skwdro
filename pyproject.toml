@@ -53,6 +53,9 @@ docs = [
     "sphinx",
     "sphinx-gallery",
     "sphinx_rtd_theme",
+    "sphinx-copybutton",
+    "sphinx_design",
+    "myst_parser"
 ]
 test = [
     "pytest",
@@ -91,6 +94,7 @@ ruff-test = "ruff check -q ./skwdro"
 pycodestyle-test = "pycodestyle --config=.pycodestyle/tox_all.ini skwdro/"
 pycodestyle-length-test = "pycodestyle --config=.pycodestyle/tox_501.ini skwdro/"
 mypy-test = "mypy skwdro/"
+doc-test = "cd ./doc && make html"
 
 [tool.hatch.envs.env-examples]
 pre-install-commands = [

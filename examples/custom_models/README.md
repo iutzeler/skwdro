@@ -1,5 +1,3 @@
-.. _general_examples:
-
 Custom models
 =============
 
