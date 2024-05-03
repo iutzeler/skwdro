@@ -75,7 +75,7 @@ jobs:
       run: hatch -e env-dev run env-test:mypy-test
 
   line-length:
-    name: Codingstyle: line lengths
+    name: Codingstyle - line lengths
     runs-on: ubuntu-latest
     needs: types
     steps:
