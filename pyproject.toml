@@ -88,8 +88,8 @@ test-sklearn = "pytest -v ./skwdro/tests -W ignore::FutureWarning"
 test-misc = "sh ./tests/misc/launchall.sh -W ignore::FutureWarning"
 ruff-test = "ruff check -q ./skwdro"
 # pycodestyle-test = "pycodestyle --exclude=skwdro/solvers/specific_solvers.py,skwdro/base/rho_tuners.py,skwdro/base/rho_tuners_computations.py --ignore=E501 skwdro/"
-pycodestyle-test = "pycodestyle --config=tox_all.ini skwdro/"
-pycodestyle-length-test = "pycodestyle --config=tox_501.ini skwdro/"
+pycodestyle-test = "pycodestyle --config=.pycodestyle/tox_all.ini skwdro/"
+pycodestyle-length-test = "pycodestyle --config=.pycodestyle/tox_501.ini skwdro/"
 mypy-test = "mypy skwdro/"
 
 [tool.hatch.envs.env-examples]
