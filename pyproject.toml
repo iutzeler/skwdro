@@ -102,7 +102,7 @@ pre-install-commands = [
 features = ["examples"]
 
 [tool.hatch.envs.env-docs]
-features = ["docs"]
+features = ["docs", "examples"]
 
 [tool.hatch.envs.env-docs.scripts]
 doc-test = "cd ./doc && make html"
