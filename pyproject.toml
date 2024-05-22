@@ -94,7 +94,6 @@ ruff-test = "ruff check -q ./skwdro"
 pycodestyle-test = "pycodestyle --config=.pycodestyle/tox_all.ini skwdro/"
 pycodestyle-length-test = "pycodestyle --config=.pycodestyle/tox_501.ini skwdro/"
 mypy-test = "mypy skwdro/"
-doc-test = "cd ./doc && make html"
 
 [tool.hatch.envs.env-examples]
 pre-install-commands = [
@@ -103,8 +102,10 @@ pre-install-commands = [
 features = ["examples"]
 
 [tool.hatch.envs.env-docs]
-# Could add a hook to build the doc here...
 features = ["docs"]
+
+[tool.hatch.envs.env-docs.scripts]
+doc-test = "cd ./doc && make html"
 
 [tool.hatch.envs.env-dev]
 pre-install-commands = [
