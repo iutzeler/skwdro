@@ -50,3 +50,8 @@ jobs:
     name: Launch Style workflow
     needs: run
     uses: ./.github/workflows/style.yml
+
+  doctest:
+    name: Launch Doc Test workflow
+    needs: run
+    uses: ./.github/workflows/doc.yml
