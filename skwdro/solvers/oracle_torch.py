@@ -112,18 +112,19 @@ class DualPostSampledLoss(_DualLoss):
         number of :math:`\zeta` samples to draw at each forward pass
     """
 
-    def __init__(self,
-                 loss: Loss,
-                 cost: Cost,
-                 n_samples: int,
-                 epsilon_0: pt.Tensor,
-                 rho_0: pt.Tensor,
-                 n_iter: Steps = 10000,
-                 gradient_hypertuning: bool = False,
-                 *,
-                 imp_samp: bool = IMP_SAMP,
-                 adapt="prodigy",
-                 ) -> None:
+    def __init__(
+        self,
+        loss: Loss,
+        cost: Cost,
+        n_samples: int,
+        epsilon_0: pt.Tensor,
+        rho_0: pt.Tensor,
+        n_iter: Steps = 10000,
+        gradient_hypertuning: bool = False,
+        *,
+        imp_samp: bool = IMP_SAMP,
+        adapt: Optional[str] = "prodigy",
+    ) -> None:
         super(DualPostSampledLoss, self).__init__(
             loss,
             cost,
@@ -230,11 +231,13 @@ class DualPostSampledLoss(_DualLoss):
                 ", please provide a positive rho value"
             ]))
         elif self.rho == 0.:
-            return self.rho * self.lam + self.primal_loss(
+            first_term = self.rho * self.lam
+            _pl: pt.Tensor = self.primal_loss(
                 xi.unsqueeze(0),  # (1, m, d)
                 # (1, m, d') or None
                 xi_labels.unsqueeze(0) if xi_labels is not None else None
             ).mean()  # (1,)
+            return first_term + _pl
         else:
             zeta_, zeta_labels_ = self.generate_zetas(self.n_samples)
             return self.compute_dual(xi, xi_labels, zeta_, zeta_labels_)
@@ -266,18 +269,19 @@ class DualPreSampledLoss(_DualLoss):
     zeta: Optional[pt.Tensor]
     zeta_labels: Optional[pt.Tensor]
 
-    def __init__(self,
-                 loss: Loss,
-                 cost: Cost,
-                 n_samples: int,
-                 epsilon_0: pt.Tensor,
-                 rho_0: pt.Tensor,
-                 n_iter: Steps = 50,
-                 gradient_hypertuning: bool = False,
-                 *,
-                 imp_samp: bool = IMP_SAMP,
-                 adapt="prodigy",
-                 ) -> None:
+    def __init__(
+        self,
+        loss: Loss,
+        cost: Cost,
+        n_samples: int,
+        epsilon_0: pt.Tensor,
+        rho_0: pt.Tensor,
+        n_iter: Steps = 50,
+        gradient_hypertuning: bool = False,
+        *,
+        imp_samp: bool = IMP_SAMP,
+        adapt: Optional[str] = "prodigy",
+    ) -> None:
         del adapt
         super(DualPreSampledLoss, self).__init__(
             loss,

@@ -1,16 +1,7 @@
 name: doc
 
 on:
-  push:
-    branches:
-#    - main
-#    - dev
-    - doc/cleanup
-#   pull_request:
-#     branches:
-# #    - main
-# #    - dev
-
+  workflow_call:
 
 concurrency:
   group: ${{ github.ref }}
@@ -18,7 +9,7 @@ concurrency:
 
 jobs:
   run:
-    name: Test
+    name: Compile Doc
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -27,12 +18,15 @@ jobs:
       uses: actions/setup-python@v4
       with:
           python-version: '3.11'
-
-    - name: Install Hatch
-      run: pip install hatch
-
-    - name: Install requirements
-      run: pip install -r doc/requirements.txt
+          
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys:
+            ${{ env.pythonLocation }}-
 
     - name: Run tests
       run: make doctest

@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, overload
 
 import torch as pt
 
@@ -6,36 +6,38 @@ import skwdro.distributions as dst
 from .normcost import NormCost
 
 
-class Constant(dst.Distribution):
-    def __init__(self, cst: pt.Tensor):
-        super().__init__(validate_args=False)
-        self.cst = cst
-
-    def sample(self, sample_shape=pt.Size()):
-        return self.cst.expand(*(sample_shape + self.cst.shape))
-
-    def rsample(self, sample_shape=pt.Size()):
-        return self.sample(sample_shape=sample_shape)
-
-
 class NormLabelCost(NormCost):
-    """ p-norm of the ground metric to change data + label
+    r""" p-norm of the ground metric to change data + label
+
+    Norm used to add cost to switching labels:
+
+    .. math::
+        d_\kappa\left(\left[\begin{array}{c}\bm{X}\\y\end{array}\right],
+            \left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]\right) :=
+        \|\bm{X}-\bm{X'}\|+\kappa |y-y'|
     """
-
-    def __init__(self, p: float = 2., power: float = 1.,
-                 kappa: float = 1e4, name: Optional[str] = None):
-        r"""
-        Norm used to add cost to switching labels:
-
-        .. math::
-            d_\kappa\left(\left[\begin{array}{c}\bm{X}\\y\end{array}\right],
-                \left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]\right) :=
-            \|\bm{X}-\bm{X'}\|+\kappa |y-y'|
+    def __init__(
+        self,
+        p: float = 2.,
+        power: float = 1.,
+        kappa: float = 1e4,
+        name: Optional[str] = None
+    ):
+        r""" Constructor
         """
-        super().__init__(power=power, p=p, name="Kappa-norm" if name is None else name)
-        self.name = name  # Overwrite the name
+        super().__init__(
+            power=power,
+            p=p,
+            name="Kappa-norm" if name is None else name
+        )
         self.kappa = kappa
-        assert kappa >= 0, f"Input kappa={kappa}<0 is illicit since it 'encourages' flipping labels in the database, and thus makes no sense wrt the database in terms of 'trust' to the labels."
+        assert kappa >= 0, ' '.join([
+            f"Input kappa={kappa}<0",
+            "is illicit since it 'encourages'",
+            "flipping labels in the database,",
+            "and thus makes no sense wrt the database",
+            "in terms of 'trust' to the labels."
+        ])
 
     @classmethod
     def _label_penalty(cls, y: pt.Tensor, y_prime: pt.Tensor, p: float):
@@ -46,10 +48,17 @@ class NormLabelCost(NormCost):
         diff = x - x_prime
         return pt.norm(diff, p=p, dim=-1, keepdim=True)
 
-    def value(self, xi: pt.Tensor, zeta: pt.Tensor,
-              xi_labels: pt.Tensor, zeta_labels: pt.Tensor):
+    @overload
+    def value(
+        self,
+        xi: pt.Tensor,
+        zeta: pt.Tensor,
+        xi_labels: pt.Tensor,
+        zeta_labels: pt.Tensor
+    ) -> pt.Tensor:
         r"""
-        Cost to displace :math:`\xi:=\left[\begin{array}{c}\bm{X}\\y\end{array}\right]`
+        Cost to displace
+        :math:`\xi:=\left[\begin{array}{c}\bm{X}\\y\end{array}\right]`
         to :math:`\zeta:=\left[\begin{array}{c}\bm{X'}\\y'\end{array}\right]`
         in :math:`mathbb{R}^n`.
 
@@ -64,28 +73,85 @@ class NormLabelCost(NormCost):
         zeta_labels : Tensor, shape (n_samples, n_features_y)
             Label or target in the dataset
         """
+        pass
+
+    @overload
+    def value(
+        self,
+        xi: pt.Tensor,
+        zeta: pt.Tensor,
+        xi_labels: None = None,
+        zeta_labels: None = None
+    ) -> pt.Tensor:
+        pass
+
+    @overload
+    def value(
+        self,
+        xi: pt.Tensor,
+        zeta: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None
+    ) -> pt.Tensor:
+        raise AssertionError()
+
+    def value(
+        self,
+        xi: pt.Tensor,
+        zeta: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None
+    ) -> pt.Tensor:
+        assert xi_labels is not None and zeta_labels is not None
+        _c: pt.Tensor
         if float(self.kappa) is float("inf"):
-            # Writing convention: if kappa=+oo we put all cost on switching labels
-            #  so the cost is reported on y.
+            # Writing convention: if kappa=+oo we put all cost on switching
+            # labels so the cost is reported on y.
             # To provide a tractable computation, we yield the y-penalty alone.
-            return self._label_penalty(
-                xi_labels, zeta_labels, self.p)**self.power
+            _c = self._label_penalty(
+                xi_labels, zeta_labels, self.p
+            )**self.power
         elif self.kappa == 0.:
-            # Writing convention: if kappa is null we put all cost on moving the data itself, so the worst-case distribution is free to switch the labels.
+            # Writing convention: if kappa is null we put all cost on moving
+            # the data itself, so the worst-case distribution is free to switch
+            # the labels.
             # Warning : this usecase should not make sense anyway.
-            return self._data_penalty(xi, zeta, self.p)**self.power
+            _c = self._data_penalty(xi, zeta, self.p)**self.power
         else:
             distance = self._data_penalty(xi, zeta, self.p) \
                 + self.kappa * \
                 self._label_penalty(xi_labels, zeta_labels, self.p)
             distance /= 1. + self.kappa
-            return distance**self.power
+            _c = distance**self.power
+            del distance
 
-    def _sampler_labels(self, xi_labels, epsilon):
+        return _c
+
+    @overload
+    def _sampler_labels(
+        self,
+        xi_labels: pt.Tensor,
+        epsilon: pt.Tensor
+    ) -> dst.Distribution:
+        pass
+
+    @overload
+    def _sampler_labels(
+        self,
+        xi_labels: None,
+        epsilon: pt.Tensor
+    ) -> None:
+        raise ValueError()
+
+    def _sampler_labels(
+        self,
+        xi_labels,
+        epsilon
+    ) -> Optional[dst.Distribution]:
         if epsilon is None:
             epsilon = 1e-3
         if self.kappa == float('inf'):
-            return Constant(xi_labels)
+            return dst.Dirac(xi_labels)
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
@@ -111,12 +177,32 @@ class NormLabelCost(NormCost):
         else:
             raise NotImplementedError()
 
+    @overload
     def solve_max_series_exp(
-            self,
-            xi: pt.Tensor,
-            xi_labels: pt.Tensor,
-            rhs: pt.Tensor,
-            rhs_labels: pt.Tensor
+        self,
+        xi: pt.Tensor,
+        xi_labels: pt.Tensor,
+        rhs: pt.Tensor,
+        rhs_labels: pt.Tensor
+    ) -> Tuple[pt.Tensor, pt.Tensor]:
+        pass
+
+    @overload
+    def solve_max_series_exp(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        rhs: pt.Tensor,
+        rhs_labels: Optional[pt.Tensor]
+    ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        pass
+
+    def solve_max_series_exp(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        rhs: pt.Tensor,
+        rhs_labels: Optional[pt.Tensor]
     ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         if xi_labels is not None and rhs_labels is not None:
             if self.p == 2 == self.power:

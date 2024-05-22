@@ -1,5 +1,4 @@
 from typing import Optional
-from types import NoneType
 
 import torch as pt
 import torch.nn as nn
@@ -7,7 +6,9 @@ import torch.nn as nn
 
 from .base_loss import Loss
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler
-from skwdro.base.samplers.torch.classif_sampler import ClassificationNormalNormalSampler
+from skwdro.base.samplers.torch.classif_sampler import (
+    ClassificationNormalNormalSampler
+)
 
 
 class SimpleWeber(nn.Module):
@@ -18,13 +19,14 @@ class SimpleWeber(nn.Module):
 
     def forward(self, xi: pt.Tensor, xi_labels: pt.Tensor) -> pt.Tensor:
         distances = pt.linalg.norm(
-            xi - self.pos.unsqueeze(0), dim=-1, keepdims=True)
+            xi - self.pos.unsqueeze(0), dim=-1, keepdims=True
+        )
         val = xi_labels * distances * xi_labels.shape[1]
+        assert isinstance(val, pt.Tensor)
         return val
 
 
 class WeberLoss(Loss):
-
     def __init__(
             self,
             sampler: LabeledSampler,
@@ -44,14 +46,22 @@ class WeberLoss(Loss):
         return val
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> LabeledSampler:
+    def default_sampler(
+        cls, xi, xi_labels, epsilon, seed: int
+    ) -> LabeledSampler:
         assert xi_labels is not None
-        return ClassificationNormalNormalSampler(xi, xi_labels, seed, sigma=epsilon, l_sigma=epsilon)
+        return ClassificationNormalNormalSampler(
+            xi,
+            xi_labels,
+            seed,
+            sigma=epsilon,
+            l_sigma=epsilon
+        )
 
     @property
     def theta(self) -> pt.Tensor:
         return self.pos
 
     @property
-    def intercept(self) -> NoneType:
+    def intercept(self) -> None:
         return None

@@ -1,5 +1,4 @@
 from typing import Optional
-from types import NoneType
 
 import torch as pt
 import torch.nn as nn
@@ -52,7 +51,9 @@ class NewsVendorLoss_torch(Loss):
     def value_old(self, theta, xi):
         return self.k * theta - self.u * pt.minimum(theta, xi)
 
-    def value(self, xi: pt.Tensor, xi_labels: NoneType = None):
+    def value(
+        self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None
+    ) -> pt.Tensor:
         """ Forward pass of the loss on the data
 
         Parameters
@@ -62,17 +63,20 @@ class NewsVendorLoss_torch(Loss):
         xi_labels : NoneType
             placeholder, do not touch
         """
-        return self.k * self.theta - self.u * \
-            pt.minimum(self.theta, xi).mean(dim=-1, keepdim=True)
+        assert xi_labels is not None
+        returns = self.k * self.theta
+        costs = self.u * pt.minimum(self.theta, xi).mean(dim=-1, keepdim=True)
+        return returns - costs
 
     @property
     def theta(self) -> pt.Tensor:
         return self._theta
 
     @property
-    def intercept(self) -> NoneType:
+    def intercept(self) -> None:
         return None
 
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
+        del xi_labels
         return NewsVendorNormalSampler(xi, seed, sigma=epsilon)

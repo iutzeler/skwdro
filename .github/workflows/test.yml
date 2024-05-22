@@ -1,33 +1,31 @@
 name: test
 
 on:
-  push:
-    branches:
-    - main
-    - dev
-  pull_request:
-    branches:
-    - main
-    - dev
-
-concurrency:
-  group: ${{ github.ref }}
-#  cancel-in-progress: true
+  workflow_call:
 
 jobs:
   run:
     name: Test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-          python-version: '3.11' 
+          python-version: '3.11'
 
-    - name: Install Hatch
-      run: pip install hatch
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+            #
+            # - name: Install Hatch
+            #   run: pip install hatch
 
     - name: Run tests
       run: make test
