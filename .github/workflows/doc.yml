@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   run:
-    name: Test
+    name: Compile Doc
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
