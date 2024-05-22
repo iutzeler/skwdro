@@ -15,7 +15,7 @@ styletest:
 
 doctest:
 	@echo "Style test:"
-	@hatch -e $(TEST_ENV) run env-test:doc-test
+	@hatch -e $(TEST_ENV) run env-docs:doc-test
 
 test: test_gen test_sk test_misc
 
