@@ -56,7 +56,6 @@ docs = [
     "sphinx-copybutton",
     "sphinx_design",
     "myst_parser",
-    "sphinx-apidoc"
 ]
 test = [
     "pytest",
