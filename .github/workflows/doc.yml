@@ -8,8 +8,14 @@ concurrency:
 #  cancel-in-progress: true
 
 jobs:
+
+  setup:
+    name: Launch setup
+    uses: ./.github/workflows/setup.yml
+
   run:
     name: Compile Doc
+    needs: setup
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -30,3 +36,5 @@ jobs:
 
     - name: Run tests
       run: make doctest
+
+
