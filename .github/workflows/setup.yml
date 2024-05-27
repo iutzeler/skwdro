@@ -1,15 +1,7 @@
 name: General setup
 
 on:
-  push:
-    branches:
-    - main
-    - dev
-    - cleanup
-  pull_request:
-    branches:
-    - main
-    - dev
+  workflow_call:
 
 jobs:
   run:
