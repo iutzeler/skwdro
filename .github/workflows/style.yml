@@ -1,10 +1,17 @@
 name: style
 
 on:
-  workflow_call:
+  push:
+    branches:
+    - main
+    - dev
+    - cleanup
+  pull_request:
+    branches:
+    - main
+    - dev
 
 jobs:
-
   setup:
     name: Launch setup
     uses: ./.github/workflows/setup.yml
