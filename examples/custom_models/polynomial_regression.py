@@ -61,7 +61,7 @@ class PolynomialModel(nn.Module):
         return self.linear(self._polynomial_features(x))
 
     def _polynomial_features(self, x):
-        return pt.cat([x ** i for i in range(1, self._degree + 1)],dim=2)
+        return pt.cat([x ** i for i in range(1, self._degree + 1)],dim=-1)
 
 model = PolynomialModel(degree).to(device)  # Our polynomial regression model
 loss  = nn.MSELoss(reduction='none')        # Our error will be measure in quadratic loss
@@ -99,7 +99,7 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
 # Training
 # ~~~~~~~~
 
-radius = pt.tensor(0.005)   # Robustness radius
+radius = pt.tensor(0.001)   # Robustness radius
 
 dual_loss = dualize_primal_loss( 
             loss,

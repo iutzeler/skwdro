@@ -1,35 +1,99 @@
 name: style
 
 on:
-  push:
-    branches:
-    - main
-    - dev
-    - cleanup
-  pull_request:
-    branches:
-    - main
-    - dev
-    - cleanup
-
-concurrency:
-  group: ${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
 
 jobs:
-  run:
-    name: Test
+  style:
+    name: Codingstyle
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
-          python-version: '3.11'
+          python-version: 3.11
 
-    - name: Install Hatch
-      run: pip install hatch
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
 
-    - name: Run tests
-      run: make styletest
+    - name: Run style test
+      run: hatch -e env-test run env-test:pycodestyle-test
+
+  pep8:
+    name: Ruffchecks
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: 3.11
+
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+
+    - name: Run pep8 verifications
+      run: hatch -e env-dev run env-test:ruff-test
+
+  types:
+    name: Typecheck
+    needs: [style, pep8]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: 3.11
+
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+
+    - name: Run types tests
+      run: hatch -e env-dev run env-test:mypy-test
+
+  line-length:
+    name: Codingstyle - line lengths
+    runs-on: ubuntu-latest
+    needs: types
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: 3.11
+
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+
+    - name: Run style test
+      run: echo "$(hatch -e env-dev run env-test:pycodestyle-length-test)"

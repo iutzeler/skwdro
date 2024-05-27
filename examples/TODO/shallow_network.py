@@ -98,7 +98,6 @@ def main():
     ax.scatter(x.cpu(), model(x.unsqueeze(-1)).detach().cpu().squeeze(), marker='+', c='r', label='outputs')
 
     fig.legend()
-    fig.savefig(("wdro_" if rho > 0. else "") + "net.png", transparent=True)
     plt.show()
 
 if __name__ == '__main__':

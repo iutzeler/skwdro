@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 from abc import ABC, abstractmethod
 
 import random
@@ -18,7 +18,9 @@ class BaseSampler(ABC):
         random.seed(seed)
 
     @abstractmethod
-    def sample(self, n_samples: int):
+    def sample(
+        self, n_samples: int
+    ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         raise NotImplementedError()
 
     def __iter__(self):

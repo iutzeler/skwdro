@@ -63,17 +63,18 @@ class _DualLossBase(nn.Module, ABC):
     epsilon_0: (1,)
     """
 
-    def __init__(self,
-                 loss: Loss,
-                 cost: Cost,
-                 n_samples: int,
-                 epsilon_0: pt.Tensor,
-                 rho_0: pt.Tensor,
-                 n_iter: Steps,
-                 gradient_hypertuning: bool = False,
-                 *,
-                 imp_samp: bool = True,
-                 ) -> None:
+    def __init__(
+        self,
+        loss: Loss,
+        cost: Cost,
+        n_samples: int,
+        epsilon_0: pt.Tensor,
+        rho_0: pt.Tensor,
+        n_iter: Steps,
+        gradient_hypertuning: bool = False,
+        *,
+        imp_samp: bool = True,
+    ) -> None:
         super(_DualLossBase, self).__init__()
         self.primal_loss = loss
         # TODO: implement __call__ for torch costs
@@ -166,7 +167,6 @@ class _DualLossBase(nn.Module, ABC):
             self.primal_loss.parameters(), (self._lam,))
         for param in frozen_params:
             param.requires_grad = rg
-        return
 
     def eval(self):
         self.erm_mode = True

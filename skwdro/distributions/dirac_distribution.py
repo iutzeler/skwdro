@@ -8,9 +8,7 @@ import torch.distributions.constraints as cstr
 class Dirac(dst.ExponentialFamily):
     @property
     def arg_constraints(self) -> Dict[str, cstr.Constraint]:
-        return {
-            "loc": cstr.real_vector
-        }
+        return {"loc": cstr.real_vector}
 
     @property
     def support(self) -> Optional[cstr.Constraint]:
@@ -33,8 +31,10 @@ class Dirac(dst.ExponentialFamily):
         batch_shape = pt.Size(batch_shape)
         loc_shape = batch_shape + self.event_shape
         new.loc = self.loc.expand(loc_shape)
-        super(Dirac, new).__init__(batch_shape, self.event_shape,
-                                   validate_args=False)  # type: ignore
+        assert isinstance(new, Dirac)
+        super(Dirac, new).__init__(  # type: ignore
+            batch_shape, self.event_shape, validate_args=False
+        )
         new._validate_args = self._validate_args
         return new
 
@@ -54,7 +54,10 @@ class Dirac(dst.ExponentialFamily):
         return self.loc.expand(self._extended_shape(sample_shape))
 
     def log_prob(self, value: pt.Tensor) -> pt.Tensor:
-        return pt.tensor(0.) if (value - self.loc).abs().sum() == 0. else pt.tensor(-pt.inf)
+        return (
+            pt.tensor(0.) if (value - self.loc).abs().sum() == 0.
+            else pt.tensor(-pt.inf)
+        )
 
     def enumerate_support(self, expand: bool = True) -> pt.Tensor:
         if expand:

@@ -1,0 +1,32 @@
+name: doc
+
+on:
+  workflow_call:
+
+concurrency:
+  group: ${{ github.ref }}
+#  cancel-in-progress: true
+
+jobs:
+  run:
+    name: Compile Doc
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+          python-version: '3.11'
+          
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+          path: ${{ env.pythonLocation }}
+          key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+          restore-keys:
+            ${{ env.pythonLocation }}-
+
+    - name: Run tests
+      run: make doctest

@@ -1,5 +1,4 @@
-from typing import Optional, Tuple
-from types import NoneType
+from typing import Optional, Tuple, overload
 
 import torch as pt
 
@@ -11,8 +10,12 @@ class NormCost(TorchCost):
     """ p-norm to some power, with torch arguments
     """
 
-    def __init__(self, p: float = 1., power: float = 1.,
-                 name: Optional[str] = None):
+    def __init__(
+        self,
+        p: float = 1.,
+        power: float = 1.,
+        name: Optional[str] = None
+    ):
         r"""
         Norm to represent the ground cost of type :math:`p`.
         It represents a distance depending on :math:`p`:
@@ -24,13 +27,24 @@ class NormCost(TorchCost):
         self.p = p
         self.power = power
 
+    @overload
     def value(
         self,
         xi: pt.Tensor,
         zeta: pt.Tensor,
-        xi_labels: NoneType = None,
-        zeta_labels: NoneType = None
-    ):
+        xi_labels: pt.Tensor,
+        zeta_labels: pt.Tensor
+    ) -> pt.Tensor:
+        pass
+
+    @overload
+    def value(
+        self,
+        xi: pt.Tensor,
+        zeta: pt.Tensor,
+        xi_labels: None = None,
+        zeta_labels: None = None
+    ) -> pt.Tensor:
         r"""
         Cost to displace :math:`\xi` to :math:`\zeta` in :math:`mathbb{R}^n`.
 
@@ -41,9 +55,30 @@ class NormCost(TorchCost):
         zeta : Tensor
             Data point towards which ``xi`` is displaced
         """
+        pass
+
+    @overload
+    def value(
+        self,
+        xi: pt.Tensor,
+        zeta: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None
+    ) -> pt.Tensor:
+        raise AssertionError()
+
+    def value(
+        self,
+        xi: pt.Tensor,
+        zeta: pt.Tensor,
+        xi_labels: Optional[pt.Tensor] = None,
+        zeta_labels: Optional[pt.Tensor] = None
+    ) -> pt.Tensor:
         del xi_labels, zeta_labels
         diff = xi - zeta
-        return pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
+        diff = pt.norm(diff, p=self.p, dim=-1, keepdim=True)**self.power
+        assert isinstance(diff, pt.Tensor)
+        return diff
 
     def _sampler_data(self, xi, epsilon) -> pt.distributions.Distribution:
         if epsilon is None:
@@ -79,22 +114,59 @@ class NormCost(TorchCost):
         else:
             raise NotImplementedError()
 
+    @overload
     def _sampler_labels(
         self,
-        xi_labels,
-        epsilon
-    ) -> Optional[pt.distributions.Distribution]:
+        xi_labels: pt.Tensor,
+        epsilon: pt.Tensor
+    ) -> dst.Distribution:
+        pass
+
+    @overload
+    def _sampler_labels(
+        self,
+        xi_labels: None,
+        epsilon: pt.Tensor
+    ) -> None:
+        return None
+
+    def _sampler_labels(
+        self,
+        xi_labels: Optional[pt.Tensor],
+        epsilon: pt.Tensor
+    ) -> Optional[dst.Distribution]:
+        del epsilon
         if xi_labels is None:
             return None
         else:
             return dst.Dirac(xi_labels, 1, True)
 
+    @overload
     def solve_max_series_exp(
-            self,
-            xi: pt.Tensor,
-            xi_labels: Optional[pt.Tensor],
-            rhs: pt.Tensor,
-            rhs_labels: Optional[pt.Tensor]
+        self,
+        xi: pt.Tensor,
+        xi_labels: pt.Tensor,
+        rhs: pt.Tensor,
+        rhs_labels: pt.Tensor
+    ) -> Tuple[pt.Tensor, pt.Tensor]:
+        pass
+
+    @overload
+    def solve_max_series_exp(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        rhs: pt.Tensor,
+        rhs_labels: Optional[pt.Tensor]
+    ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        pass
+
+    def solve_max_series_exp(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        rhs: pt.Tensor,
+        rhs_labels: Optional[pt.Tensor]
     ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         if xi_labels is not None and rhs_labels is not None:
             if self.p == 2 == self.power:

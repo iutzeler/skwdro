@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 import torch as pt
 import torch.nn as nn
@@ -9,7 +10,7 @@ ENGINES_NAMES = {
 }
 
 
-class TorchCost(nn.Module):
+class TorchCost(nn.Module, ABC):
     """ Base class for transport functions """
 
     def __init__(
@@ -32,6 +33,7 @@ class TorchCost(nn.Module):
     ) -> pt.Tensor:
         return self.value(xi, zeta, xi_labels, zeta_labels)
 
+    @abstractmethod
     def value(
         self,
         xi: pt.Tensor,
@@ -53,6 +55,7 @@ class TorchCost(nn.Module):
             self._sampler_labels(xi_labels, epsilon)
         )
 
+    @abstractmethod
     def _sampler_data(
         self,
         xi: pt.Tensor,
@@ -61,6 +64,7 @@ class TorchCost(nn.Module):
         del xi, epsilon
         raise NotImplementedError()
 
+    @abstractmethod
     def _sampler_labels(
         self,
         xi_labels: pt.Tensor,
@@ -77,6 +81,7 @@ class TorchCost(nn.Module):
             ENGINES_NAMES[self.engine]
         ])
 
+    @abstractmethod
     def solve_max_series_exp(
         self,
         xi: pt.Tensor,

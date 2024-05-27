@@ -108,67 +108,99 @@ def dualize_primal_loss(
         Labels to initialize the samplers and :math:`\lambda_0`
     post_sample: bool
         whether to use a post-sampled dual loss
-    cost_spec: str
+    cost_spec: str|None
         the cost specification in the format ``(k, p)`` for a sample k-norm
         and p-power. ``None`` to use the default ``(2, 2)``.
     n_samples: int
-        number of :math:`\zeta` samples to draw before the gradient descent begins (can be changed if needed between inferences)
+        number of :math:`\zeta` samples to draw before the gradient
+        descent begins (can be changed if needed between inferences)
     seed: int
         the seed for the samplers
-    epsilon: float
+    epsilon: float|None
         Epsilon if hard coded, ``None`` to let the algo find it.
-    sigma: float
+    sigma: float|None
         Sigma if hard coded, ``None`` to let the algo find it.
-    l2reg: float
+    l2reg: float|None
         L2 regularization if needed
-    adapt: str
+    adapt: str|None
         the adaptative step to use between `"prodigy"` and `"mechanic"`.
     imp_samp: bool
-        whether to use importance sampling (will work only for ``(2, 2)`` costs).
+        whether to use importance sampling
+        (will work only for ``(2, 2)`` costs).
     """
     sampler: BaseSampler
     cost: Cost
 
     has_labels = xi_labels_batchinit is not None
     if has_labels:
-        assert isinstance(
-            xi_labels_batchinit, pt.Tensor), "Please provide a starting (mini/full)batch of labels to initialize the samplers"
+        assert isinstance(xi_labels_batchinit, pt.Tensor), ' '.join([
+            "Please provide a starting",
+            "(mini/full)batch of labels",
+            "to initialize the samplers"
+        ])
 
     parsed_cost = parse_code_torch(cost_spec, has_labels)
-    expert_sigma, expert_epsilon = expert_hyperparams(rho, power_from_parsed_spec(
-        parsed_cost), epsilon, EPSILON_SIGMA_FACTOR, sigma, SIGMA_FACTOR)
-    expert_sigma, expert_epsilon = expert_sigma.to(
-        xi_batchinit), expert_epsilon.to(xi_batchinit)
+    expert_sigma, expert_epsilon = expert_hyperparams(
+        rho,
+        power_from_parsed_spec(parsed_cost),
+        epsilon,
+        EPSILON_SIGMA_FACTOR,
+        sigma,
+        SIGMA_FACTOR
+    )
+    expert_sigma = expert_sigma.to(xi_batchinit)
+    expert_epsilon = expert_epsilon.to(xi_batchinit)
 
     cost = cost_from_parse_torch(parsed_cost)
 
     if has_labels:
+        assert xi_labels_batchinit is not None
         sampler = LabeledCostSampler(
-            cost, xi_batchinit, xi_labels_batchinit, expert_sigma, seed)
+            cost,
+            xi_batchinit,
+            xi_labels_batchinit,
+            expert_sigma,
+            seed
+        )
     else:
         sampler = NoLabelsCostSampler(cost, xi_batchinit, expert_sigma, seed)
 
     loss = WrappedPrimalLoss(
-        loss_, transform_, sampler, has_labels, l2reg=l2reg)
+        loss_, transform_, sampler, has_labels, l2reg=l2reg
+    )
 
-    kwargs = {
-        "rho_0": rho,
-        "n_samples": n_samples,
-        "epsilon_0": expert_epsilon,
-        "adapt": adapt,
-        "imp_samp": imp_samp and parsed_cost.can_imp_samp(),
-    }
-    if post_sample:
-        return DualPostSampledLoss(
-            loss,
-            cost,
-            n_iter=(200, 2800),
-            **kwargs
-        )
-    else:
-        return DualPreSampledLoss(
-            loss,
-            cost,
-            n_iter=(100, 10),
-            **kwargs
-        )
+    # kwargs = {
+    #     "rho_0": rho,
+    #     "n_samples": n_samples,
+    #     "epsilon_0": expert_epsilon,
+    #     "adapt": adapt,
+    #     "imp_samp": imp_samp and parsed_cost.can_imp_samp(),
+    # }
+    loss_constructor = (
+        DualPostSampledLoss if post_sample
+        else DualPreSampledLoss
+    )
+    return loss_constructor(
+        loss,
+        cost,
+        n_iter=((200, 2800) if post_sample else (100, 10)),
+        rho_0=rho,
+        n_samples=n_samples,
+        epsilon_0=expert_epsilon,
+        adapt=adapt,
+        imp_samp=(imp_samp and parsed_cost.can_imp_samp())
+    )
+    # if post_sample:
+    #     return DualPostSampledLoss(
+    #         loss,
+    #         cost,
+    #         n_iter=(200, 2800),
+    #         **kwargs
+    #     )
+    # else:
+    #     return DualPreSampledLoss(
+    #         loss,
+    #         cost,
+    #         n_iter=(100, 10),
+    #         **kwargs
+    #     )

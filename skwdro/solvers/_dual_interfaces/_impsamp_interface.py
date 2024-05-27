@@ -145,10 +145,13 @@ class _SampleDisplacer(_SampledDualLoss):
         )
         psg = per_sample_grad_func(xi, xi_labels, thetas, _internal_states)
         model.train()
+        assert isinstance(psg[0], pt.Tensor)
         if xi_labels is None:
             return psg[0], None
         else:
-            return psg
+            assert len(psg) == 2
+            assert psg[1] is None or isinstance(psg[1], pt.Tensor)
+            return psg[0], psg[1]
 
     def get_displacement_direction(
         self,

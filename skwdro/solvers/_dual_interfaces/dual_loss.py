@@ -42,10 +42,12 @@ class _DualFormulation(_SampleDisplacer):
         dl : (1,)
         """
         if self.rho == 0. or self.erm_mode:
-            return self.rho * self.lam + self.primal_loss(
+            _pl: pt.Tensor = self.primal_loss(
                 xi.unsqueeze(0),  # (1, m, d)
                 maybe_unsqueeze(xi_labels, dim=0),  # (1, m, d') or None
             ).mean()  # (1,)
+            first_term: pt.Tensor = self.rho * self.lam
+            return first_term + _pl
         elif self.rho > 0.:
             p = pt.tensor(self.cost.power)
             first_term = self.lam * self.rho.pow(p)  # (1,)

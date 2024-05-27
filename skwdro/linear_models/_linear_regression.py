@@ -45,7 +45,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         l2 regularization
     fit_intercept : boolean, default=True
         Determines if an intercept is fit or not
-    cost: str, default="n-NLC-1-2"
+    cost: str, default="t-NLC-2-2"
         Tiret-separated code to define the transport cost: "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic'
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
