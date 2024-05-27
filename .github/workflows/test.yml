@@ -4,8 +4,13 @@ on:
   workflow_call:
 
 jobs:
+  setup:
+    name: Launch setup
+    uses: ./.github/workflows/setup.yml
+    
   run:
     name: Test
+    needs: setup
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
