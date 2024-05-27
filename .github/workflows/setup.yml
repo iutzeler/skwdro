@@ -40,18 +40,3 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install hatch
         hatch -e env-dev run python -c "import torch as pt; print(pt.cuda.is_available())"
-
-  tests:
-    name: Launch Test workflow
-    needs: run
-    uses: ./.github/workflows/test.yml
-
-  style:
-    name: Launch Style workflow
-    needs: run
-    uses: ./.github/workflows/style.yml
-
-  doctest:
-    name: Launch Doc Test workflow
-    needs: run
-    uses: ./.github/workflows/doc.yml
