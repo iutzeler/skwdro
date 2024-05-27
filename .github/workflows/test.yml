@@ -1,7 +1,15 @@
 name: test
 
 on:
-  workflow_call:
+  push:
+    branches:
+    - main
+    - dev
+    - cleanup
+  pull_request:
+    branches:
+    - main
+    - dev
 
 jobs:
   setup:
