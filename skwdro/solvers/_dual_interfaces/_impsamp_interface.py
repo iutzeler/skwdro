@@ -1,5 +1,5 @@
 from typing import Optional, Tuple
-import subprocess as sp
+# import subprocess as sp
 
 import torch as pt
 from torch._functorch.apis import vmap, grad
@@ -244,7 +244,13 @@ class _SampleDisplacer(_SampledDualLoss):
 
         if _check:
             # Safeguard against NaNs mainly, as well as divergences
-            sp.run(["notify-send", "=== ! NAN ALERT ! ====", f"Nans: {disp.isnan().sum()}", "-u", "critcal"], check=False)
+            # try:
+            #     sp.run(["notify-send", "=== ! NAN ALERT ! ====", f"Nans: {disp.isnan().sum()}", "-u", "critcal"], check=False)
+            # except FileNotFoundError:
+            #     print(f"┌┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈")
+            #     print(f"┊SKWDRO: === ! NAN ALERT ! ====\t")
+            #     print(f"┊SKWDRO Nans: {disp.isnan().sum()}\t")
+            #     print(f"└┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈")
             return (
                 xi.unsqueeze(0),
                 maybe_unsqueeze(xi_labels, dim=0),
