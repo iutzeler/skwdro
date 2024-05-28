@@ -244,7 +244,7 @@ class _SampleDisplacer(_SampledDualLoss):
 
         if _check:
             # Safeguard against NaNs mainly, as well as divergences
-            sp.run(["notify-send", "=== ! NAN ALERT ! ====", f"Nans: {disp.isnan().sum()}", "-u", "critcal"])
+            sp.run(["notify-send", "=== ! NAN ALERT ! ====", f"Nans: {disp.isnan().sum()}", "-u", "critcal"], check=False)
             return (
                 xi.unsqueeze(0),
                 maybe_unsqueeze(xi_labels, dim=0),
