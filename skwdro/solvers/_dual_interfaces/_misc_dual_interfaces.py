@@ -168,6 +168,14 @@ class _DualLossBase(nn.Module, ABC):
         for param in frozen_params:
             param.requires_grad = rg
 
+    def eval(self):
+        self.erm_mode = True
+        return super().eval()
+
+    def train(self, mode: bool = True):
+        self.erm_mode = mode
+        return super().train(mode)
+
 
 class _OptimizeableDual(_DualLossBase):
     @property

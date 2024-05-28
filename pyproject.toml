@@ -47,6 +47,7 @@ examples = [
     "tqdm",
     "seaborn",
     "joblib",
+	"torchvision"
 ]
 docs = [
     "numpydoc",

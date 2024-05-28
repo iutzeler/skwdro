@@ -16,31 +16,19 @@ from matplotlib.colors import LogNorm, Colormap
 from matplotlib.cm import ScalarMappable
 
 PATH = "florian-vincent31/toolbox_hists_logreg"
-HIDE = True
+HIDE = False
 DISCRIMINATE_TOPBOTTOM = "robust"
 KEYS = ['ERM train loss', (' ' if HIDE else '') + 'robust train loss', 'ERM test loss', (' ' if HIDE else '') + 'robust test loss']
-KEYS = list(
-    map(
-        lambda s: s,# s[1:] if s[0] == '_' else s,
-        map(
-            lambda s: s.replace(' ', '_').removeprefix('ERM_'),
-            KEYS
-        )
-    )
-)
 PLOT_ORDER = KEYS[-1::-2] + KEYS[-2::-2]
-PLOT_ORDER = list(map(lambda s: s[1:] if s[0]=='_' else s, PLOT_ORDER))
 DEFAULTS_COLORS = {
         'ERM train loss': (0., 0.5, .9, .5),
         ('_' if HIDE else '') + 'robust train loss': (1., 0., 0., .9),
         'ERM test loss': (0., 1., 0., .5),
         'erm': (0., 0., 1., .5)
         }
-DEFAULTS_COLORS = {k.replace(' ', '_').removeprefix('ERM_'):v for k,v in DEFAULTS_COLORS.items()}
-DEFAULTS_COLORS = {(k[1:] if k[0]=='_' else k):v for k,v in DEFAULTS_COLORS.items()}
 
 def plot_kde(ax, df, p):
-    sb.kdeplot(df, x='loss', hue='loss_type', ax=ax, palette=p, alpha=.5, fill=True, common_norm=True, bw_adjust=1.5, hue_order=[h for h in PLOT_ORDER if h in p.keys()])
+    sb.kdeplot(df, x='loss', hue='loss_type', ax=ax, palette=p, alpha=.5, fill=True, common_norm=False, bw_adjust=1.5, hue_order=[h for h in PLOT_ORDER if h in p.keys()])
     if HIDE: ax.get_legend().set_visible(False)
     else: ax.get_legend()
     return ax.get_legend_handles_labels()
@@ -51,20 +39,14 @@ def histplot_diffs(ax, df, c):
     return plot_kde(ax, df, {'_skwdro': c, 'erm': DEFAULTS_COLORS['erm']})
 
 def histplot_loss(ax, df, c):
-    trim = lambda s: s[1:] if s[0]=='_' else s
-    df = df.loc[:, KEYS].rename(trim, axis='columns')
-    df_ = pd.melt(df, var_name='loss_type', value_name='loss')
+    df = pd.melt(df.loc[:, KEYS], var_name='loss_type', value_name='loss')
     ax.axis('off')
-    print(KEYS, DEFAULTS_COLORS)
-    print(df_)
-    u_ = plot_kde(ax, df_, {'robust_test_loss': c, **{k:v for k, v in DEFAULTS_COLORS.items() if k != 'erm'}})
+    u_ = plot_kde(ax, df, {KEYS[-1]: c, **{k:v for k, v in DEFAULTS_COLORS.items() if k != 'erm'}})
     for name, c in zip(PLOT_ORDER, ax.get_children()):
         if isinstance(c, matplotlib.collections.PolyCollection) and DISCRIMINATE_TOPBOTTOM not in name:
             c.set_transform(matplotlib.transforms.Affine2D(np.eye(3) * np.array([[1, -1, 1]])) + c.get_transform())
     l = ax.get_ylim()
-    ax.set_ylim([-l[1]/4, l[1]/4])
-    l = ax.get_xlim()
-    ax.set_xlim([l[0], l[1]/3.])
+    ax.set_ylim([-l[1]/5, l[1]/5])
     return u_
 
 def histplot_test(ax, df, c):
@@ -88,7 +70,6 @@ def checkrange(min, max, val):
     return check_optional(min, val, sup=True) and check_optional(max, val)
 
 def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
-    global KEYS
     api = wandb.Api()
 
     plt.rc('legend',fontsize=15, title_fontsize=15)
@@ -120,21 +101,19 @@ def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
                 epsilon = run.config['epsilon']
                 if checkrange(epsmin, epsmax, epsilon):
                     sigma = run.config['sigma']
-                    h = run.history(keys=KEYS)
+                    h = run.history(keys=list(map(lambda s: s[1:] if s[0] == '_' else s, map(lambda s: s.replace(' ', '_').removeprefix('ERM_'), KEYS))))
                     if '_step' in h.columns:
                         h = h.drop(['_step'], axis=1)
                         h['eps'] = epsilon
                         h['s'] = sigma
                         h['rho'] = rho
                         rs.append(h)
-    df = pd.concat(
-        rs)
-    # ).rename(columns={
-    #     'robust_test_loss': ('_' if HIDE else '') + 'robust test loss',
-    #     'robust_train_loss': ('_' if HIDE else '') + 'robust train loss',
-    #     'train_loss': 'ERM train loss',
-    #     'test_loss': 'ERM test loss'
-    # })
+    df = pd.concat(rs).rename(columns={
+        'robust_test_loss': ('_' if HIDE else '') + 'robust test loss',
+        'robust_train_loss': ('_' if HIDE else '') + 'robust train loss',
+        'train_loss': 'ERM train loss',
+        'test_loss': 'ERM test loss'
+    })
     rhos = df['rho'].unique()
     epsilons = df['eps'].unique()
 
@@ -150,8 +129,8 @@ def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
             if sett:
                 ax.set_title(f"$\\varepsilon={e:.2e}$")
             if sety and sett:
-                fig.legend(*results, loc='upper right')
-                ax.get_legend().set_visible(True)
+                #fig.legend(*results, loc='upper right')
+                #ax.get_legend().set_visible(True)
                 pass
     fig.align_ylabels(axes[:, 0])
     if hide:
@@ -164,7 +143,6 @@ def generate_plots(rhomin=None, rhomax=None, epsmin=None, epsmax=None):
 
 def main():
     generate_plots(2e-1, 3e-1, 1e-2, 1e-1)
-    # generate_plots()
 
 if __name__ == '__main__':
     main()

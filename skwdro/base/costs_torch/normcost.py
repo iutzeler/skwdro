@@ -80,28 +80,35 @@ class NormCost(TorchCost):
         assert isinstance(diff, pt.Tensor)
         return diff
 
-    def _sampler_data(self, xi, epsilon):
+    def _sampler_data(self, xi, epsilon) -> pt.distributions.Distribution:
         if epsilon is None:
-            epsilon = 1e-3
+            epsilon = pt.tensor(1e-3)
+        elif not isinstance(epsilon, pt.Tensor):
+            epsilon = pt.tensor(epsilon)
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
                     loc=xi,
-                    scale=epsilon
+                    scale=epsilon.to(xi)
+                )
+            elif self.p == 2:
+                return dst.Normal(
+                    loc=xi,
+                    scale=epsilon.to(xi)
                 )
             elif self.p == pt.inf:
                 Warning("For sup norm, we use a gaussian sampler by default.")
-                return dst.MultivariateNormal(
+                return dst.Normal(
                     loc=xi,
-                    scale_tril=epsilon * pt.eye(xi.size(-1))
+                    scale=epsilon.to(xi)
                 )
             else:
                 raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
-                return dst.MultivariateNormal(
+                return dst.Normal(
                     loc=xi,
-                    scale_tril=epsilon * pt.eye(xi.size(-1))
+                    scale=epsilon.to(xi)
                 )
             else:
                 raise NotImplementedError()
@@ -169,6 +176,6 @@ class NormCost(TorchCost):
                 raise NotImplementedError()
         else:
             if self.p == 2 == self.power:
-                return xi + .5 * rhs, None
+                return xi + .5 * rhs, xi_labels
             else:
                 raise NotImplementedError()

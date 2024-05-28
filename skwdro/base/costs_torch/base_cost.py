@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 import torch as pt
 import torch.nn as nn
-
 import skwdro.distributions as dst
 
 ENGINES_NAMES = {
@@ -14,11 +13,16 @@ ENGINES_NAMES = {
 class TorchCost(nn.Module, ABC):
     """ Base class for transport functions """
 
-    def __init__(self, name: str = "", engine: str = ""):
+    def __init__(
+        self,
+        name: str = "",
+        engine: str = ""
+    ):
         super(TorchCost, self).__init__()
         self.name = name
         self.engine = engine
-        self.power: float = 1.  # Default power, needs to be overwritten
+        # Default power needs to be overwritten
+        self.power = 1.0
 
     def forward(
         self,
@@ -37,13 +41,14 @@ class TorchCost(nn.Module, ABC):
         xi_labels: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None
     ) -> pt.Tensor:
+        del xi, zeta, xi_labels, zeta_labels
         raise NotImplementedError("Please Implement this method")
 
     def sampler(
-            self,
-            xi: pt.Tensor,
-            xi_labels: pt.Tensor,
-            epsilon: pt.Tensor
+        self,
+        xi: pt.Tensor,
+        xi_labels: pt.Tensor,
+        epsilon: pt.Tensor
     ) -> Tuple[dst.Distribution, Optional[dst.Distribution]]:
         return (
             self._sampler_data(xi, epsilon),
@@ -56,6 +61,7 @@ class TorchCost(nn.Module, ABC):
         xi: pt.Tensor,
         epsilon: pt.Tensor
     ) -> dst.Distribution:
+        del xi, epsilon
         raise NotImplementedError()
 
     @abstractmethod
@@ -64,6 +70,7 @@ class TorchCost(nn.Module, ABC):
         xi_labels: pt.Tensor,
         epsilon: pt.Tensor
     ) -> Optional[dst.Distribution]:
+        del xi_labels, epsilon
         raise NotImplementedError()
 
     def __str__(self) -> str:
@@ -82,4 +89,5 @@ class TorchCost(nn.Module, ABC):
         rhs: pt.Tensor,
         rhs_labels: Optional[pt.Tensor]
     ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        del xi, rhs, xi_labels, rhs_labels
         raise NotImplementedError()

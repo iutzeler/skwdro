@@ -147,31 +147,38 @@ class NormLabelCost(NormCost):
         self,
         xi_labels,
         epsilon
-    ) -> Optional[dst.Distribution]:
+    ) -> Optional[pt.distributions.Distribution]:
+        # d = xi_labels.size(-1)
         if epsilon is None:
-            epsilon = 1e-3
+            epsilon = pt.tensor(1e-3)
+        elif not isinstance(epsilon, pt.Tensor):
+            epsilon = pt.tensor(epsilon)
         if self.kappa == float('inf'):
             return dst.Dirac(xi_labels)
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
                     loc=xi_labels,
-                    scale=epsilon / self.kappa
+                    scale=epsilon.to(xi_labels) / self.kappa
                 )
             elif self.p == pt.inf:
                 Warning("For sup norm, we use a gaussian sampler by default.")
-                return dst.MultivariateNormal(
+                return dst.Normal(
                     loc=xi_labels,
-                    scale_tril=epsilon * pt.eye(xi_labels.size(-1)) / self.kappa
+                    scale=epsilon.to(xi_labels) / self.kappa
                 )
             else:
                 raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
-                return dst.MultivariateNormal(
+                return dst.Normal(
                     loc=xi_labels,
-                    scale_tril=epsilon * pt.eye(xi_labels.size(-1)) / self.kappa
+                    scale=epsilon.to(xi_labels)
                 )
+                # return dst.MultivariateNormal(
+                #     loc=xi_labels,
+                #     scale_tril=epsilon * pt.eye(d) / self.kappa
+                # )
             else:
                 raise NotImplementedError()
         else:
