@@ -75,7 +75,7 @@ class NoLabelsSampler(BaseSampler, ABC):
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert zeta_labels is None
-        return self.data_s.log_prob(zeta).sum(-1, keepdim=True)#.unsqueeze(-1)
+        return self.data_s.log_prob(zeta).sum(-1, keepdim=True)
 
     def log_prob_recentered(
             self,
@@ -85,7 +85,7 @@ class NoLabelsSampler(BaseSampler, ABC):
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert xi_labels is None and zeta_labels is None
-        return self.data_s.log_prob(zeta - xi + self.data_s.mean).sum(-1, keepdim=True)#.unsqueeze(-1)
+        return self.data_s.log_prob(zeta - xi + self.data_s.mean).sum(-1, keepdim=True)
 
 
 class LabeledSampler(BaseSampler, ABC):
@@ -117,7 +117,7 @@ class LabeledSampler(BaseSampler, ABC):
         assert zeta_labels is not None
         lp = self.data_s.log_prob(zeta)\
             + self.labels_s.log_prob(zeta_labels)
-        return lp.sum(-1, keepdim=True)#.unsqueeze(-1)
+        return lp.sum(-1, keepdim=True)
 
     def log_prob_recentered(
             self,
@@ -129,7 +129,7 @@ class LabeledSampler(BaseSampler, ABC):
         assert zeta_labels is not None and xi_labels is not None
         lp = self.data_s.log_prob(zeta - xi + self.data_s.mean)\
             + self.labels_s.log_prob(zeta_labels - xi_labels + self.labels_s.mean)
-        return lp.sum(-1, keepdim=True)#.unsqueeze(-1)
+        return lp.sum(-1, keepdim=True)
 
 # Helper class ########################
 
@@ -160,5 +160,10 @@ class IsOptionalCovarianceSampler(ABC):
         elif prec is not None:
             return {"precision_matrix": prec}
         else:
-            raise ValueError(
-                "Please provide a valid covariance matrix for the constructor of " + str(self.__class__.__name__))
+            raise ValueError(' '.join([
+                "Please provide",
+                "a valid covariance",
+                "matrix for the"
+                "constructor of",
+                str(self.__class__.__name__)
+            ]))
