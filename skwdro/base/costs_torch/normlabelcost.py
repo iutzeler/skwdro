@@ -147,13 +147,14 @@ class NormLabelCost(NormCost):
         self,
         xi_labels,
         epsilon
-    ) -> pt.distributions.Distribution:
-        d = xi_labels.size(-1)
+    ) -> Optional[pt.distributions.Distribution]:
+        # d = xi_labels.size(-1)
         if epsilon is None:
             epsilon = pt.tensor(1e-3)
+        elif not isinstance(epsilon, pt.Tensor):
+            epsilon = pt.tensor(epsilon)
         if self.kappa == float('inf'):
             return dst.Dirac(xi_labels)
-        assert isinstance(epsilon, pt.Tensor)
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
@@ -170,10 +171,14 @@ class NormLabelCost(NormCost):
                 raise NotImplementedError()
         elif self.power == 2:
             if self.p == 2:
-                return dst.MultivariateNormal(
+                return dst.Normal(
                     loc=xi_labels,
-                    scale_tril=epsilon * pt.eye(d) / self.kappa
+                    scale=epsilon.to(xi_labels)
                 )
+                # return dst.MultivariateNormal(
+                #     loc=xi_labels,
+                #     scale_tril=epsilon * pt.eye(d) / self.kappa
+                # )
             else:
                 raise NotImplementedError()
         else:

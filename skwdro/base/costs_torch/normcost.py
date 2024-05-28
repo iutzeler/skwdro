@@ -83,7 +83,8 @@ class NormCost(TorchCost):
     def _sampler_data(self, xi, epsilon) -> pt.distributions.Distribution:
         if epsilon is None:
             epsilon = pt.tensor(1e-3)
-        assert isinstance(epsilon, pt.Tensor)
+        elif not isinstance(epsilon, pt.Tensor):
+            epsilon = pt.tensor(epsilon)
         if self.power == 1:
             if self.p == 1:
                 return dst.Laplace(
