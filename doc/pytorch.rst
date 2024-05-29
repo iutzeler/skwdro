@@ -1,5 +1,5 @@
 ####################
-Losses
+pytorch interface
 ####################
 
 The following solvers are implemented in skwdro.

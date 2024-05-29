@@ -6,40 +6,35 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Getting Started
+   :caption: Documentation
 
    quick_start
    wdro
-
-.. toctree::
-   :maxdepth: 3
-   :hidden:
-   :caption: Documentation
-
    user_guide
-   models
-   tuning
+   sklearn
+   pytorch
+   
+
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :hidden:
-   :caption: Optimization
-
-   losses
-   solvers
-   optim
-
-.. toctree::
-   :maxdepth: 3
-   :hidden:
-   :caption: Tutorial - Examples
+   :caption: Examples
 
    examples/Builtin/index
    examples/Custom/index
    
+.. toctree::
+   :maxdepth: 2
+   :hidden:
+   :caption: Advanced topics
+
+   optim
+   solvers
+   tuning
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 2
    :hidden:
    :caption: API
 
@@ -63,22 +58,3 @@ Information regarding this package and its installation as well as Wasserstein D
 
 Documentation of the package, available models, and their numerical resolution.
 
-`Custom Estimators <custom.html>`_
-----------------------------------
-
-Description of how to implement new estimators fitting the package.
-
-`API Documentation <api.html>`_
--------------------------------
-
-Structure of the models and losses.
-
-`Optimization <optimization.html>`_
------------------------------------
-
-Numerical optimization routines used for solving (entropy-regularized) WDRO problems.
-
-`Examples <auto_examples/index.html>`_
---------------------------------------
-
-A set of examples complementing the `User Guide <user_guide.html>`_.
