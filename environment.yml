@@ -1,8 +1,0 @@
-name: skwdro
-dependencies:
-  - numpy
-  - scipy
-  - scikit-learn
-  - torch
-  - cvxopt
-  - cvxpy
