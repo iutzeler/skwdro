@@ -161,12 +161,12 @@ html_theme_options = {}
 ###
 ### Furo style
 ### /!\ Maths in dark and end of paraph glyph (pycrow) are broken...
-html_theme = 'furo'
-html_theme_options = {
-    "source_repository": "https://github.com/iutzeler/skwdro/",
-    "source_branch": "dev",
-    "source_directory": "doc/",
-}
+# html_theme = 'furo'
+# html_theme_options = {
+#     "source_repository": "https://github.com/iutzeler/skwdro/",
+#     "source_branch": "dev",
+#     "source_directory": "doc/",
+# }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
