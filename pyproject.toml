@@ -57,6 +57,7 @@ docs = [
     "sphinx-copybutton",
     "sphinx_design",
     "myst_parser",
+    "furo"
 ]
 test = [
     "pytest",

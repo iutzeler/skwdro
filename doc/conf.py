@@ -138,7 +138,7 @@ exclude_patterns = ['_build', '_templates']
 pygments_style = 'sphinx'
 
 # Custom style
-html_style = 'css/project-template.css'
+# html_style = 'css/project-template.css'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -151,19 +151,36 @@ suppress_warnings = ['autosectionlabel.*']
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
+
+###
+### Read the docs style
+###
 html_theme = 'sphinx_rtd_theme'
+html_theme_options = {}
+
+###
+### Furo style
+### /!\ Maths in dark and end of paraph glyph (pycrow) are broken...
+html_theme = 'furo'
+html_theme_options = {
+    "source_repository": "https://github.com/iutzeler/skwdro/",
+    "source_branch": "dev",
+    "source_directory": "doc/",
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+
+
+
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+html_title = "skwdro Documentation"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -180,7 +197,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

@@ -1,6 +1,6 @@
-####################
-Models
-####################
+#######################
+scikit-learn interface
+#######################
 
 The following models are implemented in skwdro
 
