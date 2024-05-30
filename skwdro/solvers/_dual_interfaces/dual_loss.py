@@ -174,7 +174,6 @@ class _DualFormulation(_SampleDisplacer):
         else:
             self._lam.data.mul_(0.)
 
-
 class _DualLoss(_DualFormulation):
 
     @property

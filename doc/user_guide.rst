@@ -10,7 +10,7 @@ The goal of this page is to provide an introduction to the main features of the 
 
 
 Linear Regression
-~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
 
 Given some feature vectors :math: `x_1,\dots,x_n \in \mathbb{R}^d` and the corresponding target values :math: `y_1,\dots,y_n \in \mathbb{R}`, the goal is to learn a linear model :math: `w \in \mathbb{R}^d,\ b \in \mathbb{R}` that predicts the target value from the feature vector, i.e., :math: `y_i \approx w^T x_i + b` for all :math: `i=1,\dots,n`.
 
@@ -113,34 +113,11 @@ Assume now that the data is given as a dataloader ``train_loader``.
 
 This is the simplest use of the ``PyTorch`` interface: just wrap the usual loss and model with the ``dualize_primal_loss`` function and use the resulting loss function in the training loop.
 
-To make the otpimization of the orbust model more efficient, we also provide an learning-rate free optimizer tailored to this problem. We also recommend to first perform a standard empirical risk minimization (ERM) step before starting the robust optimization.
+To make the optimization of the robust model more efficient, we also provide an learning-rate free optimizer tailored to this problem. 
 
 ::
 
-    # Robust loss
-    robust_loss = robustify(loss_fn, model, rho, sample_batch_x, sample_batch_y)
-
     # Adaptive optimizer
     optimizer = robust_loss.optimizer
-
-    # ERM step
-    robust_loss.erm = True
-    for epoch in range(50):
-        for batch_x, batch_y in train_loader:
-            optimizer.zero_grad()
-            loss = robust_loss(model(batch_x), batch_y)
-            loss.backward()
-            optimizer.step()
-
-    # Robust optimization step
-    robust_loss.erm = False
-    for epoch in range(50):
-        for batch_x, batch_y in train_loader:
-            optimizer.zero_grad()
-            loss = robust_loss(model(batch_x), batch_y)
-            loss.backward()
-            optimizer.step()
-
-
 
 
