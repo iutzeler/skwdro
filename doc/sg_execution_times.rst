@@ -6,7 +6,7 @@
 
 Computation times
 =================
-**03:21.651** total execution time for 5 files **from all galleries**:
+**03:50.115** total execution time for 5 files **from all galleries**:
 
 .. container::
 
@@ -33,17 +33,17 @@ Computation times
      - Time
      - Mem (MB)
    * - :ref:`sphx_glr_examples_Builtin_logistic_regression.py` (``../examples/builtin_models/logistic_regression.py``)
-     - 02:09.228
-     - 0.0
-   * - :ref:`sphx_glr_examples_Builtin_linear_regression.py` (``../examples/builtin_models/linear_regression.py``)
-     - 00:33.350
+     - 02:17.002
      - 0.0
    * - :ref:`sphx_glr_examples_Builtin_spatial_perturbation_logistic_regression.py` (``../examples/builtin_models/spatial_perturbation_logistic_regression.py``)
-     - 00:32.513
+     - 00:47.571
+     - 0.0
+   * - :ref:`sphx_glr_examples_Builtin_linear_regression.py` (``../examples/builtin_models/linear_regression.py``)
+     - 00:39.011
      - 0.0
    * - :ref:`sphx_glr_examples_Custom_polynomial_regression.py` (``../examples/custom_models/polynomial_regression.py``)
-     - 00:03.307
+     - 00:03.318
      - 0.0
    * - :ref:`sphx_glr_examples_Builtin_portfolio.py` (``../examples/builtin_models/portfolio.py``)
-     - 00:03.254
+     - 00:03.212
      - 0.0
