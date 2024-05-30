@@ -12,9 +12,9 @@ The goal of this page is to provide an introduction to the main features of the 
 Linear Regression
 ~~~~~~~~~~~~~~~~~
 
-Given some feature vectors :math: `x_1,\dots,x_n \in \mathbb{R}^d` and the corresponding target values :math: `y_1,\dots,y_n \in \mathbb{R}`, the goal is to learn a linear model :math: `w \in \mathbb{R}^d,\ b \in \mathbb{R}` that predicts the target value from the feature vector, i.e., :math: `y_i \approx w^T x_i + b` for all :math: `i=1,\dots,n`.
+Given some feature vectors :math:`x_1,\dots,x_n \in \mathbb{R}^d` and the corresponding target values :math:`y_1,\dots,y_n \in \mathbb{R}`, the goal is to learn a linear model :math:`w \in \mathbb{R}^d,\ b \in \mathbb{R}` that predicts the target value from the feature vector, i.e., :math:`y_i \approx w^T x_i + b` for all :math:`i=1,\dots,n`.
 
-The most common approach to learn the parameters :math: `w` and :math: `b` is to minimize the empirical risk with the squared loss function:
+The most common approach to learn the parameters :math:`w` and :math:`b` is to minimize the empirical risk with the squared loss function:
 
 .. math::
 
