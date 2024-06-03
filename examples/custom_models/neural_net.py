@@ -20,7 +20,6 @@ import torch as pt
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
-from tqdm import tqdm
 
 from skwdro.wrap_problem import dualize_primal_loss
 from skwdro.solvers.oracle_torch import DualLoss
@@ -56,6 +55,8 @@ X_train, X_test, y_train, y_test = train_test_split(X,
                                                     random_state=42)
 
 
+dataset = DataLoader(TensorDataset(pt.tensor(X_train), pt.Tensor(y_train)))
+
 device = "cuda" if pt.cuda.is_available() else "cpu"
 
 # %%
@@ -65,32 +66,54 @@ device = "cuda" if pt.cuda.is_available() else "cpu"
 class SimpleNN(nn.Module):
     def __init__(self, in_features, out_features, hidden_units):
         super().__init__()
-        
-        self.layer1 = nn.Linear(in_features=in_features, 
-                                 out_features=hidden_units)
-        self.layer2 = nn.Linear(in_features=hidden_units, 
-                                 out_features=hidden_units)
-        self.layer3 = nn.Linear(in_features=hidden_units,
-                                out_features=out_features)
-        self.relu = nn.ReLU()
+        self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(in_features, hidden_units),
+            nn.ReLU(),
+            nn.Linear(hidden_units, hidden_units),
+            nn.ReLU(),
+            nn.Linear(hidden_units, out_features),
+        )
 
     def forward(self, x):
-        return self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))
+        x = self.flatten(x)
+        logits = self.linear_relu_stack(x)
+        return logits
+
+
+    # def __init__(self, in_features, out_features, hidden_units):
+    #     super().__init__()
+        
+    #     self.layer1 = nn.Linear(in_features=in_features, 
+    #                              out_features=hidden_units)
+    #     self.layer2 = nn.Linear(in_features=hidden_units, 
+    #                              out_features=hidden_units)
+    #     self.layer3 = nn.Linear(in_features=hidden_units,
+    #                             out_features=out_features)
+    #     self.relu = nn.ReLU()
+
+    # def forward(self, x):
+    #     return self.layer3(self.relu(self.layer2(self.relu(self.layer1(x)))))
 
 model = SimpleNN(in_features=2,
                       out_features=1,
                       hidden_units=5).to(device)
+
+
 print(model)
 
 
 loss_fn = nn.BCEWithLogitsLoss()
 
+# Define a sample batch for initialization
+sample_batch_x, sample_batch_y = next(iter(dataset))
+
+# Robust loss
 robust_loss = dualize_primal_loss( 
             loss_fn,
             model,
             pt.tensor(1.0),
-            X_train.unsqueeze(-1),
-            y_train.unsqueeze(-1)
+            sample_batch_x, sample_batch_y
         ) # Replaces the loss of the model by the dual WDRO loss
 
 # %%
@@ -102,30 +125,31 @@ epochs=100
 
 optimizer = pt.optim.AdamW(params=robust_loss.parameters(),lr=1e-2)
 
-dataset = DataLoader(TensorDataset(X_train, y_train))
 
-pbar = tqdm(range(epochs))
+# Training loop
+for epoch in range(epochs):
+    for batch_x, batch_y in dataset:
 
-for _ in pbar:
-    # Every now and then, try to rectify the dual parameter (e.g. once per epoch).
-    # robust_loss.get_initial_guess_at_dual(*next(iter(dataset))) # *
+        ### Training
+        model.train()
 
-    # Main train loop
-    inpbar = tqdm(dataset, leave=False)
-    for xi, xi_label in inpbar:
         optimizer.zero_grad()
-
-        print(xi.shape)
-        # Forward the batch
-        loss = robust_loss(xi, xi_label, reset_sampler=True).mean()
-
-        # Backward pass
+        loss = robust_loss(model(batch_x), batch_y)
         loss.backward()
         optimizer.step()
 
-        inpbar.set_postfix({"loss": f"{loss.item():.2f}"})
-    pbar.set_postfix({"lambda": f"{robust_loss.lam.item():.2f}"})
+        ### Testing
+        model.eval() 
+        with pt.inference_mode():
+            # 1. Forward pass
+            test_logits = model(X_test).squeeze()
+            test_pred = pt.round(pt.sigmoid(test_logits))
+            # 2. Caculate the loss/acc
+            test_loss = loss_fn(test_logits, y_test)
 
+        # Print out what's happening
+        if epoch % 10 == 0:
+            print(f"Epoch: {epoch} | Loss: {loss:.2f} | Test loss: {test_loss:.2f} ")
 
 
 # # Loop through the data
