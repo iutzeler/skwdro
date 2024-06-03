@@ -205,5 +205,5 @@ def dualize_primal_loss(
     #         **kwargs
     #     )
 
-robustify = dualize_primal_loss
 
+robustify = dualize_primal_loss
