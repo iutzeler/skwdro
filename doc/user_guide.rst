@@ -83,7 +83,7 @@ Assume now that the data is given as a dataloader ``train_loader``.
     import torch.nn as nn
     import torch.optim as optim
 
-    from skwdro import robustify
+    from skwdro.torch import robustify
 
     # Uncertainty radius
     rho = 0.1
