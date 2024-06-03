@@ -111,7 +111,7 @@ Assume now that the data is given as a dataloader ``train_loader``.
             loss.backward()
             optimizer.step()
 
-This is the simplest use of the ``PyTorch`` interface: just wrap the usual loss and model with the ``dualize_primal_loss`` function and use the resulting loss function in the training loop.
+This is the simplest use of the ``PyTorch`` interface: just wrap the usual loss and model with the ``robustify`` function and use the resulting loss function in the training loop.
 
 To make the optimization of the robust model more efficient, we also provide an learning-rate free optimizer tailored to this problem. 
 
