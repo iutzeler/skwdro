@@ -16,7 +16,7 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 
 
-from skwdro.wrap_problem import dualize_primal_loss
+from skwdro.torch import robustify
 
 
 # %%
@@ -89,7 +89,7 @@ sample_batch_x, sample_batch_y = next(iter(dataset))
 
 
 # Robust loss
-robust_loss = dualize_primal_loss( 
+robust_loss = robustify( 
             loss_fn,
             model,
             pt.tensor(1.0),

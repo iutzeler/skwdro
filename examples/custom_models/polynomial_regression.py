@@ -24,7 +24,6 @@ from tqdm import tqdm
 
 from skwdro.torch import robustify
 from skwdro.solvers.oracle_torch import DualLoss
-from skwdro.base.losses_torch.wrapper import WrappedPrimalLoss
 
 # %%
 # Problem setup
