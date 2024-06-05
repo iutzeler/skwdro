@@ -39,7 +39,7 @@ plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.RdYlBu);
 
 # Turn data into tensors
 X = pt.tensor(X, dtype=pt.float)
-y = pt.tensor(y, dtype=pt.float)
+y = pt.tensor(y, dtype=pt.float).unsqueeze(-1)
 
 # Split the data into train and test sets
 from sklearn.model_selection import train_test_split
@@ -49,7 +49,10 @@ X_train, X_test, y_train, y_test = train_test_split(X,
                                                     random_state=42)
 
 
-dataset = DataLoader(TensorDataset(pt.tensor(X_train), pt.Tensor(y_train)))
+dataset = DataLoader(TensorDataset(X_train, y_train))
+
+
+
 
 device = "cuda" if pt.cuda.is_available() else "cpu"
 
@@ -110,14 +113,14 @@ optimizer = pt.optim.AdamW(params=robust_loss.parameters(),lr=1e-2)
 for epoch in range(epochs):
     for batch_x, batch_y in dataset:
 
-        #print(batch_x.shape)
+        print(batch_y.shape)
 
         ### Training
         model.train()
 
         optimizer.zero_grad()
         # loss = loss_fn(model(batch_x.squeeze()), batch_y)
-        loss = robust_loss(batch_x.squeeze(), batch_y)
+        loss = robust_loss(batch_x, batch_y).mean()
         loss.backward()
         optimizer.step()
 
