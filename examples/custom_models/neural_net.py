@@ -28,7 +28,7 @@ from skwdro.torch import robustify
 
 from sklearn.datasets import make_moons
 
-n = 1024 + 64
+n = 512 + 64
 
 X, y = make_moons(n_samples=n,
                   noise=0.05,
@@ -128,16 +128,17 @@ robust_loss = robustify(
 # ~~~~~~~~~~~~~
 
 pt.manual_seed(42)
-epochs = 500
+epochs = 250
 
 # optimizer = pt.optim.AdamW(params=model.parameters(),lr=1e-2)
-optimizer = pt.optim.AdamW(params=robust_loss.parameters(), lr=1e-2)
+optimizer = pt.optim.AdamW(params=robust_loss.parameters())
 
 
 # Training loop
 iterator = tqdm(range(epochs), position=0, desc='Epochs', leave=False)
 losses = []
 for epoch in iterator:
+
     avg_testloss = 0.
     for batch_x, batch_y in tqdm(dataset, position=1, desc='Sample', leave=False):
 
