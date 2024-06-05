@@ -41,7 +41,7 @@ We assume that we are given ``X_train`` of shape ``(n_train, n_features)`` and `
     y_pred = model.predict(X_test)
 
 
-Solving the robust regression problema with ``skwdro``
+Solving the robust regression problem with ``skwdro``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Robust estimators from ``skwdro`` can be used as drop-in replacements for ``scikit-learn`` estimators (they actually inherit from ``scikit-learn`` estimators and classifier classes.)
@@ -73,7 +73,7 @@ By default, the ``LinearRegression`` estimator from ``skwdro`` uses will solve t
 Solving the regression problem with the ``PyTorch`` interface
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The next setion now describe the ``PyTorch`` interface of ``skwdro``: it allows more flexibility, custom models and optimizers. 
+The next section now describe the ``PyTorch`` interface of ``skwdro``: it allows more flexibility, custom models and optimizers. 
 
 Assume now that the data is given as a dataloader ``train_loader``.
 
@@ -107,7 +107,7 @@ Assume now that the data is given as a dataloader ``train_loader``.
     for epoch in range(100):
         for batch_x, batch_y in train_loader:
             optimizer.zero_grad()
-            loss = robust_loss(model(batch_x), batch_y)
+            loss = robust_loss(batch_x, batch_y)
             loss.backward()
             optimizer.step()
 
