@@ -131,7 +131,7 @@ pt.manual_seed(42)
 epochs = 250
 
 # optimizer = pt.optim.AdamW(params=model.parameters(),lr=1e-2)
-optimizer = pt.optim.AdamW(params=robust_loss.parameters())
+optimizer = pt.optim.AdamW(params=robust_loss.parameters(), lr=1e-2)
 
 
 # Training loop
