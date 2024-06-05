@@ -22,9 +22,8 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
 
-from skwdro.wrap_problem import dualize_primal_loss
+from skwdro.torch import robustify
 from skwdro.solvers.oracle_torch import DualLoss
-from skwdro.base.losses_torch.wrapper import WrappedPrimalLoss
 
 # %%
 # Problem setup
@@ -101,7 +100,7 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
 
 radius = pt.tensor(0.001)   # Robustness radius
 
-dual_loss = dualize_primal_loss( 
+dual_loss = robustify( 
             loss,
             model,
             radius,
@@ -151,7 +150,7 @@ print(polyString)
 radius2 = pt.tensor(1e-6)   # Robustness radius
 degree2 = 7
 
-model2 = train(dualize_primal_loss( 
+model2 = train(robustify( 
             nn.MSELoss(reduction='none'),
             PolynomialModel(degree2).to(device),
             radius2,
