@@ -31,7 +31,7 @@ from sklearn.datasets import make_moons
 n = 1024 + 64
 
 X, y = make_moons(n_samples=n,
-                  noise=0.05,
+                  noise=0.1,
                   random_state=42)
 
 
@@ -128,16 +128,21 @@ robust_loss = robustify(
 # ~~~~~~~~~~~~~
 
 pt.manual_seed(42)
-epochs = 500
+epochs = 200
 
 # optimizer = pt.optim.AdamW(params=model.parameters(),lr=1e-2)
 optimizer = pt.optim.AdamW(params=robust_loss.parameters(), lr=1e-2)
 
 
 # Training loop
-iterator = tqdm(range(epochs), position=0, desc='Epochs', leave=False)
+epochs_iterator = tqdm(
+    range(epochs),
+    position=0,
+    desc='Epochs',
+    leave=False
+)
 losses = []
-for epoch in iterator:
+for epoch in epochs_iterator:
     avg_testloss = 0.
     for batch_x, batch_y in tqdm(dataset, position=1, desc='Sample', leave=False):
 
@@ -158,13 +163,14 @@ for epoch in iterator:
             test_pred = pt.round(pt.sigmoid(test_logits))
             # Compute the loss
             avg_testloss += loss_fn(test_logits, batch_y_test).mean().item()
-        iterator.set_postfix(
-            {'acc': f"{(test_pred == batch_y_test).float().mean().item()*100}%"}
-        )
-        losses.append(loss.item())
+        epochs_iterator.set_postfix({
+            'acc': f"{(test_pred == batch_y_test).float().mean().item()*100}%"
+        })
+    avg_testloss /= len(dataset)
+    losses.append(avg_testloss)
 
     # Print
-    iterator.set_postfix({'loss': avg_testloss / len(dataset)})
+    epochs_iterator.set_postfix({'loss': avg_testloss})
 
 
 # %%
