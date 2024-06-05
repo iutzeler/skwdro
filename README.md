@@ -114,7 +114,7 @@ for epoch in range(100):
         optimizer.step()
 ```
 
-You will find detailed description on how to `robustify` modules.
+You will find detailed description on how to `robustify` modules in the documentation.
 
 
 <!-- 
