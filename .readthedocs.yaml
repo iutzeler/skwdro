@@ -24,7 +24,7 @@ sphinx:
    configuration: doc/conf.py
 
 # Generate PDF, etc
-formats: all
+# formats: all
 
 
 # Optional but recommended, declare the Python requirements required
