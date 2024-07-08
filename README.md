@@ -1,6 +1,6 @@
-[![CI tests](https://github.com/iutzeler/skwdro/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/iutzeler/skwdro/actions/workflows/test.yml)
-[![style tests](https://github.com/iutzeler/skwdro/actions/workflows/style.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/style.yml)
-[![doc tests](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml)
+| **CI** | [![CI tests](https://github.com/iutzeler/skwdro/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/iutzeler/skwdro/actions/workflows/test.yml) | x |
+| **Style**         | [![style tests](https://github.com/iutzeler/skwdro/actions/workflows/style.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/style.yml) | [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff) [![MyPY](https://img.shields.io/badge/mypy-checked-blue)](https://github.com/python/mypy) |
+| **Documentation** | [![doc tests](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml) | x |
 
 
 <div align="center">
@@ -20,7 +20,7 @@
 
 Have a look at ``skwdro`` [documentation](https://skwdro.readthedocs.io/en/latest/)!
 
-<!-- 
+<!--
 # Why WDRO & ``skwdro``?
  -->
 
