@@ -4,8 +4,8 @@
 
 
 <div align="center">
-  <h1>SkWDRO - Wasserstein Distributionaly Robust Optimization</h1>
-  <h4>Model robustification with thin interface</h4>
+  <h1>SkWDRO - Wasserstein Distributionally Robust Optimization for Machine Learning</h1>
+  <h4>Model robustification with thin Pytorch and Scikit-learn interface</h4>
   <h6><q cite="https://adversarial-ml-tutorial.org/introduction">You can make pigs fly</q>, <a href="https://adversarial-ml-tutorial.org/introduction">[Kolter&Madry, 2018]</a></h6>
 </div>
 
@@ -109,7 +109,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.01)
 for epoch in range(100):
     for batch_x, batch_y in train_loader:
         optimizer.zero_grad()
-        loss = robust_loss(model(batch_x), batch_y)
+        loss = robust_loss(batch_x, batch_y)
         loss.backward()
         optimizer.step()
 ```
