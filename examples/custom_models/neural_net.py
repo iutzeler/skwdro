@@ -12,7 +12,7 @@ from scikit--learn.
 """
 import matplotlib.pyplot as plt
 from utils.plotting import plot_decision_boundary
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader

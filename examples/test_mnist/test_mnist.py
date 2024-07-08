@@ -1,4 +1,4 @@
-import tqdm
+import tqdm.auto as tqdm
 import numpy as np
 import torch as pt
 from torch.utils.data import DataLoader, Subset
