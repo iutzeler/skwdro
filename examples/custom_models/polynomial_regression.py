@@ -4,13 +4,13 @@ Polynomial regression
 
 Polynomial regression is a simple 1D regression. The samples are of the form :math:`\xi = (x,y) \in \mathbb{R}\times\mathbb{R}` and the sought predictor is of the form  :math:`f(x) = \sum_{i=0}^d a_i x^i` where :math:`(a_0,..,a_d)` are the :math:`d+1` coefficients to lean.
 
-In the following example, we seek to learn a polynomial fitting the function 
+In the following example, we seek to learn a polynomial fitting the function
 
 .. math::
 
     f^\star(x) = \frac{10}{e^{x}+e^{-x}} + x
 
-from :math:`n=100` samples uniformly drawn from :math:`[-2,2]` and corrupted by a Gaussian noise with zero mean and variance :math:`0.1`. 
+from :math:`n=100` samples uniformly drawn from :math:`[-2,2]` and corrupted by a Gaussian noise with zero mean and variance :math:`0.1`.
 
 
 """
@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 from skwdro.torch import robustify
 from skwdro.solvers.oracle_torch import DualLoss
@@ -35,8 +35,8 @@ var = pt.tensor(0.1)                        # Variance of the noise
 
 def f_star(x):                              # Generating function
     return 10/(pt.exp(x)+pt.exp(-x)) + x
- 
-xi = pt.rand(n)*4.0 - 2.0                   # x_i's are uniformly drawn from (-2,2] 
+
+xi = pt.rand(n)*4.0 - 2.0                   # x_i's are uniformly drawn from (-2,2]
 xi = pt.sort(xi)[0]                         # we sort them for easier plotting
 yi = f_star(xi) + pt.sqrt(var)*pt.randn(n)  # y_i's are f(x_i) + noise
 
@@ -100,7 +100,7 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
 
 radius = pt.tensor(0.001)   # Robustness radius
 
-dual_loss = robustify( 
+dual_loss = robustify(
             loss,
             model,
             radius,
@@ -125,7 +125,7 @@ ax.scatter(xi.cpu(), yi.cpu(), c='g', label='train data')
 ax.plot(xtrial, f_star(xtrial), 'k', label='generating function')
 
 pred1 = model1(xtrial[:,None,None]).detach().cpu().squeeze() # type: ignore
-ax.plot(xtrial,pred1, 'r', label='WDRO prediction')  
+ax.plot(xtrial,pred1, 'r', label='WDRO prediction')
 
 fig.legend()
 plt.show()
@@ -150,7 +150,7 @@ print(polyString)
 radius2 = pt.tensor(1e-6)   # Robustness radius
 degree2 = 7
 
-model2 = train(robustify( 
+model2 = train(robustify(
             nn.MSELoss(reduction='none'),
             PolynomialModel(degree2).to(device),
             radius2,
@@ -159,7 +159,7 @@ model2 = train(robustify(
         ), dataset, epochs=5) # type: ignore
 
 # %%
-# 
+#
 
 fig, ax = plt.subplots()
 xtrial = pt.linspace(-2.1,2.1,100)
@@ -167,7 +167,7 @@ ax.scatter(xi.cpu(), yi.cpu(), c='g', label='train data')
 ax.plot(xtrial, f_star(xtrial), 'k', label='generating function')
 
 pred2 = model2(xtrial[:,None,None]).detach().cpu().squeeze() # type: ignore
-ax.plot(xtrial,pred2, 'r', label='WDRO prediction')  
+ax.plot(xtrial,pred2, 'r', label='WDRO prediction')
 
 fig.legend()
 plt.show()
@@ -183,7 +183,3 @@ for i,a in enumerate(coeffs):
         polyString += "- {:3.2f}x**{:d} ".format(abs(a),i+1)
 
 print(polyString)
-
-
-
-
