@@ -1,0 +1,114 @@
+name: style
+
+on:
+  push:
+    branches:
+    - main
+    - dev
+    - cleanup
+  pull_request:
+    branches:
+    - main
+    - dev
+
+jobs:
+  setup:
+    name: Launch setup
+    uses: ./.github/workflows/setup.yml
+
+
+  style:
+    name: Codingstyle
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: 3.11
+
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+
+    - name: Run style test
+      run: hatch -e env-test run env-test:pycodestyle-test
+
+  pep8:
+    name: Ruffchecks
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: 3.11
+
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+
+    - name: Run pep8 verifications
+      run: hatch -e env-dev run env-test:ruff-test
+
+  types:
+    name: Typecheck
+    needs: [style, pep8, setup]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: 3.11
+
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+
+    - name: Run types tests
+      run: hatch -e env-dev run env-test:mypy-test
+
+  line-length:
+    name: Codingstyle - line lengths
+    runs-on: ubuntu-latest
+    needs: [types, setup]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: 3.11
+
+    - name: Get cache
+      uses: actions/cache@v4
+      id: cache
+      with:
+        path: ${{ env.pythonLocation }}
+        key: ${{ env.pythonLocation }}-${{ hashFiles('pyproject.toml') }}
+        restore-keys:
+          ${{ env.pythonLocation }}-
+
+    - name: Run style test
+      run: echo "$(hatch -e env-dev run env-test:pycodestyle-length-test)"

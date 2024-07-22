@@ -1,61 +1,113 @@
+from skwdro.solvers.oracle_torch import _DualLoss as LossTorch
+from typing import List, Optional
+import warnings
 import numpy as np
 
-from skwdro.base.costs import Cost
 
-class WDROProblem:
-    """ Base class for WDRO problem """
+def deprecated(message):
+    def deprecated_decorator(func):
+        def deprecated_func(*args, **kwargs):
+            warnings.warn(
+                "{} is a deprecated function. {}".format(
+                    func.__name__,
+                    message
+                ),
+                category=DeprecationWarning,
+                stacklevel=2
+            )
+            warnings.simplefilter('default', DeprecationWarning)
+            return func(*args, **kwargs)
+        return deprecated_func
+    return deprecated_decorator
 
-    def __init__(self, cost: Cost, n=0, Theta_bounds=None , d=0, Xi_bounds=None , dLabel=0, XiLabel_bounds=None , costLabel=None, loss=None, rho = 0., P = None,  name="WDRO Problem"):
 
-        ## Optimization variable
-        self.n = n # size of Theta
-        self.Theta_bounds = Theta_bounds
+Bounds = Optional[List[float]]
+LossType = LossTorch
 
-        ## Uncertain variable
-        self.d = d # size of Xi
-        self.Xi_bounds = Xi_bounds
 
-        ## Uncertain labels
-        self.dLabel = dLabel # size of Xi
-        self.XiLabel_bounds = XiLabel_bounds
-        self.costLabel = costLabel
+class Distribution:
+    empirical: bool
+    with_labels: bool
 
-        ## Problem loss
-        self.loss = loss
-
-        ## Radius
-        self.rho = rho
-
-        ## Transport cost
-        self.c = cost.value
-
-        ## Base distribution
-        self.P = P
-
-        ## Problem name
+    def __init__(self, m: int, name: str) -> None:
+        self.m = m
         self.name = name
+        self._samples: Optional[np.ndarray] = None
+        self._samples_x: Optional[np.ndarray] = None
+        self._samples_y: Optional[np.ndarray] = None
+
+    @property
+    def samples(self):
+        if self.with_labels:
+            raise AttributeError()
+        else:
+            return self._samples
+
+    @samples.setter
+    def samples(self, data):
+        if isinstance(data, np.ndarray):
+            self._samples = data
+        else:
+            raise TypeError()
+
+    @property
+    def samples_x(self):
+        if self.with_labels:
+            return self._samples_x
+        else:
+            raise AttributeError()
+
+    @samples_x.setter
+    def samples_x(self, data):
+        if isinstance(data, np.ndarray):
+            self._samples_x = data
+        else:
+            raise TypeError()
+
+    @property
+    def samples_y(self):
+        if self.with_labels:
+            return self._samples_y
+        else:
+            raise AttributeError()
+
+    @samples_y.setter
+    def samples_y(self, labels):
+        if isinstance(labels, np.ndarray):
+            self._samples_y = labels
+        else:
+            raise TypeError()
 
 
-
-
-class EmpiricalDistribution:
+class EmpiricalDistributionWithoutLabels(Distribution):
     """ Empirical Probability distribution """
 
     empirical = True
+    with_labels = False
 
-    def __init__(self, m , samples , name="Empirical distribution"):
-        self.m = m
-        self.samples = samples
+    def __init__(
+        self,
+        m: int,
+        samples: np.ndarray,
+        name="Empirical distribution"
+    ):
+        super(EmpiricalDistributionWithoutLabels, self).__init__(m, name)
+        self._samples = samples
 
 
-class EmpiricalDistributionWithLabels:
+class EmpiricalDistributionWithLabels(Distribution):
     """ Empirical Probability distribution with Labels """
 
     empirical = True
+    with_labels = True
 
-    def __init__(self, m , samplesX, samplesY , name="Empirical distribution"):
-        self.m = m
-        self.samplesX = samplesX
-        self.samplesY = samplesY
-
-
+    def __init__(
+        self,
+        m: int,
+        samples_x: np.ndarray,
+        samples_y: np.ndarray,
+        name="Empirical distribution"
+    ):
+        super(EmpiricalDistributionWithLabels, self).__init__(m, name)
+        self._samples_x = samples_x.copy('K')
+        self._samples_y = samples_y.copy('K')

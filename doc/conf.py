@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('.'))
 
 # -- General configuration ------------------------------------------------
 
@@ -34,15 +34,30 @@ sys.path.insert(0, os.path.abspath('..'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
     'sphinx.ext.doctest',
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
+    'sphinx.ext.mathjax',
+    'sphinx_rtd_theme',
     'numpydoc',
     'sphinx_gallery.gen_gallery',
+    'sphinx.ext.autosectionlabel',
+    'sphinx_copybutton',
+    'sphinx_design',
+    'myst_parser',
 ]
+
+
+myst_enable_extensions = [
+    "dollarmath",
+    "amsmath"
+]
+
+
 
 # this is needed for some reason...
 # see https://github.com/numpy/numpydoc/issues/69
@@ -71,14 +86,14 @@ source_suffix = '.rst'
 #source_encoding = 'utf-8-sig'
 
 # Generate the plots for the gallery
-plot_gallery = True
+plot_gallery = 'True'
 
 # The master toctree document.
 master_doc = 'index'
 
 # General information about the project.
 project = u'skwdro'
-copyright = u'2023 skwdro team'
+copyright = u'2024 skwdro team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -123,32 +138,49 @@ exclude_patterns = ['_build', '_templates']
 pygments_style = 'sphinx'
 
 # Custom style
-html_style = 'css/project-template.css'
+# html_style = 'css/project-template.css'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
-
+suppress_warnings = ['autosectionlabel.*']
 
 # -- Options for HTML output ----------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
+
+###
+### Read the docs style
+###
 html_theme = 'sphinx_rtd_theme'
+html_theme_options = {}
+
+###
+### Furo style
+### /!\ Maths in dark and end of paraph glyph (pycrow) are broken...
+# html_theme = 'furo'
+# html_theme_options = {
+#     "source_repository": "https://github.com/iutzeler/skwdro/",
+#     "source_branch": "dev",
+#     "source_directory": "doc/",
+# }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {}
+
+
+
 
 # Add any paths that contain custom themes here, relative to this directory.
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+html_title = "skwdro Documentation"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #html_short_title = None
@@ -165,7 +197,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+# html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied
@@ -214,14 +246,14 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'project-templatedoc'
+htmlhelp_basename = 'project-skwdro'
 
 
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-#'papersize': 'letterpaper',
+'papersize': 'a4paper',
 
 # The font size ('10pt', '11pt' or '12pt').
 #'pointsize': '10pt',
@@ -234,8 +266,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'project-template.tex', u'project-template Documentation',
-   u'Vighnesh Birodkar', 'manual'),
+  ('index', 'skwdro_doc.tex', u'skwdro Documentation',
+   u'skwdro team', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -264,8 +296,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'project-template', u'project-template Documentation',
-     [u'Vighnesh Birodkar'], 1)
+    ('index', 'skwdro', u'skwdro Documentation',
+     [u'skwdro team'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -278,9 +310,9 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'project-template', u'project-template Documentation',
-   u'Vighnesh Birodkar', 'project-template', 'One line description of project.',
-   'Miscellaneous'),
+  ('index', 'skwdro', u'skwdro Documentation',
+   u'skwdro team', 'skwdro', 'Wasserstein Distributionally Robust (WDRO) estimators.',
+   'Machine Learning'),
 ]
 
 # Documents to append as an appendix to all manuals.
@@ -290,7 +322,7 @@ texinfo_documents = [
 #texinfo_domain_indices = True
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
-#texinfo_show_urls = 'footnote'
+texinfo_show_urls = 'footnote'
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #texinfo_no_detailmenu = False
@@ -312,6 +344,18 @@ sphinx_gallery_conf = {
     'doc_module': 'skwdro',
     'backreferences_dir': os.path.join('generated'),
     'reference_url': {
-        'skwdro': None}
+        'skwdro': None},
+    'filename_pattern': '',
+    'ignore_pattern' : 'utils' ,
+    'capture_repr': ('_repr_html_', '__repr__'),
+    'examples_dirs': ['../examples/builtin_models/', '../examples/custom_models/'],
+    'gallery_dirs': ['examples/Builtin', 'examples/Custom'],
 }
 
+# # The following is used by sphinx.ext.linkcode to provide links to github
+# linkcode_resolve = make_linkcode_resolve(
+#     "skwdro",
+#     "https://github.com/iutzeler/"
+#     "skwdro/blob/{revision}/"
+#     "{package}/{path}#L{lineno}",
+# )

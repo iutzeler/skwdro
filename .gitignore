@@ -3,6 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# Singularity jobs files
+*.sif
+
+# Types
+.pytype*
+.mypy*
+
 # C extensions
 *.so
 
@@ -13,7 +20,7 @@ doc/modules/generated/
 doc/datasets/generated/
 
 # Distribution / packaging
-
+.venv
 .Python
 env/
 build/
@@ -25,7 +32,7 @@ eggs/
 lib/
 lib64/
 parts/
-sdist/
+sdist/habilitation à diriger des recherches
 var/
 *.egg-info/
 .installed.cfg
@@ -62,6 +69,28 @@ coverage.xml
 # Sphinx documentation
 doc/_build/
 doc/generated/
+doc/API/
+doc/examples/
+doc/sg_execution_times.rst
 
 # PyBuilder
 target/
+.vscode/settings.json
+.vscode/launch.json
+
+# Examples data
+examples/stored_data/*
+examples/test_mnist/data/MNIST
+test_post.npy
+test_pre.npy
+
+# Wandb logs & stuff
+**/wandb/
+
+# Plots
+epsilon*.png
+logreg.png
+examples/reliability/*.png
+robust_*.png
+baseline_*.png
+*net.png
