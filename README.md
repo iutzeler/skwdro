@@ -1,107 +1,17 @@
-<table>
-    <tr>
-        <td rowspan=3>
-            <b> CI </b>
-        </td>
-        <td>
-            Test
-        </td>
-        <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Doc tests"><img alt="Workflow Test" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/test.yml?style=for-the-badge&label=Tests"></a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Style
-        </td>
-        <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Doc tests"><img alt="Workflow Style" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/style.yml?style=for-the-badge&label=Style"></a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Doc
-        </td>
-        <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Doc tests"><img alt="Workflow Doc" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/doc.yml?style=for-the-badge&label=Doc build"></a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            <b> Doc </b>
-        </td>
-        <td>
-            Readthedocs
-        </td>
-        <td>
-            <a href="https://skwdro.readthedocs.io/en/latest/" alt="Read the Docs"><img src="https://img.shields.io/badge/ReadTheDocs-blue?style=for-the-badge&logo=sphinx"></a>
-        </td>
-    </tr>
-    <tr>
-        <td rowspan=3>
-            <b> Checks </b>
-        </td>
-        <td>
-            Code style
-        </td>
-        <td>
-            <a href="https://github.com/astral-sh/ruff" alt="Ruff"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json&style=for-the-badge"></a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Types
-        </td>
-        <td>
-            <a href="https://github.com/python/mypy" alt="MyPY"><img src="https://img.shields.io/badge/mypy-checked-blue?style=for-the-badge&logo=python"></a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Build
-        </td>
-        <td>
-            <a href="https://github.com/prefix-dev/rattler-build" alt="Rattlebuild-badge"><img src="https://img.shields.io/badge/Built_by-rattle--build-yellow?logo=anaconda&style=for-the-badge&logoColor=black"></a>
-        </td>
-    </tr>
-    <tr>
-        <td rowspan=3>
-            <b> Install </b>
-        </td>
-        <td>
-            Pip
-        </td>
-        <td>
-            <a href="https://pypi.org/project/skwdro/"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/skwdro?style=for-the-badge"></a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Conda
-        </td>
-        <td>
-            <a href="https://anaconda.org/flvincen/skwdro"> <img src="https://anaconda.org/flvincen/skwdro/badges/version.svg" /> </a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Github
-        </td>
-        <td>
-            <a href="https://github.com/iutzeler/skwdro"><img src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white"></a>
-        </td>
-    </tr>
-</table>
+[![CI tests](https://github.com/iutzeler/skwdro/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/iutzeler/skwdro/actions/workflows/test.yml)
+[![style tests](https://github.com/iutzeler/skwdro/actions/workflows/style.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/style.yml)
+[![doc tests](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml/badge.svg)](https://github.com/iutzeler/skwdro/actions/workflows/doc.yml)
+
 
 <div align="center">
-  <h1>SkWDRO - Wasserstein Distributionally Robust Optimization for Machine Learning</h1>
-  <h4>Model robustification with thin Pytorch and Scikit-learn interface</h4>
+  <h1>SkWDRO - Wasserstein Distributionaly Robust Optimization</h1>
+  <h4>Model robustification with thin interface</h4>
   <h6><q cite="https://adversarial-ml-tutorial.org/introduction">You can make pigs fly</q>, <a href="https://adversarial-ml-tutorial.org/introduction">[Kolter&Madry, 2018]</a></h6>
 </div>
 
-<a href="https://www.python.org" alt="Python"><img src="https://img.shields.io/badge/Python-blue?logo=python&logoColor=yellow&style=for-the-badge"></a>
-<a href="https://pytorch.org/" alt="PyTorch"><img src="https://img.shields.io/badge/PyTorch-purple?logo=PyTorch&style=for-the-badge"></a>
-<a href="https://scikit-learn.org" alt="Scikit Learn"><img src="https://img.shields.io/badge/ScikitLearn-red?logo=scikit-learn&style=for-the-badge"></a>
+[![Python](https://img.shields.io/badge/Python-blue?logo=python&logoColor=yellow&style=for-the-badge)](https://www.python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-purple?logo=PyTorch&style=for-the-badge)](https://pytorch.org/)
+[![Scikit Learn](https://img.shields.io/badge/ScikitLearn-red?logo=scikit-learn&style=for-the-badge)](https://scikit-learn.org)
 ![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg?style=for-the-badge)
 
 
@@ -110,7 +20,7 @@
 
 Have a look at ``skwdro`` [documentation](https://skwdro.readthedocs.io/en/latest/)!
 
-<!--
+<!-- 
 # Why WDRO & ``skwdro``?
  -->
 
@@ -126,19 +36,19 @@ First install ``hatch`` and clone the archive. In the root folder, ``make shell`
 
 ### With ``pip``
 
-``skwdro`` is now available on PyPi.
+``skwdro`` will be available on PyPi *soon*, for now only the *development mode* is available.
 
-Run the following command to get the latest version of the package
+<!--  Run the following command to get the latest version of the package
 
 ```shell
 pip install -U skwdro
 ```
 
-It is also available on [anaconda.org](anaconda.org) and can be installed using, for instance:
+It is also available on conda-forge and can be installed using, for instance:
 
 ```shell
-conda install -c conda-forge -c flvincen -c pytorch skwdro
-```
+conda install -c conda-forge skwdro
+``` -->
 
 ## First steps with ``skwdro``
 
@@ -166,7 +76,7 @@ You can refer to the documentation to explore the list of ``skwdro``'s already-m
 
 ### ``pytorch`` interface
 
-Didn't find an estimator that suits you? You can compose your own using the ``pytorch`` interface: it allows more flexibility, custom models and optimizers.
+Didn't find a estimator that suits you? You can compose your own using the ``pytorch`` interface: it allows more flexibility, custom models and optimizers.
 
 Assume now that the data is given as a dataloader `train_loader`.
 
@@ -199,7 +109,7 @@ optimizer = optim.Adam(model.parameters(), lr=0.01)
 for epoch in range(100):
     for batch_x, batch_y in train_loader:
         optimizer.zero_grad()
-        loss = robust_loss(batch_x, batch_y)
+        loss = robust_loss(model(batch_x), batch_y)
         loss.backward()
         optimizer.step()
 ```
@@ -207,7 +117,7 @@ for epoch in range(100):
 You will find detailed description on how to `robustify` modules in the documentation.
 
 
-<!--
+<!-- 
 # Cite
 
 ``skwdro`` is the result of perseverant research. It is licensed under [BSD 3-Clause](https://github.com/scikit-learn-contrib/skwdro/blob/main/LICENSE). You are free to use it and if you do so, please cite
