@@ -64,7 +64,8 @@ test = [
     "pytest-cov",
 	"ruff",
 	"pycodestyle",
-	"mypy"
+	"mypy",
+	"pytest-rerunfailures"
 ]
 monitor = [
     "wandb",
@@ -90,7 +91,7 @@ features = ["test"]
 [tool.hatch.envs.env-test.scripts]
 test-custom = "pytest -v ./tests/torch_tests/!(test_regularized_linear_exact.py) -W ignore::FutureWarning"
 test-sklearn = "pytest -v ./skwdro/tests -W ignore::FutureWarning"
-test-misc = "sh ./tests/misc/launchall.sh -W ignore::FutureWarning"
+test-misc = "sh ./tests/misc/launchall.sh"
 ruff-test = "ruff check -q ./skwdro"
 # pycodestyle-test = "pycodestyle --exclude=skwdro/solvers/specific_solvers.py,skwdro/base/rho_tuners.py,skwdro/base/rho_tuners_computations.py --ignore=E501 skwdro/"
 pycodestyle-test = "pycodestyle --config=.pycodestyle/tox_all.ini skwdro/"
