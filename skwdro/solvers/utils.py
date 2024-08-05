@@ -43,11 +43,13 @@ def maybe_unsqueeze(
 def normalize_maybe_vects(
     tensor: Optional[pt.Tensor],
     threshold: float = 1.,
+    scaling: float = 1.,
     dim: int = 0
 ) -> Optional[pt.Tensor]:
     return None if tensor is None else normalize_just_vects(
         tensor,
         threshold,
+        scaling,
         dim
     )
 
@@ -55,11 +57,12 @@ def normalize_maybe_vects(
 def normalize_just_vects(
     tensor: pt.Tensor,
     threshold: float = 1.,
+    scaling: float = 1.,
     dim: int = 0
 ) -> pt.Tensor:
     n = pt.linalg.norm(tensor, dim=dim, keepdims=True)
     assert isinstance(n, pt.Tensor)
-    return tensor / n * pt.min(pt.tensor(threshold), n)
+    return tensor / n * pt.min(pt.tensor(threshold), n) / scaling
 
 
 class NoneGradError(ValueError):
