@@ -54,7 +54,7 @@ class _SampleDisplacer(_SampledDualLoss):
         # Compute the inverse scaling in the displacement
         # Warnings:
         # - .item() is important
-        # - the inverse of inv_scale must not be computed alone, 
+        # - the inverse of inv_scale must not be computed alone,
         #   it seems that it is crucial it is computed along with
         #   the grads below
         # - the point above takes care of numerical issues,
