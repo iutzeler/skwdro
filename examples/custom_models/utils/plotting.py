@@ -16,8 +16,8 @@ def plot_decision_boundary(model, X, y):
     # (with modifications)
     x_min, x_max = X[:, 0].min() - 0.1, X[:, 0].max() + 0.1
     y_min, y_max = X[:, 1].min() - 0.1, X[:, 1].max() + 0.1
-    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 101),
-                         np.linspace(y_min, y_max, 101))
+    xx, yy = np.meshgrid(np.linspace(x_min, x_max, 501),
+                         np.linspace(y_min, y_max, 501))
 
     # Make features
     X_to_pred_on = torch.from_numpy(np.column_stack((xx.ravel(), yy.ravel()))).to(X)
