@@ -63,13 +63,13 @@ class _SampleDisplacer(_SampledDualLoss):
         # Assert type of results and get them returned
         return (
             normalize_just_vects(
-                grad_xi / inv_scale,
+                grad_xi,
                 threshold,
                 inv_scale,
                 dim=-1
             ),
             normalize_maybe_vects(
-                grad_xi_l / inv_scale,
+                grad_xi_l,
                 threshold,
                 inv_scale,
                 dim=-1
