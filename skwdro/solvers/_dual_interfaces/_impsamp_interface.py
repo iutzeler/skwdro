@@ -23,11 +23,11 @@ class _SampleDisplacer(_SampledDualLoss):
             self,
             xi: pt.Tensor,
             xi_labels: Optional[pt.Tensor],
-            threshold: float = 1e10
+            threshold: float = 1e10,
     ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
         r"""
         Thresholds the displacement of the samples to avoid numerical
-        instabilities.
+        instabilities
         See :py:method:`~_SampleDisplacer.get_optimal_displacement`.
         Yields :math:`\frac{\nabla_\xi L(\xi)}{\lambda}` with backprop
         algorithm.
@@ -51,15 +51,16 @@ class _SampleDisplacer(_SampledDualLoss):
         disps: (1, m, d), (1, m, d')
         """
         grad_xi, grad_xi_l = self.get_displacement_direction(xi, xi_labels)
+        inv_scale = self._lam.item()
         # Assert type of results and get them returned
         return (
             normalize_just_vects(
-                grad_xi / self._lam,
+                grad_xi / inv_scale,
                 threshold,
                 dim=-1
             ),
             normalize_maybe_vects(
-                grad_xi_l / self._lam,
+                grad_xi_l / inv_scale,
                 threshold,
                 dim=-1
             )
