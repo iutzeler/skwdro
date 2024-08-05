@@ -51,16 +51,27 @@ class _SampleDisplacer(_SampledDualLoss):
         disps: (1, m, d), (1, m, d')
         """
         grad_xi, grad_xi_l = self.get_displacement_direction(xi, xi_labels)
+        # Compute the inverse scaling in the displacement
+        # Warnings:
+        # - .item() is important
+        # - the inverse of inv_scale must not be computed alone,
+        #   it seems that it is crucial it is computed along with
+        #   the grads below
+        # - the point above takes care of numerical issues,
+        #   adding a floor to lambda causes other issues
+        inv_scale = self._lam.item()
         # Assert type of results and get them returned
         return (
             normalize_just_vects(
-                grad_xi / self._lam,
+                grad_xi,
                 threshold,
+                inv_scale,
                 dim=-1
             ),
             normalize_maybe_vects(
-                grad_xi_l / self._lam,
+                grad_xi_l,
                 threshold,
+                inv_scale,
                 dim=-1
             )
         )
