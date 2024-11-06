@@ -216,6 +216,8 @@ for epoch in range(100):
 You will find detailed description on how to `robustify` modules in the documentation.
 
 
+
+
 # Cite
 
 ``skwdro`` is the result of a research project. It is licensed under [BSD 3-Clause](https://github.com/iutzeler/skwdro/blob/main/LICENSE). You are free to use it and if you do so, please cite
