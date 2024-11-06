@@ -1,8 +1,11 @@
-from typing import Optional, Dict
+from typing import List, Optional, Dict, Tuple, Union
 
 import torch as pt
 import torch.distributions as dst
 import torch.distributions.constraints as cstr
+
+
+Shapeoid = Union[pt.Size, List[int], Tuple[int, ...]]
 
 
 class Dirac(dst.ExponentialFamily):
@@ -26,9 +29,12 @@ class Dirac(dst.ExponentialFamily):
         self.loc: pt.Tensor = loc
         super().__init__(batch_shape, event_shape, validate_args)
 
-    def expand(self, batch_shape: pt.Size, _instance=None):
+    def expand(
+            self,
+            batch_shape: Shapeoid,
+            _instance=None):
         new: Dirac = self._get_checked_instance(Dirac, _instance)
-        batch_shape = pt.Size(batch_shape)
+        batch_shape = cast_to_size(batch_shape)
         loc_shape = batch_shape + self.event_shape
         new.loc = self.loc.expand(loc_shape)
         assert isinstance(new, Dirac)
@@ -50,7 +56,8 @@ class Dirac(dst.ExponentialFamily):
     def variance(self) -> pt.Tensor:
         return pt.zeros_like(self.loc)
 
-    def rsample(self, sample_shape: pt.Size = pt.Size()) -> pt.Tensor:
+    def rsample(self, sample_shape: Shapeoid = pt.Size()) -> pt.Tensor:
+        sample_shape = cast_to_size(sample_shape)
         return self.loc.expand(self._extended_shape(sample_shape))
 
     def log_prob(self, value: pt.Tensor) -> pt.Tensor:
@@ -70,3 +77,11 @@ class Dirac(dst.ExponentialFamily):
 
     def perplexity(self) -> pt.Tensor:
         return pt.tensor(0.)
+
+
+def cast_to_size(
+        shape: Shapeoid) -> pt.Size:
+    if (isinstance(shape, pt.Size)):
+        return shape
+    else:
+        return pt.Size(shape)
