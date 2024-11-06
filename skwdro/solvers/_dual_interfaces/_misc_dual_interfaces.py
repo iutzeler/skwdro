@@ -172,7 +172,7 @@ class _DualLossBase(nn.Module, ABC):
         self.erm_mode = True
         return super().eval()
 
-    def train(self, mode: bool = False):
+    def train(self, mode: bool = True):
         self.erm_mode = mode
         return super().train(mode)
 

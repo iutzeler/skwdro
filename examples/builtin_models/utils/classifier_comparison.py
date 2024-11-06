@@ -100,7 +100,6 @@ def plot_classifier_comparison(names, classifiers, datasets, levels=10):
 				ax.set_title(name)
 			ax.text(xx.max() - .3, yy.min() + .3, f"Test Acc. {int(score*100)}%\nF1 {int(f1_sc*100)}%",
 					size=12, horizontalalignment='right', bbox=dict(facecolor='wheat', alpha=0.5))
-			print(f"Dataset {ds_cnt}, Classifier {name}: Test Acc. {int(score*100)}%, F1 {int(f1_sc*100)}%")
 			i += 1
 
 
