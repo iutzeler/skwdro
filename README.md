@@ -101,15 +101,16 @@
 </tr>
 </table>
 
+
 <div align="center">
-  <h1>SkWDRO - Wasserstein Distributionally Robust Optimization for Machine Learning</h1>
-  <h4>Model robustification with thin Pytorch and Scikit-learn interface</h4>
+  <h1>SkWDRO - Wasserstein Distributionaly Robust Optimization</h1>
+  <h4>Model robustification with thin interface</h4>
   <h6><q cite="https://adversarial-ml-tutorial.org/introduction">You can make pigs fly</q>, <a href="https://adversarial-ml-tutorial.org/introduction">[Kolter&Madry, 2018]</a></h6>
 </div>
 
-<a href="https://www.python.org" alt="Python"><img src="https://img.shields.io/badge/Python-blue?logo=python&logoColor=yellow&style=for-the-badge"></a>
-<a href="https://pytorch.org/" alt="PyTorch"><img src="https://img.shields.io/badge/PyTorch-purple?logo=PyTorch&style=for-the-badge"></a>
-<a href="https://scikit-learn.org" alt="Scikit Learn"><img src="https://img.shields.io/badge/ScikitLearn-red?logo=scikit-learn&style=for-the-badge"></a>
+[![Python](https://img.shields.io/badge/Python-blue?logo=python&logoColor=yellow&style=for-the-badge)](https://www.python.org)
+[![PyTorch](https://img.shields.io/badge/PyTorch-purple?logo=PyTorch&style=for-the-badge)](https://pytorch.org/)
+[![Scikit Learn](https://img.shields.io/badge/ScikitLearn-red?logo=scikit-learn&style=for-the-badge)](https://scikit-learn.org)
 ![License](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg?style=for-the-badge)
 
 
@@ -118,7 +119,7 @@
 
 Have a look at ``skwdro`` [documentation](https://skwdro.readthedocs.io/en/latest/)!
 
-<!--
+<!-- 
 # Why WDRO & ``skwdro``?
  -->
 
@@ -134,19 +135,19 @@ First install ``hatch`` and clone the archive. In the root folder, ``make shell`
 
 ### With ``pip``
 
-``skwdro`` is now available on PyPi.
+``skwdro`` will be available on PyPi *soon*, for now only the *development mode* is available.
 
-Run the following command to get the latest version of the package
+<!--  Run the following command to get the latest version of the package
 
 ```shell
 pip install -U skwdro
 ```
 
-It is also available on [anaconda.org](anaconda.org) and can be installed using, for instance:
+It is also available on conda-forge and can be installed using, for instance:
 
 ```shell
-conda install -c conda-forge -c flvincen -c pytorch skwdro
-```
+conda install -c conda-forge skwdro
+``` -->
 
 ## First steps with ``skwdro``
 
@@ -174,7 +175,7 @@ You can refer to the documentation to explore the list of ``skwdro``'s already-m
 
 ### ``pytorch`` interface
 
-Didn't find an estimator that suits you? You can compose your own using the ``pytorch`` interface: it allows more flexibility, custom models and optimizers.
+Didn't find a estimator that suits you? You can compose your own using the ``pytorch`` interface: it allows more flexibility, custom models and optimizers.
 
 Assume now that the data is given as a dataloader `train_loader`.
 
@@ -207,14 +208,12 @@ optimizer = optim.Adam(model.parameters(), lr=0.01)
 for epoch in range(100):
     for batch_x, batch_y in train_loader:
         optimizer.zero_grad()
-        loss = robust_loss(batch_x, batch_y)
+        loss = robust_loss(model(batch_x), batch_y)
         loss.backward()
         optimizer.step()
 ```
 
 You will find detailed description on how to `robustify` modules in the documentation.
-
-
 
 
 # Cite
