@@ -91,6 +91,14 @@
             <a href="https://github.com/iutzeler/skwdro"><img src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white"></a>
         </td>
     </tr>
+    <tr>
+    <td colspan=2>
+       <b> Cite </b>
+    </td>
+    <td>
+        <a href="https://arxiv.org/abs/2410.21231"><img src="https://img.shields.io/badge/arXiv-2410.21231-b31b1b.svg?style=for-the-badge&logo=arXiv&logoColor=b31b1b"></a>
+    </td>
+</tr>
 </table>
 
 <div align="center">
@@ -207,16 +215,19 @@ for epoch in range(100):
 You will find detailed description on how to `robustify` modules in the documentation.
 
 
-<!--
+
+
 # Cite
 
-``skwdro`` is the result of perseverant research. It is licensed under [BSD 3-Clause](https://github.com/scikit-learn-contrib/skwdro/blob/main/LICENSE). You are free to use it and if you do so, please cite
+``skwdro`` is the result of a research project. It is licensed under [BSD 3-Clause](https://github.com/iutzeler/skwdro/blob/main/LICENSE). You are free to use it and if you do so, please cite
 
 ```bibtex
-@inproceedings{skwdro,
-    title     = {},
-    author    = {},
-    booktitle = {},
-    year      = {},
+@article{vincent2024skwdro,
+  title={skwdro: a library for Wasserstein distributionally robust machine learning},
+  author={Vincent, Florian and Azizian, Wa{\"\i}ss and Iutzeler, Franck and Malick, J{\'e}r{\^o}me},
+  journal={arXiv preprint arXiv:2410.21231},
+  year={2024}
 }
-``` -->
+```
+
+
