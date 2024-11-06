@@ -50,7 +50,7 @@ datasets.append((train_dataset, test_dataset))
 # WDRO classifiers
 # ~~~~~~~~~~~~~~~~
 
-rhos = [10**i for i in range(-3, 0)]
+rhos = [0.001, 0.01, 0.1]
 classifiers = []
 for rho in rhos:
     classifiers.append(LogisticRegression(rho=rho))

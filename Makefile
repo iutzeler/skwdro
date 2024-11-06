@@ -17,10 +17,7 @@ doctest:
 	@echo "Style test:"
 	@hatch -e $(TEST_ENV) run env-docs:doc-test
 
-test: test_sk test_misc test_gen
-
-lfstests:
-	@pytest -v ./tests/torch_tests/test_regularized_linear_exact.py -W ignore::FutureWarning
+test: test_gen test_sk test_misc
 
 test_gen:
 	@echo "General tests:"
