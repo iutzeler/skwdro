@@ -8,7 +8,7 @@ import torch.nn as nn
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from sklearn.exceptions import DataConversionWarning
 from scipy.special import expit
 
@@ -141,22 +141,28 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Store the classes seen during fit
         self.classes_ = unique_labels(y)
-
-        self.le_ = LabelEncoder()
-        y = self.le_.fit_transform(y)
-        if y is None:
-            raise ValueError("Problem with labels, none out of label encoder")
+           
+        # Encode the labels
+        if len(self.classes_) == 2:
+            # Binary classification
+            self.le_ = LabelEncoder()
+            y = self.le_.fit_transform(y)
+            if y is None:
+                raise ValueError("Problem with labels, none out of label encoder")
+            else:
+                y = np.array(y, dtype=X.dtype)
+            y[y == 0.] = -1.
+        elif len(self.classes_) > 2:
+            # Multiclass classification
+            self.le_ = OneHotEncoder(sparse_output=False)
+            y = self.le_.fit_transform(y[:, None])
+            if y is None:
+                raise ValueError("Problem with labels, none out of label encoder")
+            else:
+                y = np.array(y, dtype=X.dtype)
         else:
-            y = np.array(y, dtype=X.dtype)
-        y[y == 0.] = -1.
+            raise ValueError(f"Found {len(self.classes_)} classes, while 2 are expected.")
 
-        if len(self.classes_) > 2:
-            raise NotImplementedError(
-                f"Multiclass classificaion is not implemented. ({len(self.classes_)} classes were found : {self.classes_})")
-
-        if len(self.classes_) < 2:
-            raise ValueError(
-                f"Found {len(self.classes_)} classes, while 2 are expected.")
 
         if not np.issubdtype(X.dtype, np.number):
             raise ValueError(f"Input X has dtype  {X.dtype}")
@@ -168,8 +174,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # Setup problem parameters ################
         m, d = np.shape(X)
         self.n_features_in_ = d
-        emp = EmpiricalDistributionWithLabels(
-            m=m, samples_x=X, samples_y=y[:, None])
+        samples_y = y[:, None] if len(self.classes_) == 2 else y
+        emp = EmpiricalDistributionWithLabels(m=m, samples_x=X, samples_y=samples_y)
 
         # Define cleanly the hyperparameters of the problem.
         self.cost_ = cost_from_str(self.cost)
@@ -179,6 +185,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             raise (DeprecationWarning(
                 "The entropic (numpy) solver is now deprecated"))
         elif self.solver == "dedicated":
+            if len(self.classes_) > 2:
+                raise NotImplementedError(
+                    f"Multiclass classification is not implemented for dedicated solver. ({len(self.classes_)} classes were found : {self.classes_})")
+
             # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
             # One may use it by specifying this option
             self.coef_, self.intercept_, self.dual_var_, self.result_ = spS.WDROLogisticSpecificSolver(
@@ -190,9 +200,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             )
         elif "torch" in self.solver:
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
+            module_out = 1 if len(self.classes_) == 2 else len(self.classes_)
+            loss = BiDiffSoftMarginLoss(reduction='none') if len(self.classes_) == 2 else nn.CrossEntropyLoss(reduction='none')
             self.wdro_loss_ = dualize_primal_loss(
-                BiDiffSoftMarginLoss(reduction='none'),
-                nn.Linear(self.n_features_in_, 1, bias=self.fit_intercept),
+                loss,
+                nn.Linear(self.n_features_in_, module_out, bias=self.fit_intercept),
                 pt.tensor(self.rho),
                 pt.Tensor(emp.samples_x),
                 pt.Tensor(emp.samples_y),
@@ -214,10 +226,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.opt_cond  # type: ignore
             )
 
-            self.coef_ = detach_tensor(
-                self.wdro_loss_.primal_loss.transform.weight).flatten()  # type: ignore
-            self.intercept_ = maybe_detach_tensor(
-                self.wdro_loss_.primal_loss.transform.bias)  # type: ignore
+            self.coef_ = self.wdro_loss_.primal_loss.transform.weight.detach().squeeze().numpy()
+
+            if self.fit_intercept:
+                self.intercept_ = self.wdro_loss_.primal_loss.transform.bias.detach().squeeze().numpy()
+            else:
+                self.intercept_ = None
+
             # # TODO: deprecate ?
             # # Stock the robust loss result
             # Problems w/ dtypes (f32->f64 for some reason)
