@@ -20,7 +20,6 @@ from skwdro.base.cost_decoder import cost_from_str
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
 from skwdro.wrap_problem import dualize_primal_loss
 
 
@@ -141,7 +140,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Store the classes seen during fit
         self.classes_ = unique_labels(y)
-           
+
         # Encode the labels
         if len(self.classes_) == 2:
             # Binary classification
@@ -163,7 +162,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         else:
             raise ValueError(f"Found {len(self.classes_)} classes, while 2 are expected.")
 
-
+        # Check type
         if not np.issubdtype(X.dtype, np.number):
             raise ValueError(f"Input X has dtype  {X.dtype}")
 
@@ -226,10 +225,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.opt_cond  # type: ignore
             )
 
-            self.coef_ = self.wdro_loss_.primal_loss.transform.weight.detach().squeeze().numpy()
+            self.coef_ = self.wdro_loss_.primal_loss.transform.weight.detach().cpu().squeeze().numpy()
 
             if self.fit_intercept:
-                self.intercept_ = self.wdro_loss_.primal_loss.transform.bias.detach().squeeze().numpy()
+                self.intercept_ = self.wdro_loss_.primal_loss.transform.bias.detach().cpu().squeeze().numpy()
             else:
                 self.intercept_ = None
 
