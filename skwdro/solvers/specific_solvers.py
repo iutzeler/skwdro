@@ -129,7 +129,7 @@ def WDROLogisticSpecificSolver(
 
         problem = cp.Problem(cp.Minimize(loss), constraints=constraints)
 
-        result = problem.solve(verbose=False, solver=cp.ECOS)
+        result = problem.solve(verbose=False)
 
         return beta.value[:d], beta.value[d + 1 + n], beta.value[d], result
     else:
@@ -146,7 +146,7 @@ def WDROLogisticSpecificSolver(
 
         problem = cp.Problem(cp.Minimize(loss), constraints=constraints)
 
-        result = problem.solve(verbose=False, solver=cp.ECOS)
+        result = problem.solve(verbose=False)
 
         return beta.value[:d], 0.0, beta.value[d], result
 
@@ -171,7 +171,7 @@ def WDROLinRegSpecificSolver(rho: float = 1.0, X: np.ndarray = np.array(
 
     problem = cp.Problem(cp.Minimize(loss), constraints=constraints)
 
-    problem.solve(verbose=False, solver=cp.ECOS)
+    problem.solve(verbose=False)
 
     return coeff.value, intercept.value, None
 
@@ -226,7 +226,7 @@ def WDROPortfolioSpecificSolver(
 
     # Solving the problem
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
-    result = problem.solve(solver=cp.ECOS)
+    result = problem.solve()
 
     if theta.value is None or np.isnan(sum(theta.value)):
         raise ValueError(
