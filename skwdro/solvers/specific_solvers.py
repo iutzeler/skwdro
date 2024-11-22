@@ -226,7 +226,7 @@ def WDROPortfolioSpecificSolver(
 
     # Solving the problem
     problem = cp.Problem(cp.Minimize(obj), constraints=constraints)
-    result = problem.solve(solver=cp.ECOS)
+    result = problem.solve()
 
     if theta.value is None or np.isnan(sum(theta.value)):
         raise ValueError(
