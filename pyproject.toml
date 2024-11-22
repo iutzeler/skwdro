@@ -33,6 +33,7 @@ dependencies = [
     "scikit-learn>=1.4",
     "scipy",
     "cvxopt",
+	"ecos",
     "cvxpy",
     "torch",
     "sqwash",
