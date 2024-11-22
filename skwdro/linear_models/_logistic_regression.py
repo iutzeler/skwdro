@@ -162,6 +162,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         else:
             raise ValueError(f"Found {len(self.classes_)} classes, while 2 are expected.")
 
+
         # Check type
         if not np.issubdtype(X.dtype, np.number):
             raise ValueError(f"Input X has dtype  {X.dtype}")
