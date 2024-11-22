@@ -14,7 +14,6 @@ from sklearn.neighbors import KernelDensity
 
 import seaborn as sns
 import matplotlib.pyplot as plt
-import tikzplotlib
 
 import tqdm
 import time
@@ -24,7 +23,7 @@ import argparse
 import skwdro
 from skwdro.solvers.hybrid_sgd import HybridAdam
 
-alt = True
+alt = False
 if alt:
     from langevin_approx_dro_alt import LangevinApproxDRO
 else:
@@ -131,25 +130,6 @@ def train(model, x, y, robust):
     # opt = optim.LBFGS(model.parameters(), line_search_fn=None, max_iter=1)
     opt = HybridAdam([{'params': model.model.parameters(), 'lr':1e-1}, {'params': [model.lbd], 'lr':1e0, 'non_neg':True}])
     for t in range(1000):
-        if False:
-            def closure():
-                opt.zero_grad()
-                loss = model.forward(x, y, reset=False).mean()
-                loss.backward()
-                return loss
-            print("\nBefore BFGS")
-            loss = model.forward(x, y, reset=True).mean()
-            print(f"{loss=}")
-            print(f"{model.lbd.grad=}")
-            print(f"{model.lbd=}")
-            opt.step(closure)
-            loss = model.forward(x, y, reset=False).mean()
-            print("After BFGS")
-            print(f"{loss=}")
-            print(f"{model.lbd.grad=}")
-            print(f"{model.lbd=}\n")
-
-        
         def zero_closure(lbd):
             with torch.no_grad():
                 model.lbd.requires_grad = False
@@ -186,7 +166,7 @@ def train(model, x, y, robust):
             print(f"Break at {t=} with {crit=} / {crit_tol=}")
             break
         opt.step()
-    if False:
+    if True:
         plt.figure()
         plt.plot(times, grads)
         plt.yscale('log')
@@ -211,18 +191,9 @@ def plot_metric(metric, name, color, bins, alpha=1):
     _, bins, _ = plt.hist(metric, bins=bins, density=True, label=name, alpha=alpha, edgecolor="w")
     return bins
 
-# From https://github.com/nschloe/tikzplotlib/issues/557
-def tikzplotlib_fix_ncols(obj):
-    """
-        workaround for matplotlib 3.6 renamed legend's _ncol to _ncols, which breaks tikzplotlib
-    """
-    if hasattr(obj, "_ncols"):
-        obj._ncol = obj._ncols
-    for child in obj.get_children():
-        tikzplotlib_fix_ncols(child)
 
 
-def plot_metrics(robust, metrics, save_tex=False):
+def plot_metrics(robust, metrics):
     train = [m[0] for m in metrics]
     test  = [m[1] for m in metrics]
     pert  = [m[2] for m in metrics]
@@ -246,13 +217,7 @@ def plot_metrics(robust, metrics, save_tex=False):
     else:
         plt.title("Smoothed histogram of losses with the ERM predictor")
     plt.legend()
-    if not save_tex:
-        plt.show()
-    else:
-        fig = plt.gcf()
-        tikzplotlib_fix_ncols(fig)
-        filename = "./robust_hist.tex" if robust else "./erm_hist.tex"
-        tikzplotlib.save(filename, figure=fig)
+    plt.show()
 
 d = 10
 n_train = 100
@@ -292,10 +257,10 @@ def main(robust, filename):
     with open(filename, "wb") as file:
         pickle.dump(res, file)
 
-def plot(robust, filename, save_tex=False):
+def plot(robust, filename):
     with open(filename, "rb") as file:
         res = pickle.load(file)
-    plot_metrics(robust, res, save_tex=save_tex)
+    plot_metrics(robust, res)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -303,7 +268,6 @@ if __name__ == "__main__":
     parser.add_argument("--robust", action="store_true")
     parser.add_argument("--compute", action="store_true")
     parser.add_argument("--all", action="store_true")
-    parser.add_argument("--savetex", action="store_true")
     args = parser.parse_args()
     if args.robust:
         filename = "stored_data/logregrob.pck"
@@ -312,7 +276,7 @@ if __name__ == "__main__":
     if args.compute or args.all:
         main(args.robust, filename)
     if args.plot or args.all:
-        plot(args.robust, filename, save_tex=args.savetex)
+        plot(args.robust, filename)
 
     
     
