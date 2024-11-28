@@ -4,6 +4,10 @@ from skwdro.linear_models import LogisticRegression
 
 ANGLE_TOL = 1e-1 * np.pi
 
+##################################
+##### BINARY CLASSIFICATION ######
+##################################
+
 def generate_points():
     opposites = np.array([[1., 1.], [-1., -1.]])
     data = np.concatenate([
@@ -37,3 +41,74 @@ def test_fit_enthropic_fi():
 def test_fit_enthropic_lin():
     estimator = fit_estimator(False)
     assert angle_to_northeast(estimator.coef_) < ANGLE_TOL
+
+
+##################################
+##### MULTICLASS CLASSIFICATION ##
+##################################
+
+import numpy as np
+
+from skwdro.linear_models import LogisticRegression
+
+ANGLE_TOL = 1e-1 * np.pi
+
+
+def generate_multiclass_points():
+    """
+    Generate synthetic data for 3-class classification.
+    """
+    centers = np.array([
+        [2, 2],  # Class 0
+        [-2, -2],  # Class 1
+        [2, -2],  # Class 2
+    ])
+    data = np.concatenate([
+        centers[0, :] + np.random.normal(0, 1, size=(100, 2)),
+        centers[1, :] + np.random.normal(0, 1, size=(100, 2)),
+        centers[2, :] + np.random.normal(0, 1, size=(100, 2)),
+    ])
+    labels = np.array([0] * 100 + [1] * 100 + [2] * 100)
+    return data, labels
+
+
+def fit_multiclass_estimator(fi=True):
+    estimator = LogisticRegression(
+        rho=1e-3,
+        l2_reg=0.0,
+        cost="t-NLC-2-2",
+        fit_intercept=fi,
+        solver="entropic_torch",
+    )
+    X, y = generate_multiclass_points()
+    estimator.fit(X, y)
+    return estimator
+
+
+def angle_to_centroids(coefs, centers):
+    """
+    Check if coefficient vectors align with the directions to class centroids.
+    """
+    centroid_norms = np.linalg.norm(centers, axis=1, keepdims=True)
+    normed_centers = centers / centroid_norms
+    coef_norms = np.linalg.norm(coefs, axis=0, keepdims=True)
+    normed_coefs = coefs / coef_norms
+    return np.abs(1.0 - np.abs(np.sum(normed_centers * normed_coefs, axis=0)))
+
+
+def test_fit_multiclass_enthropic_fi():
+    estimator = fit_multiclass_estimator()
+    X, y = generate_multiclass_points()
+    # Calculate centroids of classes for validation
+    centers = np.array([X[y == i].mean(axis=0) for i in np.unique(y)])
+    assert np.all(angle_to_centroids(estimator.coef_, centers) < ANGLE_TOL)
+
+
+def test_fit_multiclass_enthropic_lin():
+    estimator = fit_multiclass_estimator(False)
+    X, y = generate_multiclass_points()
+    # Calculate centroids of classes for validation
+    centers = np.array([X[y == i].mean(axis=0) for i in np.unique(y)])
+    assert np.all(angle_to_centroids(estimator.coef_, centers) < ANGLE_TOL)
+
+

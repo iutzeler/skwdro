@@ -115,9 +115,10 @@ class LabeledSampler(BaseSampler, ABC):
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert zeta_labels is not None
-        lp = self.data_s.log_prob(zeta)\
-            + self.labels_s.log_prob(zeta_labels)
-        return lp.sum(-1, keepdim=True)
+        lp_zeta = self.data_s.log_prob(zeta).sum(-1, keepdim=True)
+        lp_zeta_labels = self.labels_s.log_prob(zeta_labels).sum(-1, keepdim=True)
+        lp = lp_zeta + lp_zeta_labels
+        return lp
 
     def log_prob_recentered(
             self,
@@ -127,9 +128,10 @@ class LabeledSampler(BaseSampler, ABC):
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert zeta_labels is not None and xi_labels is not None
-        lp = self.data_s.log_prob(zeta - xi + self.data_s.mean)\
-            + self.labels_s.log_prob(zeta_labels - xi_labels + self.labels_s.mean)
-        return lp.sum(-1, keepdim=True)
+        lp_zeta = self.data_s.log_prob(zeta).sum(-1, keepdim=True)
+        lp_zeta_labels = self.labels_s.log_prob(zeta_labels).sum(-1, keepdim=True)
+        lp = lp_zeta + lp_zeta_labels
+        return lp
 
 # Helper class ########################
 
