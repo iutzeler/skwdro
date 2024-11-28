@@ -122,7 +122,7 @@ class DualPostSampledLoss(_DualLoss):
         n_iter: Steps = 10000,
         gradient_hypertuning: bool = False,
         *,
-        learning_rate: Optional[float]=None,
+        learning_rate: Optional[float] = None,
         imp_samp: bool = IMP_SAMP,
         adapt: Optional[str] = "prodigy",
     ) -> None:
@@ -281,7 +281,7 @@ class DualPreSampledLoss(_DualLoss):
         gradient_hypertuning: bool = False,
         *,
         imp_samp: bool = IMP_SAMP,
-        learning_rate: Optional[float]=None,
+        learning_rate: Optional[float] = None,
         adapt: Optional[str] = "prodigy",
     ) -> None:
         del adapt

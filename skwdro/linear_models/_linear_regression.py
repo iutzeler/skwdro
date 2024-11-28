@@ -187,7 +187,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 sigma=self.sampler_reg,
                 epsilon=self.solver_reg,
                 imp_samp=_post_sample,  # hard set
-                adapt="prodigy",
+                adapt="prodigy" if self.learning_rate is None else None,
                 l2reg=self.l2_reg
             )
 

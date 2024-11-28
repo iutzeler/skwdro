@@ -211,6 +211,7 @@ class Portfolio(BaseEstimator):
                 self.seed,
                 learning_rate=self.learning_rate,
                 epsilon=self.solver_reg_,
+                adapt="prodigy" if self.learning_rate is None else None,
                 l2reg=0.
             )
             _res = entTorch.solve_dual_wdro(

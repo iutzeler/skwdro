@@ -234,11 +234,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             )
         elif "torch" in self.solver:
             _post_sample = (
-                self.solver == "entropic_torch"
-                or self.solver == "entropic_torch_post"
+                self.solver in ("entropic_torch", "entropic_torch_post")
             )
-            module_out = 1 if len(self.classes_) == 2 else len(self.classes_)
-            loss = BiDiffSoftMarginLoss(reduction='none') if len(self.classes_) == 2 else nn.CrossEntropyLoss(reduction='none')
+            _bilat = len(self.classes_) == 2
+            module_out = 1 if _bilat else len(self.classes_)
+            loss = (
+                BiDiffSoftMarginLoss if _bilat else nn.CrossEntropyLoss
+            )(reduction='none')
             self.wdro_loss_ = dualize_primal_loss(
                 loss,
                 nn.Linear(
@@ -257,7 +259,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 sigma=self.sampler_reg,
                 epsilon=self.solver_reg,
                 imp_samp=_post_sample,  # hard set
-                adapt="prodigy",
+                adapt="prodigy" if self.learning_rate is None else None,
                 l2reg=self.l2_reg
             )
 
@@ -268,10 +270,29 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.opt_cond  # type: ignore
             )
 
-            self.coef_ = self.wdro_loss_.primal_loss.transform.weight.detach().cpu().squeeze().numpy()
+            self.coef_ = (
+                self
+                .wdro_loss_
+                .primal_loss
+                .transform
+                .weight
+                .detach()
+                .cpu()
+                .squeeze()
+                .numpy()
+            )
 
             if self.fit_intercept:
-                self.intercept_ = self.wdro_loss_.primal_loss.transform.bias.detach().cpu().squeeze().numpy()
+                self.intercept_ = (
+                    self
+                    .wdro_loss_
+                    .primal_loss
+                    .transform
+                    .bias.detach()
+                    .cpu()
+                    .squeeze()
+                    .numpy()
+                )
             else:
                 self.intercept_ = None
 

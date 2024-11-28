@@ -177,13 +177,13 @@ def dualize_primal_loss(
     return loss_constructor(
         loss,
         cost,
-        learning_rate=learning_rate,
         n_iter=((200, 2800) if post_sample else (100, 10)),
         rho_0=rho,
         n_samples=n_samples,
         epsilon_0=expert_epsilon,
+        imp_samp=(imp_samp and parsed_cost.can_imp_samp()),
+        learning_rate=learning_rate,
         adapt=adapt,
-        imp_samp=(imp_samp and parsed_cost.can_imp_samp())
     )
     # if post_sample:
     #     return DualPostSampledLoss(

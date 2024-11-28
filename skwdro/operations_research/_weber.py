@@ -134,6 +134,7 @@ class Weber(BaseEstimator):
                 learning_rate=self.learning_rate,
                 epsilon=self.solver_reg,
                 sigma=self.sampler_reg,
+                adapt="prodigy" if self.learning_rate is None else None,
                 l2reg=self.l2_reg
             )
             self._wdro_loss.n_iter = 300

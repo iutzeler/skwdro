@@ -156,6 +156,7 @@ class NewsVendor(BaseEstimator):
                 seed=self.random_state,
                 epsilon=self.solver_reg,
                 learning_rate=self.learning_rate,
+                adapt="prodigy" if self.learning_rate is None else None,
             )
             # Solve dual problem
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
