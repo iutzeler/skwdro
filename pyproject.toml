@@ -64,7 +64,7 @@ test = [
     "pytest-cov",
 	"ruff",
 	"pycodestyle",
-	"mypy",
+	"mypy>=1.13",
 	"pytest-rerunfailures"
 ]
 monitor = [
