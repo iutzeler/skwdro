@@ -52,6 +52,9 @@ class NewsVendor(BaseEstimator):
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
+    learning_rate: float | None, default=None
+        if not set, use a default value depending on the problem, else
+        specifies the stepsize of the gradient descent algorithm
     opt_cond: Optional[OptCondTorch]
         optimality condition, see :py:class:`OptCondTorch`
 
@@ -71,17 +74,18 @@ class NewsVendor(BaseEstimator):
     """
 
     def __init__(
-            self,
-            rho: float = 1e-2,
-            k: float = 5,
-            u: float = 7,
-            cost: str = "t-NC-1-2",
-            l2_reg: float = 0.,
-            solver_reg: float = .01,
-            n_zeta_samples: int = 10,
-            solver: str = "entropic",
-            random_state: int = 0,
-            opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
+        self,
+        rho: float = 1e-2,
+        k: float = 5,
+        u: float = 7,
+        cost: str = "t-NC-1-2",
+        l2_reg: float = 0.,
+        solver_reg: float = .01,
+        learning_rate: Optional[float] = None,
+        n_zeta_samples: int = 10,
+        solver: str = "entropic",
+        random_state: int = 0,
+        opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
     ):
 
         if rho < 0:
@@ -96,6 +100,7 @@ class NewsVendor(BaseEstimator):
         self.solver = solver
         self.solver_reg = solver_reg
         self.n_zeta_samples = n_zeta_samples
+        self.learning_rate = learning_rate
         self.random_state = random_state
         self.opt_cond = opt_cond
 
@@ -150,6 +155,7 @@ class NewsVendor(BaseEstimator):
                 n_samples=self.n_zeta_samples,
                 seed=self.random_state,
                 epsilon=self.solver_reg,
+                learning_rate=self.learning_rate,
             )
             # Solve dual problem
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(

@@ -40,11 +40,19 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
     fit_intercept: boolean, default=True
         Determines if an intercept is fit or not
     cost: str, default="n-NC-1-2"
-        Tiret-separated code to define the transport cost: "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
+        Tiret-separated code to define the transport cost:
+            "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic_torch'
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
-    solver_reg: float, default=1e-2
-        regularization value for the entropic solver
+    solver_reg: float | None, default=None
+        regularization value for the entropic solver, has
+        a default heuristic
+    sampler_reg: float | None, default=None
+        standard deviation of the regularization distribution :math:`\pi_0`, has
+        a default heuristic
+    learning_rate: float | None, default=None
+        if not set, use a default value depending on the problem, else
+        specifies the stepsize of the gradient descent algorithm
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
     opt_cond: Optional[OptCondTorch]
@@ -85,6 +93,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  solver="entropic_torch",
                  solver_reg: Optional[float] = None,
                  sampler_reg: Optional[float] = None,
+                 learning_rate: Optional[float] = None,
                  n_zeta_samples: int = 10,
                  random_state: int = 0,
                  opt_cond: Optional[OptCondTorch] = OptCondTorch(2, 1e-4, 0.)
@@ -92,7 +101,12 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         if rho < 0:
             raise ValueError(
-                f"The uncertainty radius rho should be non-negative, received {rho}")
+                ' '.join([
+                    "The uncertainty radius rho should be",
+                    "non-negative, received",
+                    f"{rho}"
+                ])
+            )
 
         self.rho = rho
         self.l2_reg = l2_reg
@@ -101,6 +115,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.sampler_reg = sampler_reg  # sigma
+        self.learning_rate = learning_rate
         self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.random_state = random_state
@@ -131,7 +146,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.rho = float(self.rho)
             except BaseException:
                 raise TypeError(
-                    f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+                    ' '.join([
+                        "The uncertainty radius rho should be numeric,"
+                        f"received {type(self.rho)}"
+                    ])
+                )
 
         if len(y.shape) != 1:
             y = y.ravel()
@@ -174,7 +193,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         m, d = np.shape(X)
         self.n_features_in_ = d
         samples_y = y[:, None] if len(self.classes_) == 2 else y
-        emp = EmpiricalDistributionWithLabels(m=m, samples_x=X, samples_y=samples_y)
+        emp = EmpiricalDistributionWithLabels(
+            m=m,
+            samples_x=X,
+            samples_y=samples_y
+        )
 
         # Define cleanly the hyperparameters of the problem.
         self.cost_ = cost_from_str(self.cost)
@@ -186,11 +209,23 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         elif self.solver == "dedicated":
             if len(self.classes_) > 2:
                 raise NotImplementedError(
-                    f"Multiclass classification is not implemented for dedicated solver. ({len(self.classes_)} classes were found : {self.classes_})")
+                    ' '.join([
+                        "Multiclass classification is not implemented",
+                        "for dedicated solver.",
+                        f"({len(self.classes_)} classes were found:",
+                        "{self.classes_})"
+                    ])
+                )
 
-            # The logistic regression has a dedicated MP problem-description (solved using cvxopt)
+            # The logistic regression has a dedicated MP problem-description
+            # (solved using cvxopt)
             # One may use it by specifying this option
-            self.coef_, self.intercept_, self.dual_var_, self.result_ = spS.WDROLogisticSpecificSolver(
+            (
+                self.coef_,
+                self.intercept_,
+                self.dual_var_,
+                self.result_
+            ) = spS.WDROLogisticSpecificSolver(
                 rho=self.rho,
                 kappa=1000,
                 X=X,
@@ -198,12 +233,19 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 fit_intercept=self.fit_intercept
             )
         elif "torch" in self.solver:
-            _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
+            _post_sample = (
+                self.solver == "entropic_torch"
+                or self.solver == "entropic_torch_post"
+            )
             module_out = 1 if len(self.classes_) == 2 else len(self.classes_)
             loss = BiDiffSoftMarginLoss(reduction='none') if len(self.classes_) == 2 else nn.CrossEntropyLoss(reduction='none')
             self.wdro_loss_ = dualize_primal_loss(
                 loss,
-                nn.Linear(self.n_features_in_, module_out, bias=self.fit_intercept),
+                nn.Linear(
+                    self.n_features_in_,
+                    module_out,
+                    bias=self.fit_intercept
+                ),
                 pt.tensor(self.rho),
                 pt.Tensor(emp.samples_x),
                 pt.Tensor(emp.samples_y),
@@ -211,6 +253,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.cost,
                 self.n_zeta_samples,
                 self.random_state,
+                learning_rate=self.learning_rate,
                 sigma=self.sampler_reg,
                 epsilon=self.solver_reg,
                 imp_samp=_post_sample,  # hard set

@@ -122,6 +122,7 @@ class DualPostSampledLoss(_DualLoss):
         n_iter: Steps = 10000,
         gradient_hypertuning: bool = False,
         *,
+        learning_rate: Optional[float]=None,
         imp_samp: bool = IMP_SAMP,
         adapt: Optional[str] = "prodigy",
     ) -> None:
@@ -143,7 +144,7 @@ class DualPostSampledLoss(_DualLoss):
         else:
             self._opti = pt.optim.AdamW(
                 self.parameters(),
-                lr=5e-2,
+                lr=5e-2 if learning_rate is None else learning_rate,
                 betas=(.99, .999),
                 weight_decay=0.,
                 amsgrad=True,
@@ -280,6 +281,7 @@ class DualPreSampledLoss(_DualLoss):
         gradient_hypertuning: bool = False,
         *,
         imp_samp: bool = IMP_SAMP,
+        learning_rate: Optional[float]=None,
         adapt: Optional[str] = "prodigy",
     ) -> None:
         del adapt
@@ -296,7 +298,7 @@ class DualPreSampledLoss(_DualLoss):
 
         self._opti = pt.optim.LBFGS(
             self.parameters(),
-            lr=1.,
+            lr=1. if learning_rate is None else learning_rate,
             max_iter=1,
             max_eval=10,
             tolerance_grad=1e-4,
