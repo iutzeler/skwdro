@@ -34,7 +34,7 @@
             Readthedocs
         </td>
         <td>
-            <a href="https://skwdro.readthedocs.io/en/latest/" alt="Read the Docs"><img src="https://img.shields.io/badge/ReadTheDocs-blue?style=for-the-badge&logo=sphinx"></a>
+            <a href="https://skwdro.readthedocs.io/latest/" alt="Read the Docs"><img src="https://img.shields.io/badge/ReadTheDocs-blue?style=for-the-badge&logo=sphinx"></a>
         </td>
     </tr>
     <tr>
