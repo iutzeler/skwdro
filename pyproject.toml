@@ -64,7 +64,7 @@ test = [
     "pytest-cov",
 	"ruff",
 	"pycodestyle",
-	"mypy",
+	"mypy>=1.13",
 	"pytest-rerunfailures"
 ]
 monitor = [
@@ -89,7 +89,7 @@ python = "3.11"
 features = ["test"]
 
 [tool.hatch.envs.env-test.scripts]
-test-custom = "pytest -v ./tests/torch_tests/!(test_regularized_linear_exact.py) -W ignore::FutureWarning"
+test-custom = "bash -O extglob -c \"pytest -v ./tests/torch_tests/!(test_regularized_linear_exact.py) -W ignore::FutureWarning\""
 test-sklearn = "pytest -v ./skwdro/tests -W ignore::FutureWarning"
 test-misc = "sh ./tests/misc/launchall.sh"
 ruff-test = "ruff check -q ./skwdro"

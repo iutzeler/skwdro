@@ -59,6 +59,9 @@ class Portfolio(BaseEstimator):
         Solver to be used: 'entropic' or 'dedicated'
     solver_reg: float, default=1.0
         regularization value for the entropic solver
+    learning_rate: float | None, default=None
+        if not set, use a default value depending on the problem, else
+        specifies the stepsize of the gradient descent algorithm
     reparam: str, default="softmax"
         Reparametrization method of theta for the entropic torch loss
     random_state: int, default=None
@@ -90,6 +93,7 @@ class Portfolio(BaseEstimator):
         solver="dedicated",
         solver_reg=1e-3,
         reparam="softmax",
+        learning_rate: Optional[float] = None,
         n_zeta_samples: int = 10,
         seed: int = 0,
         opt_cond: Optional[OptCondTorch] = OptCondTorch(
@@ -118,6 +122,7 @@ class Portfolio(BaseEstimator):
         self.cost = cost
         self.solver = solver
         self.solver_reg = solver_reg
+        self.learning_rate = learning_rate
         self.reparam = reparam
         self.n_zeta_samples = n_zeta_samples
         self.seed = seed
@@ -204,7 +209,9 @@ class Portfolio(BaseEstimator):
                 self.cost,
                 self.n_zeta_samples,
                 self.seed,
+                learning_rate=self.learning_rate,
                 epsilon=self.solver_reg_,
+                adapt="prodigy" if self.learning_rate is None else None,
                 l2reg=0.
             )
             _res = entTorch.solve_dual_wdro(
