@@ -41,9 +41,11 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         Determines if an intercept is fit or not
     cost: str, default="n-NC-1-2"
         Tiret-separated code to define the transport cost:
-            "<engine>-<cost id>-<k-norm type>-<power>" for :math:`c(x, y):=\|x-y\|_k^p`
+         "<engine>-<cost id>-<k-norm type>-<power>"
+         for :math:`c(x, y):=\|x-y\|_k^p`
     solver: str, default='entropic_torch'
-        Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
+        Solver to be used: 'entropic', 'entropic_torch'
+        (_pre or _post) or 'dedicated'
     solver_reg: float | None, default=None
         regularization value for the entropic solver, has
         a default heuristic
@@ -84,6 +86,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
     >>> estimator.score(X_test,y_test)
     0.9393939393939394
     """
+    DEFAULT_OCOND = OptCondTorch(2, 1e-4, 0.)
 
     def __init__(self,
                  rho: float = 1e-2,
@@ -96,7 +99,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  learning_rate: Optional[float] = None,
                  n_zeta_samples: int = 10,
                  random_state: int = 0,
-                 opt_cond: Optional[OptCondTorch] = OptCondTorch(2, 1e-4, 0.)
+                 opt_cond: Optional[OptCondTorch] = DEFAULT_OCOND
                  ):
 
         if rho < 0:
@@ -128,7 +131,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X : array-like, shape (n_samples, n_features)
             The training input samples.
         y : array-like, shape (n_samples,)
-            The target values. An array of int. Only -1 or +1 are currently supported
+            The target values. An array of int. Only -1 or +1 are currently
+            supported
 
         Returns
         -------
@@ -147,8 +151,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             except BaseException:
                 raise TypeError(
                     ' '.join([
-                        "The uncertainty radius rho should be numeric,"
-                        f"received {type(self.rho)}"
+                        "The uncertainty radius rho should be"
+                        f"numeric, received {type(self.rho)}"
                     ])
                 )
 
@@ -166,7 +170,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             self.le_ = LabelEncoder()
             y = self.le_.fit_transform(y)
             if y is None:
-                raise ValueError("Problem with labels, none out of label encoder")
+                raise ValueError(
+                    "Problem with labels, none out of label encoder"
+                )
             else:
                 y = np.array(y, dtype=X.dtype)
             y[y == 0.] = -1.
@@ -175,11 +181,18 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             self.le_ = OneHotEncoder(sparse_output=False)
             y = self.le_.fit_transform(y[:, None])
             if y is None:
-                raise ValueError("Problem with labels, none out of label encoder")
+                raise ValueError(
+                    "Problem with labels, none out of label encoder"
+                )
             else:
                 y = np.array(y, dtype=X.dtype)
         else:
-            raise ValueError(f"Found {len(self.classes_)} classes, while 2 are expected.")
+            raise ValueError(
+                ' '.join([
+                    f"Found {len(self.classes_)} classes,",
+                    "while (at least) 2 are expected."
+                ])
+            )
 
 
         # Check type
@@ -205,8 +218,9 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         # #########################################
 
         if self.solver == "entropic":
-            raise (DeprecationWarning(
-                "The entropic (numpy) solver is now deprecated"))
+            raise DeprecationWarning(
+                "The entropic (numpy) solver is now deprecated"
+            )
         elif self.solver == "dedicated":
             if len(self.classes_) > 2:
                 raise NotImplementedError(
@@ -214,7 +228,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                         "Multiclass classification is not implemented",
                         "for dedicated solver.",
                         f"({len(self.classes_)} classes were found:",
-                        "{self.classes_})"
+                        f"{self.classes_})"
                     ])
                 )
 
@@ -297,19 +311,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             else:
                 self.intercept_ = None
 
-            # # TODO: deprecate ?
-            # # Stock the robust loss result
-            # Problems w/ dtypes (f32->f64 for some reason)
-            # To be fixed later
-            # =============================================
-            # Stock the robust loss result
-            # if self.solver == "entropic_torch_pre":
-            #     #self.result_ = _wdro_loss.forward(xi=self.X_, xi_labels=self.y_, zeta=?, zeta_labels=?)
-            #     #raise NotImplementedError("Result for pre_sample not available")
-            #     pass
-            # elif self.solver == "entropic_torch" or self.solver == "entropic_torch_post":
-            #     self.result_ = _wdro_loss.forward(xi=pt.from_numpy(emp.samples_x), xi_labels=pt.from_numpy(emp.samples_y)).item()
-
+        # Unknown solver
         else:
             raise NotImplementedError()
         self.is_fitted_ = True
@@ -361,8 +363,14 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Input validation
         X = check_array(X)
-        p = expit(X.dot(self.coef_) + self.intercept_)
-        return np.vstack((1 - p, p)).T
+
+        if not hasattr(self, "wdro_loss_") or len(self.classes_) <= 2:
+            p = expit(X.dot(self.coef_) + self.intercept_)
+            return np.vstack((1 - p, p)).T
+        else:
+            return self.wdro_loss_.primal_loss.transform(
+                pt.from_numpy(X).to(self.wdro_loss_.rho)
+            ).detach().cpu().numpy()
 
     def predict(self, X):
         """ Robust prediction.
@@ -385,8 +393,19 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = check_array(X)
         X = np.array(X)
 
-        proba = self.predict_proba_2Class(X)
-        out = self.le_.inverse_transform((proba >= 0.5).astype('uint8'))
+        if isinstance(self.le_, LabelEncoder):
+            proba = self.predict_proba_2Class(X)
+            out = self.le_.inverse_transform((proba >= 0.5).astype('uint8'))
+        elif isinstance(self.le_, OneHotEncoder):
+            proba = self.predict_proba(X)
+            _p = proba >= np.max(proba, axis=1, keepdims=True)
+            out = self.le_.inverse_transform(
+                _p.astype('uint8')
+            )
+        else:
+            raise ValueError(
+                "The label encoder type {type(self.le_)} is not supported."
+            )
         return out
 
     def _more_tags(self):
