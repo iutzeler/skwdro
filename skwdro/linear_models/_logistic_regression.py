@@ -296,8 +296,14 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Input validation
         X = check_array(X)
-        p = expit(X.dot(self.coef_) + self.intercept_)
-        return np.vstack((1 - p, p)).T
+
+        if not hasattr(self, "wdro_loss_"):
+            p = expit(X.dot(self.coef_) + self.intercept_)
+            return np.vstack((1 - p, p)).T
+        else:
+            return self.wdro_loss_.transform(
+                pt.from_numpy(X).to(self.wdro_loss_.rho)
+            ).detach().cpu().numpy()
 
     def predict(self, X):
         """ Robust prediction.
@@ -320,8 +326,14 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         X = check_array(X)
         X = np.array(X)
 
-        proba = self.predict_proba_2Class(X)
-        out = self.le_.inverse_transform((proba >= 0.5).astype('uint8'))
+        proba = self.predict_proba(X)
+        # proba = self.predict_proba_2Class(X)
+        if isinstance(self.le_, LabelEncoder):
+            out = self.le_.inverse_transform((proba >= 0.5).astype('uint8'))
+        elif isinstance(self.le_, OneHotEncoder):
+            out = self.le_.inverse_transform((proba >= np.max(proba)).astype('uint8'))
+        else:
+            raise ValueError("The label encoder type {type(self.le_)} is not supported.")
         return out
 
     def _more_tags(self):
