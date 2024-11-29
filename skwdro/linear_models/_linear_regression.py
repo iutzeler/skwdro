@@ -50,7 +50,14 @@ class LinearRegression(BaseEstimator, RegressorMixin):
     solver: str, default='entropic'
         Solver to be used: 'entropic', 'entropic_torch' (_pre or _post) or 'dedicated'
     solver_reg: float, default=1.0
-        regularization value for the entropic solver
+        regularization value for the entropic solver, has
+        a default heuristic
+    sampler_reg: float | None, default=None
+        standard deviation of the regularization distribution :math:`\pi_0`, has
+        a default heuristic
+    learning_rate: float | None, default=None
+        if not set, use a default value depending on the problem, else
+        specifies the stepsize of the gradient descent algorithm
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
     opt_cond: Optional[OptCondTorch]
@@ -87,6 +94,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  solver="entropic_torch",
                  solver_reg=None,
                  sampler_reg=None,
+                 learning_rate: Optional[float] = None,
                  n_zeta_samples: int = 10,
                  random_state: int = 0,
                  opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
@@ -103,6 +111,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.solver = solver
         self.solver_reg = solver_reg
         self.sampler_reg = sampler_reg
+        self.learning_rate = learning_rate
         self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.random_state = random_state
@@ -174,6 +183,11 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 self.cost,
                 self.n_zeta_samples,
                 self.random_state,
+                learning_rate=self.learning_rate,
+                sigma=self.sampler_reg,
+                epsilon=self.solver_reg,
+                imp_samp=_post_sample,  # hard set
+                adapt="prodigy" if self.learning_rate is None else None,
                 l2reg=self.l2_reg
             )
 

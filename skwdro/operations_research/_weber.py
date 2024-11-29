@@ -32,6 +32,9 @@ class Weber(BaseEstimator):
         For the cost
     solver_reg: float, default=1e-2
         regularization value for the entropic solver
+    learning_rate: float | None, default=None
+        if not set, use a default value depending on the problem, else
+        specifies the stepsize of the gradient descent algorithm
     n_zeta_samples: int, default=10
         number of adversarial samples to draw
     solver: str, default='entropic_torch'
@@ -60,6 +63,7 @@ class Weber(BaseEstimator):
         kappa: float = 10.0,
         solver_reg: float = 1e-2,
         sampler_reg: float = 1e-2,
+        learning_rate: Optional[float] = None,
         l2_reg: float = 0.,
         n_zeta_samples: int = 10,
         cost: str = "t-NLC-2-2",
@@ -76,6 +80,7 @@ class Weber(BaseEstimator):
         self.kappa = kappa
         self.solver = solver
         self.solver_reg = solver_reg
+        self.learning_rate = learning_rate
         self.sampler_reg = sampler_reg
         self.l2_reg = l2_reg
         self.n_zeta_samples = n_zeta_samples
@@ -126,8 +131,10 @@ class Weber(BaseEstimator):
                 self.cost,
                 self.n_zeta_samples,
                 self.random_state,
+                learning_rate=self.learning_rate,
                 epsilon=self.solver_reg,
                 sigma=self.sampler_reg,
+                adapt="prodigy" if self.learning_rate is None else None,
                 l2reg=self.l2_reg
             )
             self._wdro_loss.n_iter = 300
