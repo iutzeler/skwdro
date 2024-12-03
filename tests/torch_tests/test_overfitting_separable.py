@@ -1,12 +1,14 @@
 import numpy as np
 
+from sklearn.metrics import accuracy_score
 from skwdro.linear_models import LogisticRegression
 
 ANGLE_TOL = 1e-1 * np.pi
 
-##################################
-##### BINARY CLASSIFICATION ######
-##################################
+
+# ##################################
+# ##### BINARY CLASSIFICATION ######
+# ##################################
 
 def generate_points():
     opposites = np.array([[1., 1.], [-1., -1.]])
@@ -28,30 +30,28 @@ def fit_estimator(fi=True):
         )
     X, y = generate_points()
     estimator.fit(X, y)
+    assert accuracy_score(y, estimator.predict(X)) > 0.8
     return estimator
+
 
 def angle_to_northeast(coefs):
     return np.abs(1. - abs(coefs.sum())/np.linalg.norm(coefs)/np.sqrt(2))
+
 
 def test_fit_enthropic_fi():
     estimator = fit_estimator()
     # Needs more tolerance for now since intercept difficult to estimate
     assert angle_to_northeast(estimator.coef_) < ANGLE_TOL
 
+
 def test_fit_enthropic_lin():
     estimator = fit_estimator(False)
     assert angle_to_northeast(estimator.coef_) < ANGLE_TOL
 
 
-##################################
-##### MULTICLASS CLASSIFICATION ##
-##################################
-
-import numpy as np
-
-from skwdro.linear_models import LogisticRegression
-
-ANGLE_TOL = 1e-1 * np.pi
+# #####################################
+# ##### MULTICLASS CLASSIFICATION #####
+# #####################################
 
 
 def generate_multiclass_points():
@@ -82,6 +82,7 @@ def fit_multiclass_estimator(fi=True):
     )
     X, y = generate_multiclass_points()
     estimator.fit(X, y)
+    assert accuracy_score(y, estimator.predict(X)) > 0.8
     return estimator
 
 
@@ -110,5 +111,3 @@ def test_fit_multiclass_enthropic_lin():
     # Calculate centroids of classes for validation
     centers = np.array([X[y == i].mean(axis=0) for i in np.unique(y)])
     assert np.all(angle_to_centroids(estimator.coef_, centers) < ANGLE_TOL)
-
-
