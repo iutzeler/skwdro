@@ -194,6 +194,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 ])
             )
 
+
         # Check type
         if not np.issubdtype(X.dtype, np.number):
             raise ValueError(f"Input X has dtype  {X.dtype}")
