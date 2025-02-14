@@ -174,9 +174,6 @@ class _DualFormulation(_SampleDisplacer):
         else:
             self._lam.data.mul_(0.)
 
-
-class _DualLoss(_DualFormulation):
-
     @property
     def theta(self):
         """
@@ -202,3 +199,6 @@ class _DualLoss(_DualFormulation):
         """
         # return F.softplus(self._lam)
         return self._lam
+
+
+_DualLoss = _DualFormulation
