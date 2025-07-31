@@ -29,22 +29,24 @@ from skwdro.solvers.oracle_torch import DualLoss
 # Problem setup
 # ~~~~~~~~~~~~~
 
-n = 100                                     # Number of observations
+n = 100  # Number of observations
 
-var = pt.tensor(0.1)                        # Variance of the noise
+var = pt.tensor(0.1)  # Variance of the noise
 
-def f_star(x):                              # Generating function
+# Generating function
+def f_star(x):
     return 10/(pt.exp(x)+pt.exp(-x)) + x
  
-xi = pt.rand(n)*4.0 - 2.0                   # x_i's are uniformly drawn from (-2,2] 
-xi = pt.sort(xi)[0]                         # we sort them for easier plotting
+xi = pt.rand(n)*4.0 - 2.0  # x_i's are uniformly drawn from (-2,2] 
+xi = pt.sort(xi)[0]  # we sort them for easier plotting
 yi = f_star(xi) + pt.sqrt(var)*pt.randn(n)  # y_i's are f(x_i) + noise
 
+# Build minibatches lazily with a dataloader
 dataset = DataLoader(TensorDataset(xi.unsqueeze(-1), yi.unsqueeze(-1)), batch_size=n//2, shuffle=True)
 
 degree = 4                                  # Degree of the regression
 
-device = "cuda" if pt.cuda.is_available() else "cpu"
+device = "cpu"
 
 # %%
 # Polynomial model
@@ -68,6 +70,7 @@ loss  = nn.MSELoss(reduction='none')        # Our error will be measure in quadr
 # %%
 # Training loop
 # ~~~~~~~~~~~~~
+# Define a function to train a model so that we can reuse it in various settings
 
 def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], epochs: int=10):
 
@@ -101,12 +104,12 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
 radius = pt.tensor(0.001)   # Robustness radius
 
 dual_loss = robustify( 
-            loss,
-            model,
-            radius,
-            xi.unsqueeze(-1),
-            yi.unsqueeze(-1)
-        ) # Replaces the loss of the model by the dual WDRO loss
+    loss,
+    model,
+    radius,
+    xi.unsqueeze(-1),
+    yi.unsqueeze(-1)
+) # Replaces the loss of the model by the dual WDRO loss
 
 model1 = train(dual_loss, dataset, epochs=5) # type: ignore
 

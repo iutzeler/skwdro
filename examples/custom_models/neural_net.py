@@ -12,7 +12,7 @@ from scikit--learn.
 """
 import matplotlib.pyplot as plt
 from utils.plotting import plot_decision_boundary
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import torch as pt
 import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
@@ -56,6 +56,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 )
 
 device = "cuda" if pt.cuda.is_available() else "cpu"
+# Set a seed for torch to avoid too widely different results
+pt.manual_seed(42)
 
 # Turn data into tensors
 full_batch_x = pt.from_numpy(X_train).to(device)
@@ -93,33 +95,58 @@ class SimpleNN(nn.Module):
         return logits
 
 
-# %%
-# Set the model up
-# ~~~~~~~~~~~~~~~~
-
-model = SimpleNN(
-    in_features=2,
-    out_features=1,
-    hidden_units=5
-).to(full_batch_x)
-
-
-print(model)
-
-
 loss_fn = nn.BCEWithLogitsLoss(reduction='none')
 
 # Define a sample batch for initialization
 sample_batch_x, sample_batch_y = next(iter(dataset))
 
+# %%
+# Set the models up
+# ~~~~~~~~~~~~~~~~~
+# First build the ERM model solving:
+#
+# .. math::
+#    \min_\theta \frac{1}{N}\sum_{i=1}^NL_\theta(\xi_i)
+#
+
+erm_model = SimpleNN(
+    in_features=2,
+    out_features=1,
+    hidden_units=10
+).to(full_batch_x)
+print(erm_model)
+
+# ERM loss, with the same interfaces as the robust one
+erm_loss = robustify(
+    loss_fn,
+    erm_model,
+    pt.tensor(0.),
+    sample_batch_x, sample_batch_y
+)  # Replaces the loss of the model by the dual WDRO loss
+
+# %%
+# Then the robust model solving
+#
+# .. math::
+#    \min_{\theta, \lambda\ge 0} \rho\lambda+\frac{1}{N}\sum_{i=1}^N\texttt{LogSumExp}_\varepsilon \{L_\theta(\cdot)-\|\cdot-\xi_i\|_2^2\}
+#
+
+robust_model = SimpleNN(
+    in_features=2,
+    out_features=1,
+    hidden_units=100
+).to(full_batch_x)
+
+
+print(robust_model)
 
 # Robust loss
 robust_loss = robustify(
     loss_fn,
-    model,
-    pt.tensor(1e-4),
+    robust_model,
+    pt.tensor(1e-3),
     sample_batch_x, sample_batch_y,
-    cost_spec="t-NC-2-2",
+    cost_spec="t-NLC-2-2",
     n_samples=16
 )  # Replaces the loss of the model by the dual WDRO loss
 
@@ -127,65 +154,96 @@ robust_loss = robustify(
 # Training loop
 # ~~~~~~~~~~~~~
 
-pt.manual_seed(42)
-epochs = 250
+def train(model, epochs = 500, lr=1e-3):
+    optimizer = pt.optim.AdamW(params=model.parameters(), lr=lr)
+    # optimizer = pt.optim.AdamW(params=robust_loss.parameters())
 
-# optimizer = pt.optim.AdamW(params=model.parameters(),lr=1e-2)
-optimizer = pt.optim.AdamW(params=robust_loss.parameters())
+    # Training loop
+    epoch_iterator = tqdm(range(epochs), position=0, desc='Epochs', leave=True)
+    losses = []
+    for _ in epoch_iterator:
+        avg_testloss = 0.
+        for batch_x, batch_y in tqdm(dataset, position=1, desc='Sample', leave=False):
+
+            # ## Training
+            model.train()
+
+            optimizer.zero_grad()
+            # loss = loss_fn(model(batch_x.squeeze()), batch_y)
+            loss = model(batch_x, batch_y, reset_sampler=True)
+            loss.backward()
+            optimizer.step()
+
+            # ## Testing
+            model.eval()
+            with pt.no_grad():
+                # Forward pass
+                model.erm_mode = True
+                test_logits = model.primal_loss.transform(batch_x_test)
+                test_pred = pt.round(pt.sigmoid(test_logits))
+                # Compute the loss
+                avg_testloss += loss_fn(test_logits, batch_y_test).mean().item()
+                model.erm_mode = False
+            epoch_iterator.set_postfix(
+                {'acc': f"{(test_pred == batch_y_test).float().mean().item()*100}%"}
+            )
+        losses.append(avg_testloss / len(dataset))
+
+        # Print
+        epoch_iterator.set_postfix({'loss': avg_testloss / len(dataset)})
+    return losses
 
 
-# Training loop
-iterator = tqdm(range(epochs), position=0, desc='Epochs', leave=False)
-losses = []
-for epoch in iterator:
+# %%
+# Learn the ERM model
+# ~~~~~~~~~~~~~~~~~~~
+erm_losses = train(erm_loss)
 
-    avg_testloss = 0.
-    for batch_x, batch_y in tqdm(dataset, position=1, desc='Sample', leave=False):
-
-        # ## Training
-        model.train()
-
-        optimizer.zero_grad()
-        # loss = loss_fn(model(batch_x.squeeze()), batch_y)
-        loss = robust_loss(batch_x, batch_y, reset_sampler=True)
-        loss.backward()
-        optimizer.step()
-
-        # ## Testing
-        model.eval()
-        with pt.no_grad():
-            # Forward pass
-            test_logits = model(batch_x_test)
-            test_pred = pt.round(pt.sigmoid(test_logits))
-            # Compute the loss
-            avg_testloss += loss_fn(test_logits, batch_y_test).mean().item()
-        iterator.set_postfix(
-            {'acc': f"{(test_pred == batch_y_test).float().mean().item()*100}%"}
-        )
-        losses.append(loss.item())
-
-    # Print
-    iterator.set_postfix({'loss': avg_testloss / len(dataset)})
-
+# %%
+# Learn the SkWDRO model
+# ~~~~~~~~~~~~~~~~~~~~~~
+dro_losses = train(robust_loss)
 
 # %%
 # Visuals
 # ~~~~~~~
+# First, the ERM:
 
 # Plot decision boundaries for training and test sets
 plt.figure(figsize=(12, 6))
 
 plt.subplot(2, 2, 1)
 plt.title("Train")
-plot_decision_boundary(model, full_batch_x, full_batch_y)
+plot_decision_boundary(erm_model, full_batch_x, full_batch_y)
 
 plt.subplot(2, 2, 2)
 plt.title("Test")
-plot_decision_boundary(model, batch_x_test, batch_y_test)
+plot_decision_boundary(erm_model, batch_x_test, batch_y_test)
 
 plt.subplot(2, 1, 2)
 plt.title("Test loss through epochs")
-plt.plot(losses)
+plt.plot(dro_losses)
+plt.yscale('log')
+
+plt.show()
+
+# %%
+# Then the DRO model:
+
+# Plot decision boundaries for training and test sets
+plt.figure(figsize=(12, 6))
+
+plt.subplot(2, 2, 1)
+plt.title("Train")
+plot_decision_boundary(robust_model, full_batch_x, full_batch_y)
+
+plt.subplot(2, 2, 2)
+plt.title("Test")
+plot_decision_boundary(robust_model, batch_x_test, batch_y_test)
+
+plt.subplot(2, 1, 2)
+plt.title("Test loss through epochs")
+plt.plot(dro_losses)
 plt.yscale('log')
 
 plt.show()

@@ -1,16 +1,14 @@
 r"""
-Spatial perturbations and logistic regression
-=============================================
+Effect of the epsilon Sinkhorn regularization parameter
+===================================================================
 
 This example illustrates the use of the :class:`skwdro.linear_models.LogisticRegression` class on datasets that are shifted at test time.
+It uses this setting to study the (small) impact of the regularization hyperparameter on the accuracy of the classification.
 
 """
 import numpy as np
-import matplotlib.pyplot as plt
 
-from sklearn.datasets import make_blobs, make_moons
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
+from sklearn.datasets import make_blobs
 
 from skwdro.linear_models import LogisticRegression
 
@@ -20,7 +18,7 @@ from utils.classifier_comparison import plot_classifier_comparison
 # Setup
 # ~~~~~
 
-n = 500 # Total number of samples
+n = 50 # Total number of samples
 n_train = (3 * n) // 4 # Number of training samples
 n_test = n - n_train # Number of test samples
 
@@ -40,12 +38,17 @@ for (sdev_1, sdev_2) in sdevs:
 # %%
 # WDRO classifiers
 # ~~~~~~~~~~~~~~~~
+# We build various ``SkWDRO`` estimators for :math:`\varepsilon` varying.
 
 # Rho chosen analytically
-rhos = [0, 2*4**2]
+rho = 2*4**2
+
+# Enthropic regularization: test various ones
+e0, e1 = -2, 2
+regs = np.logspace(e0, e1, base=10, num=5)
 
 # Kappa: weight of label shift
-kappa = 1000
+kappa = 100000
 
 # Cost:
 # t: torch backend
@@ -55,12 +58,24 @@ kappa = 1000
 cost = f"t-NLC-2-2-{kappa}"
 
 # WDRO classifier
-classifiers = [LogisticRegression(rho=rho, cost=cost) for rho in rhos]
+classifiers = [
+    LogisticRegression(rho=0.),
+    *(LogisticRegression(
+        rho=rho,
+        cost=cost,
+        solver_reg=eps,
+        n_zeta_samples=10,
+    ) for eps in regs)
+]
 
 # %%
 # Make plot
 # ~~~~~~~~~
+# Observe that the accuracy changes with the :math:`\varepsilon`.
 
-names = ["Logistic Regression", "WDRO Logistic Regression"]
+names = [
+    "Logistic Regression",
+    *(f"$\\rho=32$, $\\varepsilon=10^{{{eps}}}$" for eps in range(e0, e1+1))
+]
 levels = [0., 0.25, 0.45, 0.5, 0.55, 0.75, 1.]
 plot_classifier_comparison(names, classifiers, datasets, levels=levels) # type: ignore
