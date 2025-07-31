@@ -45,11 +45,6 @@ Tuning using statistical methods
    :toctree: generated/
    :template: class.rst
 
-This tuning method is based on an algorithm from Blanchet's 2021 paper "Statistical Analysis of Wasser-
-stein Distributionally Robust Estimators" (see https://arxiv.org/abs/2108.02120 for more details). It is based on rewriting the general stochastic
-optimization problem as a statistical hypothesis test, and deducing an estimation for a good value of :math:`\rho` that guarantees the presence
-of a minimizer in the Wasserstein ball with high probability.
+This tuning method is based on an algorithm from Blanchet's 2021 paper "Statistical Analysis of Wasserstein Distributionally Robust Estimators" (see https://arxiv.org/abs/2108.02120 for more details). It is based on rewriting the general stochastic optimization problem as a statistical hypothesis test, and deducing an estimation for a good value of :math:`\rho` that guarantees the presence of a minimizer in the Wasserstein ball with high probability.
 
-This method doesn't work with the NewsVendor problem as it exploits the second derivative with respect to the decision :math:`\theta` and
-the sample parameter :math:`\xi`, and this derivative is equal to zero. This fact breaks the structure of the algorithm, because the 
-value of :math:`\varphi^{*}` as described in the above paper will be unbounded.
+This method doesn't work with the NewsVendor problem as it exploits the second derivative with respect to the decision :math:`\theta` and the sample parameter :math:`\xi`, and this derivative is equal to zero. This fact breaks the structure of the algorithm, because the value of :math:`\varphi^{*}` as described in the above paper will be unbounded.
