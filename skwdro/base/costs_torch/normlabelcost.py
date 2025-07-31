@@ -161,6 +161,11 @@ class NormLabelCost(NormCost):
                     loc=xi_labels,
                     scale=epsilon.to(xi_labels) / self.kappa
                 )
+            elif self.p == 2:
+                return dst.Normal(
+                    loc=xi_labels,
+                    scale=epsilon.to(xi_labels) / self.kappa
+                )
             elif self.p == pt.inf:
                 Warning("For sup norm, we use a gaussian sampler by default.")
                 return dst.Normal(

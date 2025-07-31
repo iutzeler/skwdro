@@ -77,6 +77,7 @@ class OptCondTorch:
         order: Union[int, str],
         tol_theta: float = 1e-8,
         tol_lambda: float = 1e-8,
+        max_iter: Optional[int] = None,
         *,
         monitoring: str = "theta",
         mode: str = "rel",
@@ -98,7 +99,7 @@ class OptCondTorch:
         self.monitoring = monitoring
         self.mode = mode
         self.metric = metric
-        self.max_iter: int = 0
+        self.max_iter: int = 0 if max_iter is None else max_iter
 
         self.verbose = verbose
 
