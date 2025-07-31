@@ -23,6 +23,7 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 
    examples/Builtin/index
    examples/Custom/index
+   examples/Study/index
    
 .. toctree::
    :maxdepth: 2
