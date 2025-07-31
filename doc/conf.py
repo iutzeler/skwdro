@@ -16,7 +16,7 @@ import sys
 import os
 
 import sphinx_gallery
-import sphinx_rtd_theme
+# import sphinx_rtd_theme
 
 # Add to sys.path the top-level directory where the package is located.
 sys.path.insert(0, os.path.abspath('..'))
@@ -42,20 +42,20 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.viewcode',
     'sphinx.ext.mathjax',
-    'sphinx_rtd_theme',
+    # 'sphinx_rtd_theme',
     'numpydoc',
     'sphinx_gallery.gen_gallery',
-    'sphinx.ext.autosectionlabel',
+    # 'sphinx.ext.autosectionlabel',
     'sphinx_copybutton',
     'sphinx_design',
-    'myst_parser',
+    # 'myst_parser',
 ]
 
 
-myst_enable_extensions = [
-    "dollarmath",
-    "amsmath"
-]
+# myst_enable_extensions = [
+#     "dollarmath",
+#     "amsmath"
+# ]
 
 
 
@@ -65,11 +65,13 @@ numpydoc_show_class_members = False
 
 # pngmath / imgmath compatibility layer for different sphinx versions
 import sphinx
-from distutils.version import LooseVersion
-if LooseVersion(sphinx.__version__) < LooseVersion('1.4'):
-    extensions.append('sphinx.ext.pngmath')
-else:
-    extensions.append('sphinx.ext.imgmath')
+# from distutils.version import LooseVersion
+# if LooseVersion(sphinx.__version__) < LooseVersion('1.4'):
+#     extensions.append('sphinx.ext.pngmath')
+# else:
+#     extensions.append('sphinx.ext.imgmath')
+#     imgmath_latex_preamble = r'\usepackage[active]{preview}' # + other custom stuff for inline math, such as non-default math fonts etc.
+#     imgmath_use_preview = True
 
 autodoc_default_flags = ['members', 'inherited-members']
 
@@ -155,18 +157,23 @@ suppress_warnings = ['autosectionlabel.*']
 ###
 ### Read the docs style
 ###
-html_theme = 'sphinx_rtd_theme'
+# html_theme = 'groundwork'
+# html_theme = 'sphinx_rtd_theme'
+html_permalinks_icon = '<span>#</span>'
+html_theme = 'sphinxawesome_theme'
+html_css_files = ['_static/css/custom.css']
+
 html_theme_options = {}
 
 ###
 ### Furo style
 ### /!\ Maths in dark and end of paraph glyph (pycrow) are broken...
 # html_theme = 'furo'
-# html_theme_options = {
-#     "source_repository": "https://github.com/iutzeler/skwdro/",
-#     "source_branch": "dev",
-#     "source_directory": "doc/",
-# }
+html_theme_options = {
+    "source_repository": "https://github.com/iutzeler/skwdro/",
+    "source_branch": "dev",
+    "source_directory": "doc/",
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -253,7 +260,7 @@ htmlhelp_basename = 'project-skwdro'
 
 latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
-'papersize': 'a4paper',
+    'papersize': 'a4paper',
 
 # The font size ('10pt', '11pt' or '12pt').
 #'pointsize': '10pt',
@@ -346,10 +353,10 @@ sphinx_gallery_conf = {
     'reference_url': {
         'skwdro': None},
     'filename_pattern': '',
-    'ignore_pattern' : 'utils' ,
+    'ignore_pattern' : r'utils',
     'capture_repr': ('_repr_html_', '__repr__'),
-    'examples_dirs': ['../examples/builtin_models/', '../examples/custom_models/'],
-    'gallery_dirs': ['examples/Builtin', 'examples/Custom'],
+    'examples_dirs': ['../examples/builtin_models/', '../examples/custom_models/', '../examples/studying_skwdro/'],
+    'gallery_dirs': ['examples/Builtin', 'examples/Custom', 'examples/Study'],
 }
 
 # # The following is used by sphinx.ext.linkcode to provide links to github
