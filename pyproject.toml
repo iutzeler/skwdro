@@ -53,7 +53,7 @@ docs = [
     "numpydoc",
     "sphinx",
     "sphinx-gallery",
-    "sphinx_rtd_theme",
+    "sphinxawesome-theme",
     "sphinx-copybutton",
     "sphinx_design",
     "myst_parser",
