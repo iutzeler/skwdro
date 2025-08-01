@@ -14,7 +14,7 @@ For instance, in linear regression, we have :math:`\xi=(x,y)\in\mathbb{R}^d\time
 
 In machine learning, it is usual to train our model (or fit, ie. optimize on :math:`\theta`) using data samples :math:`(\xi_i)_{i=1}^n`  of the uncertain parameter by minimizing the Empirical Risk, which leads to the problem: 
 
-.. math::    
+.. math::
     \min_{\theta} \frac{1}{n} \sum_{i=1}^n  f_\theta(\xi_i)
     :label: ERM
 

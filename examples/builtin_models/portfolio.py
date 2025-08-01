@@ -23,14 +23,17 @@ where :math:`\tau` is an extra real parameter accounting for the threshold of th
 We set the confidence level :math:`\alpha` of the CVaR to 0.2 and the robustness coefficient :math:`\eta` to 10.
 
 """
+from matplotlib.gridspec import GridSpec
 import numpy as np
 import matplotlib.pyplot as plt
 from skwdro.operations_research._portfolio import Portfolio
 
 
 ## PROBLEM SETUP
-N = 30 # Number of observations
-m = 10  # Number of assets
+# N = 30 # Number of observations
+# m = 10  # Number of assets
+N = 40 # Number of observations
+m = 6  # Number of assets
 
 common_var = 0.02               # Variance of the common part
 specific_mean_factor = 0.03     # Mean factor of the common part
@@ -40,10 +43,14 @@ psi = np.random.randn(N, 1) * np.sqrt(common_var)
 zeta = np.random.randn(N, m) * np.sqrt(specific_var_factor) + specific_mean_factor * np.arange(1,m+1)[None, :]
 returns_by_asset = psi + zeta
 
-## RESOLUTION FOR DIFFERENT RADII
-tested_radii = np.logspace(-3, 0, 10)
+psi_test = np.random.randn(100*N, 1) * np.sqrt(common_var)
+zeta_test = np.random.randn(100*N, m) * np.sqrt(specific_var_factor) + specific_mean_factor*0 * np.arange(1,m+1)[None, :]
+returns_by_asset_test = psi_test + zeta_test
 
-pbrs = [Portfolio(rho = i, alpha=.2, eta=10.).fit(returns_by_asset) for i in tested_radii]
+## RESOLUTION FOR DIFFERENT RADII
+tested_radii = np.logspace(-3, 0, 100)
+
+pbrs = [Portfolio(rho = i, alpha=.2, eta=1., solver='dedicated').fit(returns_by_asset) for i in tested_radii]
 
 
 data = np.vstack([m.coef_ for m in pbrs]).T
@@ -57,12 +64,21 @@ data = data[np.argsort(data[:, -1]), :]
 
 
 ## Plotting
-fig, ax = plt.subplots()
-_ = plt.stackplot([m.rho for m in pbrs], data)
-plt.xlabel("Robustness radius")
+#fig, ax = plt.subplots(2, 1, sharex=True)
+fig = plt.figure()
+gs = GridSpec(5, 5, hspace=0, wspace=0)
+ax = (fig.add_subplot(gs[0, :]), fig.add_subplot(gs[1:, :]))
+ax[0].plot(tested_radii, [m.score(returns_by_asset_test) for m in pbrs], '--')
+_ = ax[1].stackplot(tested_radii, data, labels=tuple(
+    map(lambda s_: f"$\\mu={specific_mean_factor * s_}$", range(1,m+1))
+))
+ax[1].set_xlabel("Robustness radius")
 plt.xlim([np.min(tested_radii),np.max(tested_radii)])
-ax.set_xscale('log')
-plt.ylabel("Portfolio repartition")
+ax[0].set_xscale('log')
+ax[1].set_xscale('log')
+ax[0].set_ylabel('test score')
+ax[1].set_ylabel("Portfolio repartition")
+plt.legend()
 plt.ylim([0,1])
 
 plt.show()

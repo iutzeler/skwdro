@@ -139,7 +139,7 @@ class DualPostSampledLoss(_DualLoss):
         if adapt:
             assert adapt in ("mechanic", "prodigy")
             self._opti = CompositeOptimizer(
-                self.primal_loss.parameters(), self.lam, n_iter, adapt)
+                self.primal_loss.parameters(), self._lam, n_iter, adapt)
 
         else:
             self._opti = pt.optim.AdamW(
