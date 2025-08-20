@@ -32,8 +32,10 @@ class LabeledCostSampler(LabeledSampler):
         sigma,
         seed: int
     ):
-        sd, sl = cost._sampler_data(
-            xi, sigma), cost._sampler_labels(xi_labels, sigma)
+        sd, sl = (
+            cost._sampler_data(xi, sigma),
+            cost._sampler_labels(xi_labels, sigma)
+        )
         if sl is None:
             raise ValueError("Please choose a cost that can sample labels")
         super(LabeledCostSampler, self).__init__(sd, sl, seed)

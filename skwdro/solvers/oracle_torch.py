@@ -105,11 +105,35 @@ class DualPostSampledLoss(_DualLoss):
     Parameters
     ----------
     loss : Loss
-        the loss of interest :math:`L_\theta`
+        the (primal) loss of interest :math:`L_\theta`
     cost : Cost
         ground-distance function
     n_samples : int
         number of :math:`\zeta` samples to draw at each forward pass
+    epsilon_0: torch.Tensor
+        scalar tensor containing the :math:`\varepsilon` regularization
+        hyperparameter
+    rho_0: torch.Tensor
+        scalar tensor containing the :math:`\rho` (regularized) Wasserstein
+        radius hyperparameter
+    n_iter: Steps
+        either a tuple ``(number of ERM iterations, number of DRO iterations)``,
+        of type ``(int, int)``, or an integer for the number of DRO iterations
+    gradient_hypertuning: bool
+        set to ``True`` to accumulate gradients in ``rho`` and ``epsilon``
+        .. tip:: should almost always be kept to ``False``
+    learning_rate: Optional[float]
+        set the stepsize of the :py:class:`torch.optim.AdamW` algorithm. Defaults
+        to ``None`` which will be parsed as ``5e-2``
+    imp_samp: bool
+        set to false to disable importance sampling for ``(2, 2)`` ground-costs
+    adapt: Optional[str]
+        set to either:
+
+        * ``"prodigy"`` or ``"mechanic"`` to get automatic learning rate tuning
+        * ``None`` to use :py:class:`torch.optim.AdamW`.
+            .. tip:: Set the learning rate with the above parameter
+                ``learning_rate``.
     """
 
     def __init__(
@@ -232,6 +256,7 @@ class DualPostSampledLoss(_DualLoss):
                 ", please provide a positive rho value"
             ]))
         elif self.rho == 0.:
+            # Just to have a zero grad in lambda
             first_term = self.rho * self.lam
             _pl: pt.Tensor = self.primal_loss(
                 xi.unsqueeze(0),  # (1, m, d)
@@ -266,6 +291,40 @@ class DualPreSampledLoss(_DualLoss):
     n_samples : int
         number of :math:`\zeta` samples to draw before the gradient
         descent begins (can be changed if needed between inferences).
+    epsilon_0: torch.Tensor
+        scalar tensor containing the :math:`\varepsilon` regularization
+        hyperparameter
+    rho_0: torch.Tensor
+        scalar tensor containing the :math:`\rho` (regularized) Wasserstein
+        radius hyperparameter
+    n_iter: Steps
+        either a tuple ``(number of ERM iterations, number of DRO iterations)``,
+        of type ``(int, int)``, or an integer for the number of DRO iterations
+    gradient_hypertuning: bool
+        set to ``True`` to accumulate gradients in ``rho`` and ``epsilon``
+        .. tip:: should almost always be kept to ``False``
+    learning_rate: Optional[float]
+        set the stepsize of the :py:class:`torch.optim.AdamW` algorithm. Defaults
+        to ``None`` which will be parsed as ``5e-2``
+    imp_samp: bool
+        set to false to disable importance sampling for ``(2, 2)`` ground-costs
+    adapt: Optional[str]
+        set to either:
+
+            * ``None`` to use :py:class:`torch.optim.LBFGS`
+                .. tip:: Set the learning rate with the above parameter
+                    ``learning_rate``.
+            * ``"prodigy"`` or ``"mechanic"`` to get automatic learning rate tuning
+
+    Attributes
+    ----------
+    zeta: Optional[torch.Tensor]
+        the set batch of inputs :math:`\zeta`. Set to ``None`` at initialization
+        but will be dynamically overriden at the first forward pass
+    zeta: Optional[torch.Tensor]
+        the set batch of targets :math:`\zeta_y`. Set to ``None`` at
+        initialization but will be dynamically overriden at the first forward
+        pass if the problem is either of classification of regression type
     """
     zeta: Optional[pt.Tensor]
     zeta_labels: Optional[pt.Tensor]

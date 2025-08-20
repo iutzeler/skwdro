@@ -1,10 +1,11 @@
-from .base_samplers import IsOptionalCovarianceSampler, LabeledSampler, NoLabelsSampler
+from .base_samplers import IsOptionalCovarianceSampler, LabeledSampler, NoLabelsSampler, BaseSampler
 from .classif_sampler import ClassificationNormalBernouilliSampler, ClassificationNormalIdSampler, ClassificationNormalNormalSampler
 from .cost_samplers import LabeledCostSampler, NoLabelsCostSampler
 from .newsvendor_sampler import NewsVendorNormalSampler
 from .portfolio_sampler import PortfolioLaplaceSampler, PortfolioNormalSampler
 
 __all__ = [
+    "BaseSampler",
     "IsOptionalCovarianceSampler",
     "LabeledSampler",
     "NoLabelsSampler",

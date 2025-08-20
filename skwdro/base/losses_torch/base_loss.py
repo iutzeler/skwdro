@@ -27,7 +27,7 @@ class Loss(nn.Module, ABC):
     def regularize(self, loss: pt.Tensor) -> pt.Tensor:
         r"""
         Returns the regularized loss, used in the value function.
-        Adds a new term :math:`\frac{1}{2}\|\theta\|_2^2
+        Adds a new term :math:`\frac{1}{2}\|\theta\|_2^2`
         """
         if self.l2reg is None:
             return loss
@@ -88,7 +88,7 @@ class Loss(nn.Module, ABC):
 
     def forward(self, *args):
         """
-        Alias for :method:`~Loss.value`, for consistency with usual torch api.
+        Alias for :py:meth:`value`, for consistency with usual torch api.
         """
         return self.value(*args)
 
