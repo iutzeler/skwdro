@@ -20,7 +20,6 @@ In general for linear classification, as can be seen in the logistic regression 
 
 You can learn more about how you can use the library to build a ``PyTorch`` optimization model by reading through the user guide.
 
-
 In machine learning, it is usual to train our model (or fit, i.e. optimize on :math:`\theta`) using a finite amount of data samples :math:`(\xi_i)_{i=1}^N`, by minimizing the **Empirical Risk** over this available dataset, which leads to the problem: 
 
 .. math::
