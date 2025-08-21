@@ -9,12 +9,15 @@ from skwdro.base.samplers.torch.newsvendor_sampler import NewsVendorNormalSample
 
 
 class NewsVendorLoss_torch(Loss):
-    r""" Loss associated with the newsvendor problem:
+    r"""Loss associated with the newsvendor problem:
+
     .. math::
+
         k\theta - \mathbb{E}[u\min(\theta, \xi)]
 
     Parameters
     ----------
+
     sampler : Optional[NoLabelsSampler]
         optional sampler to use for the demand
     k : int
@@ -26,6 +29,7 @@ class NewsVendorLoss_torch(Loss):
 
     Attributes
     ----------
+
     sampler : NoLabelsSampler
     k : nn.Parameter
     u : nn.Parameter
@@ -35,13 +39,14 @@ class NewsVendorLoss_torch(Loss):
     """
 
     def __init__(
-            self,
-            sampler: NoLabelsSampler,
-            *,
-            k: float = 5,
-            u: float = 7,
-            l2reg: Optional[float] = None,
-            name: Optional[str] = "NewsVendor loss"):
+        self,
+        sampler: NoLabelsSampler,
+        *,
+        k: float = 5,
+        u: float = 7,
+        l2reg: Optional[float] = None,
+        name: Optional[str] = "NewsVendor loss"
+    ):
         super(NewsVendorLoss_torch, self).__init__(sampler, l2reg=l2reg)
         self.k = pt.tensor(float(k))
         self.u = pt.tensor(float(u))
@@ -58,6 +63,7 @@ class NewsVendorLoss_torch(Loss):
 
         Parameters
         ----------
+
         xi : pt.Tensor
             empirical observations of demand
         xi_labels : NoneType
