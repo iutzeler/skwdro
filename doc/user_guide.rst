@@ -2,11 +2,11 @@
 
 .. _user_guide:
 
-==================================================
+==========
 User guide
-==================================================
+==========
 
-The goal of this page is to provide an introduction to the main features of the package: the ``scikit-learn`` and the ``PyTorch`` interfaces. We will demonstrate the main functionalities on a simple Linear Regression example.
+The goal of this page is to point to the parts of the documentation that showcase the main features of the package: the ``scikit-learn`` and the ``PyTorch`` interfaces. We will demonstrate the main functionalities on a simple Linear Regression example.
 
 
 Linear Regression
@@ -26,10 +26,12 @@ The most common approach to learn the parameters :math:`w` and :math:`b` is to m
 Solving the regression problem with ``scikit-learn``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The linear regression problem can now be solved with the ``LinearRegression`` estimator from ``scikit-learn``.
+The linear regression problem can now be solved with the :py:class:`sklearn.linear_model.LinearRegression` estimator from ``scikit-learn``.
 We assume that we are given ``X_train`` of shape ``(n_train, n_features)`` and ``y_train`` of shape ``(n_train,)`` as training data and ``X_test`` of shape ``(n_test, n_features)`` as test data.
 
-::
+.. code-block:: python
+   :linenos:
+   :caption: Scikit's ``LinearRegression`` interface
 
     from sklearn.linear_model import LinearRegression
 
@@ -42,31 +44,37 @@ We assume that we are given ``X_train`` of shape ``(n_train, n_features)`` and `
 
 
 Solving the robust regression problem with ``skwdro``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Robust estimators from ``skwdro`` can be used as drop-in replacements for ``scikit-learn`` estimators (they actually inherit from ``scikit-learn`` estimators and classifier classes.)
 ``skwdro`` provides robust estimators for standard problems such as linear regression or logistic regression.
-``LinearRegression`` from ``skwdro.linear_model`` is a robust version of ``LinearRegression`` from ``scikit-learn`` and be used in the same way. The only difference is that now an uncertainty radius ``rho`` is required.
+:py:class:`skwdro.linear_models.LinearRegression` is a robust version of :py:class:`sklearn.linear_model.LinearRegression` and may be used in the same way. The only difference is that now an uncertainty radius ``rho`` is required.
 
-::
+.. code-block:: python
+   :linenos:
+   :caption: SkWDRO's ``LinearRegression`` interface
+   :emphasize-added: 2,5,9
+   :emphasize-removed: 1,8
 
-    from skwdro.linear_model import LinearRegression
+   from sklearn.linear_model import LinearRegression
+   from skwdro.linear_model import LinearRegression
 
-    # Uncertainty radius
-    rho = 0.1
+   # Uncertainty radius
+   rho = 0.1
 
-    # Fit the model
-    robust_model = LinearRegression(rho=rho)
-    robust_model.fit(X_train, y_train)
+   # Fit the model
+   model = LinearRegression()
+   robust_model = LinearRegression(rho=rho)
+   robust_model.fit(X_train, y_train)
 
-    # Predict the target values
-    y_pred = robust_model.predict(X_test)
+   # Predict the target values
+   y_pred = robust_model.predict(X_test)
 
 As a consequence, robust estimators can be tried and used without much change to existing pipelines!
 
-By default, the ``LinearRegression`` estimator from ``skwdro`` uses will solve the robust optimization problem with entropic regularization and by calling a stochastic first-order solver in ``PyTorch``. A dedicated solver can be used by setting the ``solver`` parameter in the constructor to ``'dedicated'``.
+By default, the ``LinearRegression`` estimator from ``skwdro`` uses will solve the robust optimization problem with entropic regularization and by calling a stochastic first-order solver in ``PyTorch``. A dedicated solver from ``CvxPy`` can be used by setting the ``solver`` parameter in the constructor to ``'dedicated'``.
 
-::
+.. code-block:: python
 
     robust_model = LinearRegression(rho=rho, solver='dedicated')
 
@@ -75,9 +83,12 @@ Solving the regression problem with the ``PyTorch`` interface
 
 The next section now describe the ``PyTorch`` interface of ``skwdro``: it allows more flexibility, custom models and optimizers. 
 
-Assume now that the data is given as a dataloader ``train_loader``.
+Assume now that the (training) data is given as a dataloader ``train_loader``.
 
-::
+.. code-block:: python
+   :linenos:
+   :caption: SkWDRO's ``PyTorch``-type interface
+   :emphasize-lines: 8,20
 
     import torch
     import torch.nn as nn
@@ -96,7 +107,7 @@ Assume now that the data is given as a dataloader ``train_loader``.
 
     # Define a sample batch for initialization
     sample_batch_x, sample_batch_y = next(iter(train_loader))
-    
+
     # Robust loss
     robust_loss = robustify(loss_fn, model, rho, sample_batch_x, sample_batch_y)
 
@@ -107,17 +118,22 @@ Assume now that the data is given as a dataloader ``train_loader``.
     for epoch in range(100):
         for batch_x, batch_y in train_loader:
             optimizer.zero_grad()
-            loss = robust_loss(batch_x, batch_y)
+            loss = robust_loss(batch_x, batch_y, reset_sampler=True)
             loss.backward()
             optimizer.step()
 
 This is the simplest use of the ``PyTorch`` interface: just wrap the usual loss and model with the ``robustify`` function and use the resulting loss function in the training loop.
 
-To make the optimization of the robust model more efficient, we also provide an learning-rate free optimizer tailored to this problem. 
+To make the optimization of the robust model more efficient, we also provide an learning-rate free optimizer tailored to this problem, taken from pieces of the literature: [#CDM23]_ and [MD24]_. 
 
-::
+.. code-block:: python
+   :caption: Fetch the optimizer from the robust loss!
 
     # Adaptive optimizer
     optimizer = robust_loss.optimizer
 
+References
+==========
 
+.. [#CDM23] Cutkosky, Defazio and Mehta: **Mechanic: a Learning Rate Tuner**, *NIPS*, 2023
+.. [#MD24] Mishchenko and Defazio: **Prodigy: An Expeditiously Adaptive Parameter-Free Learner**, *ICML*, 2024

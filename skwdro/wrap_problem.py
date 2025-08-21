@@ -97,11 +97,12 @@ def dualize_primal_loss(
 
     Parameters
     ----------
+
     loss_: nn.Module
         the primal loss
     transform_: nn.Module
         the transformation to apply to the data before feeding it to the loss
-    rho: Tensor, shape (n_samples,)
+    rho: Tensor, scalar tensor
         Wasserstein radius
     xi_batchinit: Tensor, shape (n_samples, n_features)
         Data points to initialize the samplers and :math:`\lambda_0`
@@ -117,6 +118,9 @@ def dualize_primal_loss(
         descent begins (can be changed if needed between inferences)
     seed: int
         the seed for the samplers
+    learning_rate: float
+        the step size for the default descent algorithm linked to the loss
+        function
     epsilon: float|None
         Epsilon if hard coded, ``None`` to let the algo find it.
     sigma: float|None

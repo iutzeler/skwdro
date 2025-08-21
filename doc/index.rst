@@ -10,10 +10,10 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 
    quick_start
    wdro
+   why_skwdro
    user_guide
    sklearn
    pytorch
-   
 
 
 .. toctree::
@@ -24,7 +24,8 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    examples/Builtin/index
    examples/Custom/index
    examples/Study/index
-   
+
+
 .. toctree::
    :maxdepth: 2
    :hidden:
@@ -50,12 +51,19 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
 
 
 `Getting started <quick_start.html>`_
--------------------------------------
+=====================================
 
 Information regarding this package and its installation as well as Wasserstein Distributionally Robust optimization.
 
 `User Guide <user_guide.html>`_
--------------------------------
+===============================
 
 Documentation of the package, available models, and their numerical resolution.
 
+`About WDRO <wdro.html>`_
+=========================
+
+Introduction to the WDRO framework and ideas predating this library.
+
+`Why SkWDRO? <why_skwdro.html>`_
+================================
