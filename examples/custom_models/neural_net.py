@@ -154,7 +154,7 @@ robust_loss = robustify(
 # Training loop
 # ~~~~~~~~~~~~~
 
-def train(model, epochs = 500, lr=1e-3):
+def train(model, epochs = 500, lr = 1e-3):
     optimizer = pt.optim.AdamW(params=model.parameters(), lr=lr)
     # optimizer = pt.optim.AdamW(params=robust_loss.parameters())
 
