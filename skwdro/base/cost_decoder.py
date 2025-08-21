@@ -123,16 +123,20 @@ def parse_code_torch(
 def cost_from_parse_torch(parsed: ParsedCost) -> TorchCost:
     r"""Converts a ParsedCost object into a TorchCost object.
 
-    Takes a :py:class:`ParsedCost` instance, which contains specific information about the cost type and parameters, and returns an appropriate :py:class:`TorchCost` subclass based on the parsed ID.
+    Takes a :py:class:`ParsedCost` instance, which contains specific information
+    about the cost type and parameters, and returns an appropriate
+    :py:class:`TorchCost` subclass based on the parsed ID.
 
     Parameters
     ----------
 
     :param parsed: An instance of ParsedCost containing the cost information.
     :type parsed: ParsedCost
-    :raises ValueError: If the ID in the parsed cost is not recognized as valid (either "NC" or "NLC"), raises a ValueError 
-                         with an error message indicating that the cost code is invalid.
-    :return: A TorchCost subclass instance corresponding to the parsed cost type and parameters.
+    :raises ValueError: If the ID in the parsed cost is not recognized as valid
+        (either "NC" or "NLC"), raises a ValueError with an error message
+        indicating that the cost code is invalid.
+    :return: A TorchCost subclass instance corresponding to the parsed cost type
+        and parameters.
     :rtype: TorchCost
     """
     _, id_, power_, type_, kappa = parsed
