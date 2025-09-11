@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union, Callable
 
 import torch as pt
 import torch.nn as nn
@@ -75,7 +75,10 @@ def power_from_parsed_spec(parsed_spec: Optional[ParsedCost]) -> float:
 
 
 def dualize_primal_loss(
-    loss_: nn.Module,
+    loss_: Union[
+        nn.Module,
+        Callable[..., pt.Tensor]
+    ],
     transform_: Optional[nn.Module],
     rho: pt.Tensor,
     xi_batchinit: pt.Tensor,
@@ -98,10 +101,12 @@ def dualize_primal_loss(
     Parameters
     ----------
 
-    loss_: nn.Module
-        the primal loss
-    transform_: nn.Module
-        the transformation to apply to the data before feeding it to the loss
+    loss_: nn.Module|Callable
+        the primal loss :math:`L_\theta`. Can be given either as a
+        :py:class:`torch.nn.Module` or as a (functional) callable.
+    transform_: nn.Module|None
+        the transformation to apply to the (non-label) data before feeding it to
+        the loss. Identity if set to ``None`` (default).
     rho: Tensor, scalar tensor
         Wasserstein radius
     xi_batchinit: Tensor, shape (n_samples, n_features)
@@ -189,17 +194,3 @@ def dualize_primal_loss(
         learning_rate=learning_rate,
         adapt=adapt,
     )
-    # if post_sample:
-    #     return DualPostSampledLoss(
-    #         loss,
-    #         cost,
-    #         n_iter=(200, 2800),
-    #         **kwargs
-    #     )
-    # else:
-    #     return DualPreSampledLoss(
-    #         loss,
-    #         cost,
-    #         n_iter=(100, 10),
-    #         **kwargs
-    #     )
