@@ -12,7 +12,6 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
     def __init__(
         self,
         xi: pt.Tensor, xi_labels: pt.Tensor,
-        seed: Optional[int] = None,
         *,
         sigma: Optional[Union[float, pt.Tensor]] = None,
         tril: Optional[pt.Tensor] = None,
@@ -21,7 +20,8 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
         l_sigma: Optional[Union[float, pt.Tensor]] = None,
         l_tril: Optional[pt.Tensor] = None,
         l_prec: Optional[pt.Tensor] = None,
-        l_cov: Optional[pt.Tensor] = None
+        l_cov: Optional[pt.Tensor] = None,
+        seed: Optional[int] = None,
     ):
         assert len(xi.size()) >= 2
         assert len(xi_labels.size()) >= 2
@@ -45,7 +45,7 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
         self.__init__(
             xi,
             xi_labels,
-            self.seed,
+            seed=self.seed,
             tril=self.data_s._unbroadcasted_scale_tril,
             l_tril=self.labels_s._unbroadcasted_scale_tril
         )
@@ -59,12 +59,12 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
     def __init__(
         self,
         xi: pt.Tensor, xi_labels: pt.Tensor,
-        seed: Optional[int],
         *,
         sigma: Optional[Union[float, pt.Tensor]] = None,
         tril: Optional[pt.Tensor] = None,
         prec: Optional[pt.Tensor] = None,
-        cov: Optional[pt.Tensor] = None
+        cov: Optional[pt.Tensor] = None,
+        seed: Optional[int],
     ):
         covar = self.init_covar(xi.size(-1), sigma, tril, prec, cov)
         super(ClassificationNormalIdSampler, self).__init__(
@@ -90,7 +90,7 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
         self.__init__(
             xi,
             xi_labels,
-            self.seed,
+            seed=self.seed,
             tril=self.data_s._unbroadcasted_scale_tril,
         )
 
@@ -101,14 +101,14 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
 
     def __init__(
         self,
-        xi: pt.Tensor, xi_labels: pt.Tensor,
-        seed: Optional[int],
-        *,
         p: float,
+        xi: pt.Tensor, xi_labels: pt.Tensor,
+        *,
         sigma: Optional[Union[float, pt.Tensor]] = None,
         tril: Optional[pt.Tensor] = None,
         prec: Optional[pt.Tensor] = None,
-        cov: Optional[pt.Tensor] = None
+        cov: Optional[pt.Tensor] = None,
+        seed: Optional[int],
     ):
         assert 0. <= p <= 1.
         covar = self.init_covar(xi.size(-1), sigma, tril, prec, cov)
@@ -141,9 +141,9 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
 
     def reset_mean(self, xi, xi_labels):
         self.__init__(
+            self.p,
             xi,
             xi_labels,
-            self.seed,
+            seed=self.seed,
             tril=self.data_s._unbroadcasted_scale_tril,
-            p=self.p
         )
