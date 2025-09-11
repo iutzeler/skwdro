@@ -13,6 +13,7 @@ class WrappingError(ValueError):
 
 class WrappedPrimalLoss(Loss):
     loss_oop_interface: bool = True
+    reduce_spatial_dims: bool = True
 
     def __init__(
         self,
@@ -23,6 +24,7 @@ class WrappedPrimalLoss(Loss):
         transform: Optional[nn.Module],
         sampler: BaseSampler,
         has_labels: bool,
+        reduce_spatial_dims: bool = True,
         *,
         l2reg: Optional[float] = None
     ) -> None:
@@ -45,6 +47,7 @@ class WrappedPrimalLoss(Loss):
                 'or my_loss(input: Tensor, reduction: str).'
             ])
             self.loss_oop_interface = False
+        self.reduce_spatial_dims = reduce_spatial_dims
         self.transform = transform if transform is not None else nn.Identity()
         self.has_labels = has_labels
 
@@ -95,29 +98,54 @@ class WrappedPrimalLoss(Loss):
                 reduction='none'
             ))
 
+    def _reduce_flat_spatial_dims_loss(self, losses: pt.Tensor) -> pt.Tensor:
+        if self.reduce_spatial_dims:
+            return losses.mean(dim=-1, keepdim=True)
+        else:
+            return losses.unsqueeze(-1)
+
     def value(self, xi: pt.Tensor, xi_labels: Optional[pt.Tensor] = None):
         if self.has_labels:
             assert xi_labels is not None
             if xi.dim() > 2 and xi_labels.dim() > 2:
                 *b, _ = xi.size()
-                return self._flat_value_w_labels(xi.flatten(start_dim=0, end_dim=-2), xi_labels.flatten(start_dim=0, end_dim=-2)).view(*b, 1)
+                flat_loss = self._flat_value_w_labels(
+                    xi.flatten(start_dim=0, end_dim=-2),
+                    xi_labels.flatten(start_dim=0, end_dim=-2)
+                )
+                return self._reduce_flat_spatial_dims_loss(flat_loss).view(*b, 1)
             elif xi.dim() > 2 and xi_labels.dim() == 2:
                 *b, _ = xi.size()
-                return self._flat_value_w_labels(xi.flatten(start_dim=0, end_dim=-2), xi_labels.squeeze()).view(*b, 1)
+                flat_loss = self._flat_value_w_labels(
+                    xi.flatten(start_dim=0, end_dim=-2),
+                    xi_labels
+                )
+                return self._reduce_flat_spatial_dims_loss(flat_loss).view(*b, 1)
             elif xi.dim() == 2 and xi_labels.dim() <= 2:
-                return self._flat_value_w_labels(xi, xi_labels).unsqueeze(-1)
+                flat_loss = self._flat_value_w_labels(
+                    xi, xi_labels
+                ).squeeze()
+                return self._reduce_flat_spatial_dims_loss(flat_loss)
             elif xi.dim() == xi_labels.dim() == 1:
-                return self._flat_value_w_labels(xi, xi_labels)
+                flat_loss = self._flat_value_w_labels(xi, xi_labels)
+                return self._reduce_flat_spatial_dims_loss(flat_loss)
             else:
                 raise NotImplementedError()
         else:
             assert xi_labels is None
             if xi.dim() > 2:
                 *b, _ = xi.size()
-                return self._flat_value_wo_labels(xi.flatten(start_dim=0, end_dim=-2)).view(*b, 1)
+                flat_loss = self._flat_value_wo_labels(
+                    xi.flatten(start_dim=0, end_dim=-2)
+                )
+                return self._reduce_flat_spatial_dims_loss(flat_loss).view(*b, 1)
             elif xi.dim() == 2:
-                return self._flat_value_wo_labels(xi).unsqueeze(-1)
+                return self._reduce_flat_spatial_dims_loss(
+                    self._flat_value_wo_labels(xi)
+                ).squeeze()
             elif xi.dim() == 1:
-                return self._flat_value_wo_labels(xi)
+                return self._reduce_flat_spatial_dims_loss(
+                    self._flat_value_wo_labels(xi)
+                )
             else:
                 raise NotImplementedError()

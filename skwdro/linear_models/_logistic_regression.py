@@ -274,7 +274,10 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 epsilon=self.solver_reg,
                 imp_samp=_post_sample,  # hard set
                 adapt="prodigy" if self.learning_rate is None else None,
-                l2reg=self.l2_reg
+                l2reg=self.l2_reg,
+                # Important: if using multiclass, tell the interfaces that the
+                # loss batch will not have a trailing dimension to reduce
+                loss_reduces_spatial_dims=True
             )
 
             # The problem is solved with the new "dual loss"
