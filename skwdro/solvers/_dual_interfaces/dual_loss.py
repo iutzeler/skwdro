@@ -47,7 +47,7 @@ class _DualFormulation(_SampleDisplacer):
                 maybe_unsqueeze(xi_labels, dim=0),  # (1, m, d') or None
             )  # (1, m, 1)
             first_term: pt.Tensor = self.rho * self.lam
-            primal_loss = self.reduce_loss_batch(batched_pl)
+            primal_loss = self.reduce_loss_batch(batched_pl.squeeze(0))
             return first_term + primal_loss
         elif self.rho > 0.:
             p = pt.tensor(self.cost.power)

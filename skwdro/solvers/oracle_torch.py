@@ -287,7 +287,7 @@ class DualPostSampledLoss(_DualLoss):
                 # (1, m, d') or None
                 xi_labels.unsqueeze(0) if xi_labels is not None else None
             )  # (1, m, 1)
-            primal_loss = self.reduce_loss_batch(batched_pl)
+            primal_loss = self.reduce_loss_batch(batched_pl.squeeze(0))
             return first_term + primal_loss
         else:
             zeta_, zeta_labels_ = self.generate_zetas(self.n_samples)
