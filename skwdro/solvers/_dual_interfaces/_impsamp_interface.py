@@ -120,7 +120,7 @@ class _SampleDisplacer(_SampledDualLoss):
                 # give as inputs xi and xi_labels
                 (data.unsqueeze(0), maybe_unsqueeze(target, dim=0),)
             )
-            return loss.squeeze()
+            return loss.squeeze(0)
 
         grad_func = grad(
             # diff the loss
