@@ -28,6 +28,41 @@ class WrappedPrimalLoss(Loss):
         *,
         l2reg: Optional[float] = None
     ) -> None:
+        r"""
+        Provide the wrapped version of the primal loss.
+
+        Parameters
+        ----------
+
+        loss: nn.Module|Callable
+            the primal loss :math:`L_\theta`. Can be given either as a
+            :py:class:`torch.nn.Module` or as a (functional) callable.
+        transform: nn.Module|None
+            the transformation to apply to the (non-label) data before feeding it
+            to the loss. Identity if set to ``None`` (default).
+        sampler: :py:class:`skwdro.base.samplers.torch.base_samplers.BaseSampler`
+            the sampling object that defines the way :math:`\zeta` samples are
+            drawn
+        has_labels: bool
+            set to ``True`` if the loss accepts two inputs: a prediction and some
+            kind of target. Otherwise, set to ``False``.
+
+            .. warning:: It is *your* job to check that the :py:attr:`loss`,
+                :py:attr:`_sampler`, and :py:attr:`has_labels` parameters are
+                compatible with one another.
+
+        reduce_spatial_dims: bool
+            set to ``False`` if the loss reduces by default the last dimension
+            of a batch of non-reduced losses. This may be useful for example if
+            using :py:class:`~torch.nn.CrossEntropyLoss` which will consider your
+            last axis as a channel axis (which might not be the case outside of
+            computer vision applications).
+        l2reg: float|None
+            L2 regularization if needed
+
+        Attributes
+        ----------
+        """
         super(WrappedPrimalLoss, self).__init__(sampler, l2reg=l2reg)
         self.loss = loss
 
