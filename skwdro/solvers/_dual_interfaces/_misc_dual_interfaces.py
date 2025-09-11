@@ -123,7 +123,7 @@ class _DualLossBase(nn.Module, ABC):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: None = None,
         zeta_labels: None = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         ...
 
@@ -135,7 +135,7 @@ class _DualLossBase(nn.Module, ABC):
         xi_labels: Optional[pt.Tensor],
         zeta: pt.Tensor,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         ...
 
@@ -146,7 +146,7 @@ class _DualLossBase(nn.Module, ABC):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> Optional[pt.Tensor]:
         raise NotImplementedError()
 
