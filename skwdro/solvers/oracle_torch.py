@@ -286,7 +286,7 @@ class DualPostSampledLoss(_DualLoss):
                 xi.unsqueeze(0),  # (1, m, d)
                 # (1, m, d') or None
                 xi_labels.unsqueeze(0) if xi_labels is not None else None
-            )  # (1, m)
+            )  # (1, m, 1)
             primal_loss = self.reduce_loss_batch(batched_pl)
             return first_term + primal_loss
         else:
@@ -484,13 +484,30 @@ TODO
                     "an instance of DualPostSampledLoss."
                 ]))
             else:
-                # Reuse the same samples as last forward pass
-                return self.compute_dual(
-                    xi,
-                    xi_labels,
-                    self.zeta,
-                    self.zeta_labels
-                )
+                if self.rho < 0.:
+                    raise ValueError(' '.join([
+                        "Rho < 0 detected: ->",
+                        str(self.rho.item()),
+                        ", please provide a positive rho value"
+                    ]))
+                elif self.rho == 0.:
+                    # Just to have a zero grad in lambda
+                    first_term = self.rho * self.lam
+                    batched_pl: pt.Tensor = self.primal_loss(
+                        xi.unsqueeze(0),  # (1, m, d)
+                        # (1, m, d') or None
+                        xi_labels.unsqueeze(0) if xi_labels is not None else None
+                    )  # (1, m, 1)
+                    primal_loss = self.reduce_loss_batch(batched_pl)
+                    return first_term + primal_loss
+                else:
+                    # Reuse the same samples as last forward pass
+                    return self.compute_dual(
+                        xi,
+                        xi_labels,
+                        self.zeta,
+                        self.zeta_labels
+                    )
         else:
             self.zeta = zeta
             self.zeta_labels = zeta_labels
