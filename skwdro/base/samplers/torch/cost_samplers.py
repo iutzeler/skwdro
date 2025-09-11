@@ -22,7 +22,7 @@ class NoLabelsCostSampler(NoLabelsSampler):
         ----------
         cost: Cost
             cost functional specifying the samp;ling behaviour through its
-            :py:method:`skwdro.base.costs_torch.Cost.default_sampler` method.
+            :py:method:`skwdro.base.costs_torch.Cost.sampler` method.
         xi: pt.Tensor
             mean for inputs
         sigma: float|Tensor
@@ -60,7 +60,7 @@ class LabeledCostSampler(LabeledSampler):
         ----------
         cost: Cost
             cost functional specifying the samp;ling behaviour through its
-            :py:method:`skwdro.base.costs_torch.Cost.default_sampler` method.
+            :py:method:`skwdro.base.costs_torch.Cost.sampler` method.
         xi: pt.Tensor
             mean for inputs
         xi_labels: pt.Tensor
