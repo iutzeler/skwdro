@@ -43,7 +43,7 @@ class QuadraticLoss(Loss):
     @classmethod
     def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> BaseSampler:
         return ClassificationNormalNormalSampler(
-            xi, xi_labels, seed,
+            xi, xi_labels, seed=seed,
             sigma=epsilon, l_sigma=epsilon
         )
 
