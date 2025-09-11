@@ -23,6 +23,28 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
         l_cov: Optional[pt.Tensor] = None,
         seed: Optional[int] = None,
     ):
+        """
+        Example of an available sampler for classification problems.
+
+        - inputs are sampled from a gaussian distribution
+        - targets from another one.
+
+        Specify the parameters of the distributions as keywords arguments.
+
+        Parameters
+        ----------
+        xi: pt.Tensor
+            mean for inputs
+        xi_labels: pt.Tensor
+            mean for targets
+        sigma: float|Tensor
+            scalar standard deviation shared through dimensions, for inputs.
+        l_sigma: float|Tensor
+            scalar standard deviation shared through dimensions, for targets.
+
+        See :py:class:`skwdro.base.samplers.torch.base_samplers.IsOptionalCovarianceSampler`
+        for other arguments.
+        """
         assert len(xi.size()) >= 2
         assert len(xi_labels.size()) >= 2
         covar = self.init_covar(xi.size(-1), sigma, tril, prec, cov)
@@ -66,6 +88,26 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
         cov: Optional[pt.Tensor] = None,
         seed: Optional[int],
     ):
+        """
+        Example of an available sampler for classification problems.
+
+        - inputs are sampled from a gaussian distribution
+        - targets are not noisy.
+
+        Specify the parameters of the distributions as keywords arguments.
+
+        Parameters
+        ----------
+        xi: pt.Tensor
+            mean for inputs
+        xi_labels: pt.Tensor
+            mean for targets
+        sigma: float|Tensor
+            scalar standard deviation shared through dimensions, for inputs.
+
+        See :py:class:`skwdro.base.samplers.torch.base_samplers.IsOptionalCovarianceSampler`
+        for other arguments.
+        """
         covar = self.init_covar(xi.size(-1), sigma, tril, prec, cov)
         super(ClassificationNormalIdSampler, self).__init__(
             dst.MultivariateNormal(
@@ -110,6 +152,28 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
         cov: Optional[pt.Tensor] = None,
         seed: Optional[int],
     ):
+        r"""
+        Example of an available sampler for classification problems.
+
+        - inputs are sampled from a gaussian distribution
+        - targets are sampled randomly in :math:`\{0, 1\}`.
+
+        Specify the parameters of the distributions as keywords arguments.
+
+        Parameters
+        ----------
+        p: float|Tensor
+            Probability of switch for bernouilli.
+        xi: pt.Tensor
+            mean for inputs
+        xi_labels: pt.Tensor
+            mean for targets
+        sigma: float|Tensor
+            scalar standard deviation shared through dimensions, for inputs.
+
+        See :py:class:`skwdro.base.samplers.torch.base_samplers.IsOptionalCovarianceSampler`
+        for other arguments.
+        """
         assert 0. <= p <= 1.
         covar = self.init_covar(xi.size(-1), sigma, tril, prec, cov)
         self.p = p

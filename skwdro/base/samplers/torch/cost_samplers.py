@@ -13,6 +13,24 @@ class NoLabelsCostSampler(NoLabelsSampler):
         sigma,
         seed: Optional[int] = None,
     ):
+        """
+        Parent class of all samplers that only sample inputs, with a
+        specification drawn from a cost functional
+        (:py:class:`skwdro.base.costs_torch.Cost`).
+
+        Parameters
+        ----------
+        cost: Cost
+            cost functional specifying the samp;ling behaviour through its
+            :py:method:`skwdro.base.costs_torch.Cost.default_sampler` method.
+        xi: pt.Tensor
+            mean for inputs
+        sigma: float|Tensor
+            scalar standard deviation shared through dimensions, for inputs.
+
+        See :py:class:`skwdro.base.samplers.torch.base_samplers.IsOptionalCovarianceSampler`
+        for other arguments.
+        """
         super(NoLabelsCostSampler, self).__init__(
             cost._sampler_data(xi, sigma), seed
         )
@@ -33,6 +51,26 @@ class LabeledCostSampler(LabeledSampler):
         sigma,
         seed: Optional[int] = None
     ):
+        """
+        Parent class of all samplers that sample both inputs and labels, with a
+        specification drawn from a cost functional
+        (:py:class:`skwdro.base.costs_torch.Cost`).
+
+        Parameters
+        ----------
+        cost: Cost
+            cost functional specifying the samp;ling behaviour through its
+            :py:method:`skwdro.base.costs_torch.Cost.default_sampler` method.
+        xi: pt.Tensor
+            mean for inputs
+        xi_labels: pt.Tensor
+            mean for targets
+        sigma: float|Tensor
+            scalar standard deviation shared through dimensions, for inputs.
+
+        See :py:class:`skwdro.base.samplers.torch.base_samplers.IsOptionalCovarianceSampler`
+        for other arguments.
+        """
         sd, sl = (
             cost._sampler_data(xi, sigma),
             cost._sampler_labels(xi_labels, sigma)

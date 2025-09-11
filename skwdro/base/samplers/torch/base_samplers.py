@@ -11,6 +11,16 @@ class BaseSampler(ABC):
     seed: Optional[int]
 
     def __init__(self, seed: Optional[int] = None):
+        """
+        Base class for all samplers available in the library.
+        One must subclass this in order to make their samplers comply with the
+        interfaces of this library.
+
+        Attributes
+        ----------
+        seed: int|None
+            rando seed for np and torch rngs.
+        """
         self.seed = seed
 
         # Set seed
