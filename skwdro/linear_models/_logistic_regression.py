@@ -277,7 +277,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 l2reg=self.l2_reg,
                 # Important: if using multiclass, tell the interfaces that the
                 # loss batch will not have a trailing dimension to reduce
-                loss_reduces_spatial_dims=True
+                loss_reduces_spatial_dims=not _bilat
             )
 
             # The problem is solved with the new "dual loss"
