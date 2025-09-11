@@ -1,3 +1,4 @@
+from typing import Optional
 import torch as pt
 
 from skwdro.base.samplers.torch.base_samplers import LabeledSampler, NoLabelsSampler
@@ -10,7 +11,7 @@ class NoLabelsCostSampler(NoLabelsSampler):
         cost: Cost,
         xi: pt.Tensor,
         sigma,
-        seed: int,
+        seed: Optional[int] = None,
     ):
         super(NoLabelsCostSampler, self).__init__(
             cost._sampler_data(xi, sigma), seed
@@ -19,7 +20,7 @@ class NoLabelsCostSampler(NoLabelsSampler):
         self.sigma = sigma
 
     def reset_mean(self, xi, xi_labels):
-        del xi_labels  # https://pycodequ.al/docs/pylint-messages/w0613-unused-argument.html#how-to-fix
+        del xi_labels
         self.__init__(self.generating_cost, xi, self.sigma, self.seed)
 
 
@@ -30,7 +31,7 @@ class LabeledCostSampler(LabeledSampler):
         xi: pt.Tensor,
         xi_labels: pt.Tensor,
         sigma,
-        seed: int
+        seed: Optional[int] = None
     ):
         sd, sl = (
             cost._sampler_data(xi, sigma),

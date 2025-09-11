@@ -11,7 +11,7 @@ class PortfolioNormalSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
     def __init__(
         self,
         xi,
-        seed: int,
+        seed: Optional[int] = None,
         *,
         sigma: Optional[Union[pt.Tensor, float]] = None,
         tril: Optional[pt.Tensor] = None,
@@ -42,7 +42,7 @@ class PortfolioLaplaceSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
     def __init__(
         self,
         xi,
-        seed: int,
+        seed: Optional[int] = None,
         *,
         sigma: Optional[Union[pt.Tensor, float]] = None,
         tril: Optional[pt.Tensor] = None,
@@ -61,5 +61,6 @@ class PortfolioLaplaceSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
         )
 
     def reset_mean(self, xi, xi_labels):
+        del xi_labels
         self.__init__(
             xi, self.seed, tril=self.data_s._unbroadcasted_scale_tril)

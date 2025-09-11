@@ -12,7 +12,7 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
     def __init__(
         self,
         xi: pt.Tensor, xi_labels: pt.Tensor,
-        seed: int,
+        seed: Optional[int] = None,
         *,
         sigma: Optional[Union[float, pt.Tensor]] = None,
         tril: Optional[pt.Tensor] = None,
@@ -59,7 +59,7 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
     def __init__(
         self,
         xi: pt.Tensor, xi_labels: pt.Tensor,
-        seed: int,
+        seed: Optional[int],
         *,
         sigma: Optional[Union[float, pt.Tensor]] = None,
         tril: Optional[pt.Tensor] = None,
@@ -102,7 +102,7 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
     def __init__(
         self,
         xi: pt.Tensor, xi_labels: pt.Tensor,
-        seed: int,
+        seed: Optional[int],
         *,
         p: float,
         sigma: Optional[Union[float, pt.Tensor]] = None,
