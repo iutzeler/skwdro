@@ -54,7 +54,7 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
             optimizer.zero_grad()
 
             # Forward the batch
-            loss = dual_loss(xi, xi_label, reset_sampler=True).mean()
+            loss = dual_loss(xi, xi_label).mean()
 
             # Backward pass
             loss.backward()

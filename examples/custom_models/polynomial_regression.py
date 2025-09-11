@@ -78,7 +78,7 @@ def train(dual_loss: DualLoss, dataset: Iterable[tuple[pt.Tensor, pt.Tensor]], e
 
     def closure():          # Closure for the LBFGS solver
         lbfgs.zero_grad()
-        loss = dual_loss(xi, xi_label, reset_sampler=True).mean()
+        loss = dual_loss(xi, xi_label).mean()
         loss.backward()
         return loss
 
@@ -186,7 +186,3 @@ for i,a in enumerate(coeffs):
         polyString += "- {:3.2f}x**{:d} ".format(abs(a),i+1)
 
 print(polyString)
-
-
-
-
