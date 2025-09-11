@@ -118,7 +118,7 @@ Assume now that the (training) data is given as a dataloader ``train_loader``.
     for epoch in range(100):
         for batch_x, batch_y in train_loader:
             optimizer.zero_grad()
-            loss = robust_loss(batch_x, batch_y, reset_sampler=True)
+            loss = robust_loss(batch_x, batch_y)
             loss.backward()
             optimizer.step()
 
