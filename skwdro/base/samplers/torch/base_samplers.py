@@ -8,14 +8,25 @@ import skwdro.distributions as dst
 
 
 class BaseSampler(ABC):
-    seed: int
+    seed: Optional[int]
 
-    def __init__(self, seed: int):
+    def __init__(self, seed: Optional[int] = None):
+        """
+        Base class for all samplers available in the library.
+        One must subclass this in order to make their samplers comply with the
+        interfaces of this library.
+
+        Attributes
+        ----------
+        seed: int|None
+            rando seed for np and torch rngs.
+        """
         self.seed = seed
 
         # Set seed
-        pt.manual_seed(seed)
-        random.seed(seed)
+        if seed is not None:
+            pt.manual_seed(seed)
+            random.seed(seed)
 
     @abstractmethod
     def sample(
@@ -58,7 +69,7 @@ class BaseSampler(ABC):
 
 
 class NoLabelsSampler(BaseSampler, ABC):
-    def __init__(self, data_sampler: dst.Distribution, seed: int):
+    def __init__(self, data_sampler: dst.Distribution, seed: Optional[int]):
         super(NoLabelsSampler, self).__init__(seed)
         self.data_s = data_sampler
 
@@ -89,7 +100,12 @@ class NoLabelsSampler(BaseSampler, ABC):
 
 
 class LabeledSampler(BaseSampler, ABC):
-    def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution, seed: int):
+    def __init__(
+        self,
+        data_sampler: dst.Distribution,
+        labels_sampler: dst.Distribution,
+        seed: Optional[int]
+    ) -> None:
         super(LabeledSampler, self).__init__(seed)
         self.data_s = data_sampler
         self.labels_s = labels_sampler

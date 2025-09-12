@@ -31,19 +31,37 @@ def assert_grad(sampler, xi, xi_labels, s):
 def test_size_samples_classif():
     xi, xi_labels = generate_blob()
     list(map(assert_shapes, [
-            smplr.ClassificationNormalNormalSampler(xi, xi_labels.unsqueeze(-1), SEED, l_sigma=.1, sigma=.1),
-            smplr.ClassificationNormalBernouilliSampler(xi, xi_labels.unsqueeze(-1), SEED, p=.1, sigma=.1),
-            smplr.LabeledCostSampler(dummy_cost, xi, xi_labels.unsqueeze(-1), .1, SEED)
-        ]))
+        smplr.ClassificationNormalNormalSampler(
+            xi, xi_labels.unsqueeze(-1),
+            seed=SEED, l_sigma=.1, sigma=.1
+        ),
+        smplr.ClassificationNormalBernouilliSampler(
+            .1,
+            xi, xi_labels.unsqueeze(-1),
+            seed=SEED, sigma=.1
+        ),
+        smplr.LabeledCostSampler(
+            dummy_cost,
+            xi, xi_labels.unsqueeze(-1),
+            .1,
+            seed=SEED
+        )
+    ]))
 
 def test_grads_sampler():
     xi, xi_labels = generate_blob(rg=True)
     s = pt.tensor([.1], requires_grad=True)
     for sampler in [
-            smplr.ClassificationNormalNormalSampler(xi, xi_labels.unsqueeze(-1), SEED, l_sigma=s, sigma=s),
-            smplr.LabeledCostSampler(dummy_cost, xi, xi_labels.unsqueeze(-1), s, SEED),
-            smplr.NoLabelsCostSampler(dummy_cost, xi, s, SEED)
-            ]:
+        smplr.ClassificationNormalNormalSampler(
+            xi, xi_labels.unsqueeze(-1),
+            seed=SEED, l_sigma=s, sigma=s
+        ),
+        smplr.LabeledCostSampler(
+            dummy_cost, xi, xi_labels.unsqueeze(-1),
+            s, seed=SEED
+        ),
+        smplr.NoLabelsCostSampler(dummy_cost, xi, s, seed=SEED)
+    ]:
         assert_grad(sampler, xi, xi_labels, s)
 
 if __name__ == "__main__": test_size_samples_classif()

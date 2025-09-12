@@ -53,7 +53,7 @@ class WeberLoss(Loss):
         return ClassificationNormalNormalSampler(
             xi,
             xi_labels,
-            seed,
+            seed=seed,
             sigma=epsilon,
             l_sigma=epsilon
         )
