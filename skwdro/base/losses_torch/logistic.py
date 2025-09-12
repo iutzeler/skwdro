@@ -11,6 +11,8 @@ from skwdro.base.samplers.torch.classif_sampler import (
 
 
 class BiDiffSoftMarginLoss(nn.Module):
+    reduction: str = 'none'
+
     def __init__(self, *args, **kwargs) -> None:
         del args, kwargs
         super(BiDiffSoftMarginLoss, self).__init__()

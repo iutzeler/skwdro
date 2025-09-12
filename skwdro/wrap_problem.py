@@ -1,4 +1,4 @@
-from typing import Tuple, Optional
+from typing import Tuple, Optional, Union, Callable
 
 import torch as pt
 import torch.nn as nn
@@ -74,8 +74,18 @@ def power_from_parsed_spec(parsed_spec: Optional[ParsedCost]) -> float:
         return parsed_spec.power
 
 
+def decide_on_impsamp(
+    user_query: bool,
+    cost: ParsedCost,
+) -> bool:
+    return user_query and cost.can_imp_samp()
+
+
 def dualize_primal_loss(
-    loss_: nn.Module,
+    loss_: Union[
+        nn.Module,
+        Callable[..., pt.Tensor]
+    ],
     transform_: Optional[nn.Module],
     rho: pt.Tensor,
     xi_batchinit: pt.Tensor,
@@ -85,12 +95,14 @@ def dualize_primal_loss(
     n_samples: int = 10,
     seed: int = 42,
     *,
+    reduction: Optional[str] = None,
     learning_rate: Optional[float] = None,
     epsilon: Optional[float] = None,
     sigma: Optional[float] = None,
     l2reg: Optional[float] = None,
     adapt: Optional[str] = "prodigy",
-    imp_samp: bool = True
+    imp_samp: bool = True,
+    loss_reduces_spatial_dims: bool = False
 ) -> _DualLoss:
     r"""
     Provide the wrapped version of the primal loss.
@@ -98,10 +110,12 @@ def dualize_primal_loss(
     Parameters
     ----------
 
-    loss_: nn.Module
-        the primal loss
-    transform_: nn.Module
-        the transformation to apply to the data before feeding it to the loss
+    loss_: nn.Module|Callable
+        the primal loss :math:`L_\theta`. Can be given either as a
+        :py:class:`torch.nn.Module` or as a (functional) callable.
+    transform_: nn.Module|None
+        the transformation to apply to the (non-label) data before feeding it to
+        the loss. Identity if set to ``None`` (default).
     rho: Tensor, scalar tensor
         Wasserstein radius
     xi_batchinit: Tensor, shape (n_samples, n_features)
@@ -118,6 +132,14 @@ def dualize_primal_loss(
         descent begins (can be changed if needed between inferences)
     seed: int
         the seed for the samplers
+    reduction: str | None
+         specifies the reduction to apply to the outer expectation of the
+         SkWDRO formula applied: ``'none'`` | ``'mean'`` | ``'sum'``.
+         - ``'none'``: no reduction will be applied,
+         - ``'mean'``: the sum of the output will be divided by the number of
+         elements in the output,
+         - ``'sum'``: the output will be summed.
+         Default: ``None`` which translates to ``'mean'``
     learning_rate: float
         the step size for the default descent algorithm linked to the loss
         function
@@ -132,6 +154,11 @@ def dualize_primal_loss(
     imp_samp: bool
         whether to use importance sampling
         (will work only for ``(2, 2)`` costs).
+    loss_reduces_spatial_dims: bool
+        flag that can be set to ``True`` if the primal :py:attr:`loss` reduces
+        the last dimension of the losses batch with its reduction set to
+        ``'none'``, e.g. for :py:class:`torch.CrossEntropyLoss` which will take
+        one dimension as channel axis, defaults to ``False``
     """
     sampler: BaseSampler
     cost: Cost
@@ -171,7 +198,8 @@ def dualize_primal_loss(
         sampler = NoLabelsCostSampler(cost, xi_batchinit, expert_sigma, seed)
 
     loss = WrappedPrimalLoss(
-        loss_, transform_, sampler, has_labels, l2reg=l2reg
+        loss_, transform_, sampler, has_labels, l2reg=l2reg,
+        reduce_spatial_dims=not loss_reduces_spatial_dims
     )
 
     loss_constructor = (
@@ -185,21 +213,8 @@ def dualize_primal_loss(
         rho_0=rho,
         n_samples=n_samples,
         epsilon_0=expert_epsilon,
-        imp_samp=(imp_samp and parsed_cost.can_imp_samp()),
+        reduction=reduction,
+        imp_samp=decide_on_impsamp(imp_samp, parsed_cost),
         learning_rate=learning_rate,
         adapt=adapt,
     )
-    # if post_sample:
-    #     return DualPostSampledLoss(
-    #         loss,
-    #         cost,
-    #         n_iter=(200, 2800),
-    #         **kwargs
-    #     )
-    # else:
-    #     return DualPreSampledLoss(
-    #         loss,
-    #         cost,
-    #         n_iter=(100, 10),
-    #         **kwargs
-    #     )

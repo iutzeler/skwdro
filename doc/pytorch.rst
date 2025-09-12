@@ -148,20 +148,32 @@ Diving into the ``robustify`` function
 
 Here are the arguments and how to use them in the example training procedure:
 
+
+.. It should be given in its :py:class:`~torch.nn.Module` form! This is due to some internals of the interfaces that concatenate parameters together in some cases, e.g. to let your :math:`\ell` functional contain a subset of the parameters :math:`\theta` as well if you feel like it.
+..             If your model was specified as a :py:mod:`torch.nn.functional` instead, you will need to translate it: take a look at the `torch 'nn' doc <https://docs.pytorch.org/docs/stable/nn.html#loss-functions>`__ or wrap it by hand as follows:
+
 * The important ones:
     * **loss_**: this is the function that takes the output of your inference model :math:`f_\theta(x)` and computes the mismatch to the target :math:`y`, whether in the sense of classification or regression.
-        .. warning:: It should be given in its :py:class:`~torch.nn.Module` form! This is due to some internals of the interfaces that concatenate parameters together in some cases, e.g. to let your :math:`\ell` functional contain a subset of the parameters :math:`\theta` as well if you feel like it.
-            If your model was specified as a :py:mod:`torch.nn.functional` instead, you will need to translate it: take a look at the `torch 'nn' doc <https://docs.pytorch.org/docs/stable/nn.html#loss-functions>`__ or wrap it by hand as follows:
+        .. warning:: The functional interface of pytorch is available for this argument specificaly, but it is recent and less tested.
+            Use at your own risk. If you believe that the interface is the reason behind some bug you have, we encourage you to wrap it in a :py:class:`~torch.nn.Module` instance, as follows:
 
             .. code-block:: python
                 :caption: Translate the functional api to object-oriented
                 :linenos:
-                :emphasize-lines: 3
+                :emphasize-lines: 6
 
                 class MyOopLoss(torch.nn.Module):
                     def forward(self, input, target, *args, **kwargs):
-                        return my_functional_loss(input, target, *args, **kwargs)
-    * **transform_** is the inference mechanism :math:`f_\theta`. In most cases, it will contain all of the parameters :math:`\theta`, e.g. it can be your linear model :py:class:`~torch.nn.Linear` or any kind of :py:class:`~torch.nn.Module` (neural nets, etc).
+                        # Here goes any reshaping necessary
+                        ...
+                        # Call directly the function
+                        return my_functional_loss(
+                            input, target,
+                            reduction='none',
+                            *args, **kwargs
+                        )
+
+    * **transform_** is the inference mechanism :math:`f_\theta`. In most cases, it will contain all of the parameters :math:`\theta`, e.g. it can be your linear model :py:class:`~torch.nn.Linear` or any kind of :py:class:`~torch.nn.Module` (neural nets, etc). No functional interface ios available there.
     * **rho** is the most important hyperparameter of the WDRO framework: it represents the radius of uncertainty defining the (regularized) Wasserstein ambiguity set. You can use simple cross-validation to find a suitable one for your particular problem if you do not have any idea about it, or you can turn to some tricks from the litterature, e.g. [#BMN21]_.
     * **xi_batchinit** and **xi_labels_batchinit** must be taken as a subset of the dataset to help the optimizers with a good starting point :math:`\lambda_0` for the dual parameter :math:`\lambda\ge 0` of ``SkWDRO``\ 's magic formula :eq:`dual_loss`.
     * **epsilon** is the regularization parameter determining how much we smooth the Wasserstein ambiguity region with the entropic regularization :math:`\varepsilon\mathcal{KL}(\pi\|\pi_0)`.
