@@ -12,6 +12,7 @@ class WrappingError(ValueError):
 
 
 class WrappedPrimalLoss(Loss):
+    has_labels: bool
     loss_oop_interface: bool = True
     reduce_spatial_dims: bool = True
 
@@ -63,7 +64,7 @@ class WrappedPrimalLoss(Loss):
         Attributes
         ----------
         """
-        super(WrappedPrimalLoss, self).__init__(sampler, l2reg=l2reg)
+        super(WrappedPrimalLoss, self).__init__(sampler, has_labels, l2reg=l2reg)
         self.loss = loss
 
         if isinstance(loss, pt.nn.Module):

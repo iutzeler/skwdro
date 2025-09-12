@@ -51,7 +51,7 @@ class LogisticLoss(Loss):
             d: int = 0,
             l2reg: Optional[float] = None,
             fit_intercept: bool = False) -> None:
-        super(LogisticLoss, self).__init__(sampler, l2reg=l2reg)
+        super(LogisticLoss, self).__init__(sampler, True, l2reg=l2reg)
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         nn.init.zeros_(self.linear.weight)

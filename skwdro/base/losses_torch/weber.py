@@ -34,7 +34,7 @@ class WeberLoss(Loss):
             d: int = 2,
             l2reg: Optional[float] = None
     ):
-        super(WeberLoss, self).__init__(sampler, l2reg=l2reg)
+        super(WeberLoss, self).__init__(sampler, True, l2reg=l2reg)
         self.d = d
         self.pos = nn.Parameter(pt.zeros(d))
 

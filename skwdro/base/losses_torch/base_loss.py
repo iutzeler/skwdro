@@ -10,10 +10,12 @@ from skwdro.base.samplers.torch.base_samplers import BaseSampler
 class Loss(nn.Module, ABC):
     """ Base class for loss functions """
     _sampler: BaseSampler
+    has_labels: bool
 
     def __init__(
         self,
         sampler: BaseSampler,
+        has_labels: bool,
         *,
         l2reg: Optional[float] = None
     ):
@@ -23,6 +25,7 @@ class Loss(nn.Module, ABC):
             None if l2reg is None or l2reg <= 0.
             else pt.tensor(l2reg)
         )
+        self.has_labels = has_labels
 
     def regularize(self, loss: pt.Tensor) -> pt.Tensor:
         r"""
