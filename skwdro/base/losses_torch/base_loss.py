@@ -60,6 +60,7 @@ class Loss(nn.Module, ABC):
     ) -> pt.Tensor:
         """
         Perform forward pass.
+        Overload the method to implement your own.
         """
         del xi, xi_labels
         raise NotImplementedError("Please Implement this method")
@@ -86,8 +87,18 @@ class Loss(nn.Module, ABC):
 
     @classmethod
     @abstractmethod
-    def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> BaseSampler:
-        raise NotImplementedError("Please Implement this method")
+    def default_sampler(
+        cls,
+        xi,
+        xi_labels,
+        epsilon,
+        seed: Optional[int]
+    ) -> Optional[BaseSampler]:
+        r"""
+        Overload this method if you wish to define a default sampler associated
+        to your loss.
+        """
+        return None
 
     def forward(self, *args):
         """
