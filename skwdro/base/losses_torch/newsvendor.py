@@ -47,7 +47,7 @@ class NewsVendorLoss_torch(Loss):
         l2reg: Optional[float] = None,
         name: Optional[str] = "NewsVendor loss"
     ):
-        super(NewsVendorLoss_torch, self).__init__(sampler, l2reg=l2reg)
+        super(NewsVendorLoss_torch, self).__init__(sampler, False, l2reg=l2reg)
         self.k = pt.tensor(float(k))
         self.u = pt.tensor(float(u))
         self.name = name
@@ -83,6 +83,11 @@ class NewsVendorLoss_torch(Loss):
         return None
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
+    def default_sampler(
+        cls,
+        xi,
+        xi_labels,
+        epsilon, seed: Optional[int]
+    ) -> NewsVendorNormalSampler:
         del xi_labels
         return NewsVendorNormalSampler(xi, seed=seed, sigma=epsilon)

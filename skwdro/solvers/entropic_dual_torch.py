@@ -123,11 +123,11 @@ def solve_dual_wdro(loss: _DualLoss, p_hat: Distribution, opt: OptCondTorch):
 
 
 def optim_presample(
-        optimizer: pt.optim.Optimizer,
-        xi: pt.Tensor,
-        xi_labels: Optional[pt.Tensor],
-        loss: _DualLoss,
-        opt_cond: OptCondTorch
+    optimizer: pt.optim.Optimizer,
+    xi: pt.Tensor,
+    xi_labels: Optional[pt.Tensor],
+    loss: _DualLoss,
+    opt_cond: OptCondTorch
 ) -> List[float]:
     r"""
     Optimize the dual loss by sampling the :math:`zeta` values once at
@@ -155,6 +155,10 @@ def optim_presample(
     xi_labels: (m, d')
     """
 
+    if loss.primal_loss.sampler is None:
+        # Means were never set in the first place, so initialize the sampler
+        # Warning: no seed is set, so set the sampler yourself if needed
+        loss.init_sampler(xi, xi_labels, loss.epsilon.detach().item(), None)
     zeta, zeta_labels = loss.generate_zetas()
 
     def closure(back=True) -> float:

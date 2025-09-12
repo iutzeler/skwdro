@@ -48,6 +48,7 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    API/skwdro.neural_network
    API/skwdro.distributions
    API/skwdro.base.samplers.torch
+   API/skwdro.base.losses_torch
 
 
 

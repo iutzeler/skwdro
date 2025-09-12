@@ -8,6 +8,7 @@ import torch.nn as nn
 from skwdro.base.costs_torch import Cost
 from skwdro.base.losses_torch import Loss
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
+from skwdro.base.samplers.torch import NoLabelsCostSampler, LabeledCostSampler
 from skwdro.solvers.utils import Steps
 
 
@@ -112,7 +113,8 @@ class _DualLossBase(nn.Module, ABC):
         if rho_0 <= 0.:
             self._lam.requires_grad_(False)
 
-        # Private sampler points to the loss l_theta
+        # Private sampler points to the loss l_theta, even if unset
+        # Verification is made lazily at forward pass time
         self._sampler = loss._sampler
 
         # Number of zeta samples are checked at __init__, but can be
@@ -167,6 +169,64 @@ class _DualLossBase(nn.Module, ABC):
         else:
             # Unreachable (unless messing up with reduction attribute).
             raise NotImplementedError()
+
+    def init_sampler(
+        self,
+        xi: pt.Tensor, xi_labels: Optional[pt.Tensor],
+        sigma: float, seed: Optional[int]
+    ) -> BaseSampler:
+        """Initializes a sampler based on the provided parameters and sets it to
+        the instance attribute :py:attr:`_sampler`.
+
+        Parameters
+        ----------
+
+        xi: pt.Tensor
+            A tensor representing the input data points.
+        xi_labels: pt.Tensor|None
+            An optional tensor representing the labels for the input data points,
+            defaults to ``None``.
+        sigma: float
+            A float representing the scale parameter for the sampler.
+        seed: int|None
+            An optional integer representing the random seed for reproducibility,
+            defaults to None.
+
+        Raises
+        ------
+        AssertionError:
+            If `has_labels` is True and `xi_labels` is None, or if `has_labels`
+            is False and `xi_labels` is not None.
+
+        Returns
+        -------
+        BaseSampler
+            An instance of the appropriate subclass of BaseSampler.
+        """
+        sam: BaseSampler
+        assert self.primal_loss.sampler is None
+        if self.primal_loss.has_labels:
+            assert xi_labels is not None, """
+                Do not forward None as labels on a Loss function that has the
+                `has_labels` flag set to True.
+            """
+            sam = LabeledCostSampler(
+                self.cost,
+                xi, xi_labels,
+                sigma, seed=seed
+            )
+        else:
+            assert xi_labels is None, """
+                Do not forward labels on a Loss function that has the
+                `has_labels` flag set to False.
+            """
+            sam = NoLabelsCostSampler(
+                self.cost,
+                xi,
+                sigma, seed=seed
+            )
+        self._sampler = sam
+        return sam
 
     @property
     def iterations(self):
@@ -271,7 +331,9 @@ class _SampledDualLoss(_OptimizeableDual):
         self,
         n_samples: Optional[int] = None
     ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
-        """ Generate zeta samples from the loss-sampler
+        """ Generate zeta samples from the loss-sampler.
+        Either generates the default number of samples, set at onstruction of the
+        object, or the set number of samples specified as a parameter.
 
         Parameters
         ----------
@@ -288,7 +350,13 @@ class _SampledDualLoss(_OptimizeableDual):
         zeta : (n_samples, m, d)
         zeta_labels : (n_samples, m, d')
         """
-        if n_samples is None or n_samples <= 0:
+        if self.primal_loss.sampler is None:
+            raise ValueError(" ".join([
+                'Please set a sampler on your dual loss for the',
+                'reference distribution of the regularization of the'
+                'Wasserstein neighborhood before your forward pass.'
+            ]))
+        elif n_samples is None or n_samples <= 0:
             # Default:
             return self.primal_loss.sampler.sample(self.n_samples)
         else:
@@ -299,8 +367,8 @@ class _SampledDualLoss(_OptimizeableDual):
         xi: pt.Tensor,
         xi_labels: Optional[pt.Tensor],
         epsilon: pt.Tensor,
-        seed: int
-    ) -> BaseSampler:
+        seed: Optional[int]
+    ) -> Optional[BaseSampler]:
         r""" Wraper for the original loss sampler
 
         Parameters

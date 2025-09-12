@@ -23,7 +23,7 @@ class QuadraticLoss(Loss):
         l2reg: Optional[float] = None,
         fit_intercept: bool = False
     ) -> None:
-        super(QuadraticLoss, self).__init__(sampler, l2reg=l2reg)
+        super(QuadraticLoss, self).__init__(sampler, True, l2reg=l2reg)
         assert d > 0, "Please provide a valid data dimension d>0"
         self.linear = nn.Linear(d, 1, bias=fit_intercept)
         self.L = nn.MSELoss(reduction='none')
@@ -41,7 +41,11 @@ class QuadraticLoss(Loss):
         return self.regularize(self.L(coefs, xi_labels))
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> BaseSampler:
+    def default_sampler(
+        cls,
+        xi, xi_labels,
+        epsilon, seed: Optional[int]
+    ) -> BaseSampler:
         return ClassificationNormalNormalSampler(
             xi, xi_labels, seed=seed,
             sigma=epsilon, l_sigma=epsilon
