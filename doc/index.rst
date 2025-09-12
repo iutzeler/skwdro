@@ -1,5 +1,5 @@
 Welcome to skwdro's documentation!
-============================================
+==================================
 
 This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) versions of popular machine learning and operations research problems.
 
@@ -40,14 +40,15 @@ This project provides easy-to-use Wasserstein Distributionally Robust (WDRO) ver
    :caption: API
 
    API/modules
-   API/skwdro
-   API/skwdro.solvers
-   API/skwdro.linear_models
-   API/skwdro.operations_research
-   API/skwdro.neural_network
-   API/skwdro.distributions
-   API/skwdro.base.samplers.torch
-   API/skwdro.base.losses_torch
+   API/submodules
+
+.. API/skwdro.solvers
+.. API/skwdro.linear_models
+.. API/skwdro.operations_research
+.. API/skwdro.neural_network
+.. API/skwdro.distributions
+.. API/skwdro.base.samplers.torch
+.. API/skwdro.base.losses_torch
 
 
 

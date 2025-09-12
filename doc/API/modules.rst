@@ -1,5 +1,5 @@
-skwdro
-======
+Exhaustive API
+==============
 
 .. toctree::
    :maxdepth: 4
