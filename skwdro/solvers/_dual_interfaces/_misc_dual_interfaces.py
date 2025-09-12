@@ -34,11 +34,19 @@ class _DualLossBase(nn.Module, ABC):
     rho_0 : pt.Tensor
         first guess for a good maximal distance between xi distribution
         and adversarial distribution
-    n_iter : int
-        number of gradient descent updates
     epsilon_0 : Optional[pt.tensor], default ``None``
         first guess for a good regularization value :math:`\epsilon`
         for Sinkhorn
+    n_iter : int
+        number of gradient descent updates
+    reduction: str | None
+         specifies the reduction to apply to the outer expectation of the
+         SkWDRO formula applied: ``'none'`` | ``'mean'`` | ``'sum'``.
+         - ``'none'``: no reduction will be applied,
+         - ``'mean'``: the sum of the output will be divided by the number of
+         elements in the output,
+         - ``'sum'``: the output will be summed.
+         Default: ``None`` which translates to ``'mean'``
     gradient_hypertuning : bool, default ``False``
         [WIP] set to ``True`` to tune rho and epsilon.
     imp_samp : bool, default ``True``
@@ -55,6 +63,9 @@ class _DualLossBase(nn.Module, ABC):
         initialized a ``rho_0``, and without requires_grad
     n_samples : int
     n_iter : int
+    reduction: str
+         specifies the reduction to apply to the outer expectation of the
+         SkWDRO formula applied: ``'none'`` | ``'mean'`` | ``'sum'``.
     imp_samp : bool
 
     Shapes
@@ -62,6 +73,7 @@ class _DualLossBase(nn.Module, ABC):
     rho_0: (1,)
     epsilon_0: (1,)
     """
+    reduction: str
 
     def __init__(
         self,
@@ -71,8 +83,9 @@ class _DualLossBase(nn.Module, ABC):
         epsilon_0: pt.Tensor,
         rho_0: pt.Tensor,
         n_iter: Steps,
-        gradient_hypertuning: bool = False,
         *,
+        reduction: Optional[str] = None,
+        gradient_hypertuning: bool = False,
         imp_samp: bool = True,
     ) -> None:
         super(_DualLossBase, self).__init__()
@@ -87,6 +100,8 @@ class _DualLossBase(nn.Module, ABC):
             rho_0), requires_grad=gradient_hypertuning)
         self.epsilon = nn.Parameter(pt.as_tensor(
             epsilon_0), requires_grad=gradient_hypertuning)
+
+        self.reduction = 'mean' if reduction is None else reduction
 
         # Lambda is tuned during training, and it requires a proxy in its
         # parameter form.
@@ -107,6 +122,51 @@ class _DualLossBase(nn.Module, ABC):
         self.imp_samp = imp_samp
         self._opti: Optional[pt.optim.Optimizer] = None
         self.erm_mode: bool = False
+
+    def reduce_loss_batch(self, losses: pt.Tensor) -> pt.Tensor:
+        r"""Performs the reduction that the ``torch.nn._C`` API would have done if
+        one were to use the OOP/functional API of pytorch instead of SkWDRO.
+        If the reduction method was set to ``"mean"``, the batch of losses is
+        averaged on all available dimensions. If instead it was set to ``"sum"``
+        it is summed over.
+        On the other hand if it was set to ``"none"`` (or ``None``), the batch is
+        returned **as is**.
+
+        This reduction aims at computing the **outer** expectation of the SkWDRO
+        formula (`see more <why_skwdro.html>`__), on the :math:`\xi` samples as
+        :math:`\mathbb{E}_{\xi\sim\hat{\mathbb{P}}^N}[L_\theta^\texttt{robust}]`
+
+        .. warning::
+            Take care about the way the loss you picked returns batches in the
+            good shape if you want the "no reduction" option.
+
+        Parameters
+        ----------
+        losses: :py:class:`torch.Tensor`
+            batch of losses computed for each sample :math:`\xi`
+
+        Returns
+        -------
+        loss: :py:class:`torch.Tensor`
+            squeezed/reduced batch of losses
+
+        Shapes:
+        -------
+        losses: (m, 1)
+        loss:
+            - (,) if :py:attr:`reduction` is ``"mean"`` or ``"sum"``,
+            - (m,) if :py:attr:`reduction` is ``"none"``.
+        """
+        assert losses.dim() == 2
+        if self.reduction == 'mean':
+            return losses.mean()
+        elif self.reduction == 'sum':
+            return losses.sum()
+        elif self.reduction in ('none', None):
+            return losses.squeeze(-1)
+        else:
+            # Unreachable (unless messing up with reduction attribute).
+            raise NotImplementedError()
 
     @property
     def iterations(self):
