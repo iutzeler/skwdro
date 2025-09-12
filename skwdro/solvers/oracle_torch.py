@@ -274,8 +274,14 @@ class DualPostSampledLoss(_DualLoss):
         dl : (1,)
         """
         del zeta, zeta_labels
-        if reset_sampler:
+        if self.primal_loss.sampler is None:
+            # Means were never set in the first place, so initialize the sampler
+            # Warning: no seed is set, so set the sampler yourself if needed
+            self.init_sampler(xi, xi_labels, self.epsilon.detach().item(), None)
+        elif reset_sampler:
+            # Otherwise reset the mean
             self.reset_sampler_mean(xi, xi_labels)
+
         if self.rho < 0.:
             raise ValueError(' '.join([
                 "Rho < 0 detected: ->",
