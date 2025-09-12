@@ -222,7 +222,7 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: None = None,
         zeta_labels: None = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         pass
 
@@ -233,7 +233,7 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor],
         zeta: pt.Tensor,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         raise ValueError(
             "This class does not support forwarding pre-sampled zetas"
@@ -245,7 +245,7 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> Optional[pt.Tensor]:
         """
         Forward pass for the dual loss, with the sampling of the
@@ -258,7 +258,10 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels : Optional[pt.Tensor]
             labels batch
         reset_sampler : bool
-            defaults to ``False``, if set resets the batch saved in the sampler
+            defaults to ``True``, if set resets the batch saved in the sampler
+
+            .. warning:: Must be set to ``True`` for any flavor of SGD, otherwise
+                the samples will never be redrawn
 
         Returns
         -------
@@ -425,7 +428,7 @@ class DualPreSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: None = None,
         zeta_labels: None = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         raise NotImplementedError(
             "This class must forward pre-sampled zeta values"
@@ -438,7 +441,7 @@ class DualPreSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor],
         zeta: pt.Tensor,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ):
         del xi, xi_labels, zeta, zeta_labels, reset_sampler
 
@@ -448,7 +451,7 @@ class DualPreSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         r""" Forward pass for the dual loss, wrt the already sampled
         :math:`\zeta` values
@@ -463,7 +466,10 @@ class DualPreSampledLoss(_DualLoss):
             data batch
         zeta_labels : Optional[pt.Tensor]
             labels batch
-TODO
+        reset_sampler: bool
+            This parameter plays no role for this class, and can be left to
+            ``True`` as anyway the sampler is never reset.
+
         Returns
         -------
         dl : pt.Tensor

@@ -101,7 +101,7 @@ def train_dual_alexnet(rho: pt.Tensor, X, y, epochs=10, verbose=False, plot=Fals
             for data, target in train_loader:
                 # Training step
                 model.zero_grad()
-                loss = model(data.to(device), target.to(device), reset_sampler=True)
+                loss = model(data.to(device), target.to(device))
                 loss.backward()
                 optimizer.step()
 

@@ -218,7 +218,7 @@ Before/after comparison for ``robustify``
         # Forward pass
         inference = model(sample)
         loss = my_loss_function(inference, target)
-        loss = robust_model(inference, target, reset_sampler=True)
+        loss = robust_model(inference, target)
 
         # Backward pass
         loss.backward()
@@ -342,7 +342,7 @@ Before/after comparison for ``robustify``
         # Forward pass
         inference = model(sample)
         loss = my_loss_function(inference, target)
-        loss = robust_model(inference, target, reset_sampler=True)
+        loss = robust_model(inference, target)
 
         # Backward pass
         loss.backward()
