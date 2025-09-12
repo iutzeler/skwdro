@@ -83,6 +83,11 @@ class NewsVendorLoss_torch(Loss):
         return None
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
+    def default_sampler(
+        cls,
+        xi,
+        xi_labels,
+        epsilon, seed: Optional[int]
+    ) -> NewsVendorNormalSampler:
         del xi_labels
         return NewsVendorNormalSampler(xi, seed=seed, sigma=epsilon)

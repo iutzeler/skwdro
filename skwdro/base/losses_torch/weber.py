@@ -47,7 +47,9 @@ class WeberLoss(Loss):
 
     @classmethod
     def default_sampler(
-        cls, xi, xi_labels, epsilon, seed: int
+        cls,
+        xi, xi_labels,
+        epsilon, seed: Optional[int]
     ) -> LabeledSampler:
         assert xi_labels is not None
         return ClassificationNormalNormalSampler(

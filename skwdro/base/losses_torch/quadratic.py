@@ -41,7 +41,11 @@ class QuadraticLoss(Loss):
         return self.regularize(self.L(coefs, xi_labels))
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon, seed: int) -> BaseSampler:
+    def default_sampler(
+        cls,
+        xi, xi_labels,
+        epsilon, seed: Optional[int]
+    ) -> BaseSampler:
         return ClassificationNormalNormalSampler(
             xi, xi_labels, seed=seed,
             sigma=epsilon, l_sigma=epsilon

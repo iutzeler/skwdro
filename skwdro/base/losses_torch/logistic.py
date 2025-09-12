@@ -4,7 +4,7 @@ import torch as pt
 import torch.nn as nn
 
 from .base_loss import Loss
-from skwdro.base.samplers.torch.base_samplers import LabeledSampler
+from skwdro.base.samplers.torch.base_samplers import BaseSampler, LabeledSampler
 from skwdro.base.samplers.torch.classif_sampler import (
     ClassificationNormalNormalSampler
 )
@@ -108,7 +108,13 @@ class LogisticLoss(Loss):
         return self.regularize(self.L(coefs, xi_labels))
 
     @classmethod
-    def default_sampler(cls, xi, xi_labels, epsilon, seed: int):
+    def default_sampler(
+        cls,
+        xi,
+        xi_labels,
+        epsilon,
+        seed: Optional[int]
+    ) -> BaseSampler:
         return ClassificationNormalNormalSampler(
             xi,
             xi_labels,
