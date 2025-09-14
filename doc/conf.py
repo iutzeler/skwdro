@@ -46,6 +46,7 @@ extensions = [
     'numpydoc',
     'sphinx_gallery.gen_gallery',
     # 'sphinx.ext.autosectionlabel',
+    "sphinxcontrib.mermaid",
     # 'sphinx_copybutton',
     'sphinx_design',
     # 'myst_parser',

@@ -1,4 +1,4 @@
-
+sphinxcontrib-mermaid
 sphinxawesome-theme
 sphinx-gallery
 sphinx_rtd_theme
