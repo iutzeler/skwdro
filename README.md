@@ -115,7 +115,7 @@
 
 
 
-``skwdro`` is a Python package that offers **WDRO versions** for a large range of estimators, either by extending **``scikit-learn`` estimator** or by providing a wrapper for **``pytorch`` modules**.
+``skwdro`` is a Python package that offers **WDRO versions** for a large range of estimators, either by extending **``scikit-learn`` estimatora** or by providing a wrapper for **``pytorch`` modules**.
 
 Have a look at ``skwdro`` [documentation](https://skwdro.readthedocs.io/en/latest/)!
 
@@ -135,19 +135,26 @@ First install ``hatch`` and clone the archive. In the root folder, ``make shell`
 
 ### With ``pip``
 
-``skwdro`` will be available on PyPi *soon*, for now only the *development mode* is available.
+<!-- ``skwdro`` will be available on PyPi *soon*, for now only the *development mode* is available. -->
 
-<!--  Run the following command to get the latest version of the package
+Run the following command to get the latest version of the package
 
 ```shell
 pip install -U skwdro
 ```
 
-It is also available on conda-forge and can be installed using, for instance:
+For ``uv`` users:
 
 ```shell
-conda install -c conda-forge skwdro
-``` -->
+uv pip install skwdro
+```
+
+It is also available via conda and alikes (mamba, etc) and can be installed using, for instance:
+
+```shell
+conda install flvincen::skwdro
+```
+
 
 ## First steps with ``skwdro``
 
@@ -214,8 +221,6 @@ for epoch in range(100):
 ```
 
 You will find detailed description on how to `robustify` modules in the documentation.
-
-
 
 
 # Cite
