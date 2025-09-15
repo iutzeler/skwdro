@@ -8,14 +8,25 @@ import skwdro.distributions as dst
 
 
 class BaseSampler(ABC):
-    seed: int
+    seed: Optional[int]
 
-    def __init__(self, seed: int):
+    def __init__(self, seed: Optional[int] = None):
+        """
+        Base class for all samplers available in the library.
+        One must subclass this in order to make their samplers comply with the
+        interfaces of this library.
+
+        Attributes
+        ----------
+        seed: int|None
+            rando seed for np and torch rngs.
+        """
         self.seed = seed
 
         # Set seed
-        pt.manual_seed(seed)
-        random.seed(seed)
+        if seed is not None:
+            pt.manual_seed(seed)
+            random.seed(seed)
 
     @abstractmethod
     def sample(
@@ -58,7 +69,7 @@ class BaseSampler(ABC):
 
 
 class NoLabelsSampler(BaseSampler, ABC):
-    def __init__(self, data_sampler: dst.Distribution, seed: int):
+    def __init__(self, data_sampler: dst.Distribution, seed: Optional[int]):
         super(NoLabelsSampler, self).__init__(seed)
         self.data_s = data_sampler
 
@@ -89,7 +100,12 @@ class NoLabelsSampler(BaseSampler, ABC):
 
 
 class LabeledSampler(BaseSampler, ABC):
-    def __init__(self, data_sampler: dst.Distribution, labels_sampler: dst.Distribution, seed: int):
+    def __init__(
+        self,
+        data_sampler: dst.Distribution,
+        labels_sampler: dst.Distribution,
+        seed: Optional[int]
+    ) -> None:
         super(LabeledSampler, self).__init__(seed)
         self.data_s = data_sampler
         self.labels_s = labels_sampler
@@ -109,14 +125,28 @@ class LabeledSampler(BaseSampler, ABC):
     def produces_labels(self):
         return True
 
+    def _format_logprobs(
+        self,
+        dist: dst.Distribution,
+        data: pt.Tensor
+    ) -> pt.Tensor:
+        lp = dist.log_prob(data)
+        if lp.dim() == 3:
+            return lp.sum(dim=-1, keepdim=True)
+        elif lp.dim() == 2:
+            return lp.unsqueeze(-1)
+        else:
+            return lp.unsqueeze(-1)
+            raise NotImplementedError()
+
     def log_prob(
             self,
             zeta: pt.Tensor,
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert zeta_labels is not None
-        lp_zeta = self.data_s.log_prob(zeta).sum(-1, keepdim=True)
-        lp_zeta_labels = self.labels_s.log_prob(zeta_labels).sum(-1, keepdim=True)
+        lp_zeta = self._format_logprobs(self.data_s, zeta)
+        lp_zeta_labels = self._format_logprobs(self.labels_s, zeta_labels)
         lp = lp_zeta + lp_zeta_labels
         return lp
 
@@ -128,8 +158,9 @@ class LabeledSampler(BaseSampler, ABC):
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert zeta_labels is not None and xi_labels is not None
-        lp_zeta = self.data_s.log_prob(zeta).sum(-1, keepdim=True)
-        lp_zeta_labels = self.labels_s.log_prob(zeta_labels).sum(-1, keepdim=True)
+        # TODO: FIX
+        lp_zeta = self._format_logprobs(self.data_s, zeta)
+        lp_zeta_labels = self._format_logprobs(self.labels_s, zeta_labels)
         lp = lp_zeta + lp_zeta_labels
         return lp
 

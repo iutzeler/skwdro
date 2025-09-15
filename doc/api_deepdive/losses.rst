@@ -1,0 +1,12 @@
+skwdro.base.losses_torch module
+-------------------------------
+
+Here you can fin the API for all available losses in the library.
+They all subclass the base :py:class:`Loss` class, and so should your custom implementations if you wish to build one from scratch.
+
+In order to make your own loss, you must overload :py:method:`Loss.value` and probably :py:method:`default_sampler`
+
+.. automodule:: skwdro.base.losses_torch
+   :members:
+   :show-inheritance:
+   :undoc-members:

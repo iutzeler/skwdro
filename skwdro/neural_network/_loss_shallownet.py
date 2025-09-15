@@ -11,16 +11,17 @@ from skwdro.base.losses_torch import Loss
 
 class ShallowNetLoss(Loss):
     def __init__(
-            self,
-            sampler: Optional[LabeledSampler] = None,
-            *,
-            d: int = 0,
-            n_neurons: int = 0,
-            ly1=None,
-            ly2=None,
-            fit_intercept: bool = False) -> None:
+        self,
+        sampler: Optional[LabeledSampler] = None,
+        *,
+        d: int = 0,
+        n_neurons: int = 0,
+        ly1: Optional[pt.Tensor] = None,
+        ly2: Optional[pt.Tensor] = None,
+        fit_intercept: bool = False
+    ) -> None:
         assert sampler is not None
-        super(ShallowNetLoss, self).__init__(sampler)
+        super(ShallowNetLoss, self).__init__(sampler, True)
         assert n_neurons is not None and n_neurons > 0, "Please provide a valid layer height n_neurons>0"
         assert d > 0, "Please provide a valid data dimension d>0"
         if ly1 is not None:

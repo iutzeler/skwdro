@@ -119,6 +119,14 @@ class DualPostSampledLoss(_DualLoss):
     n_iter: Steps
         either a tuple ``(number of ERM iterations, number of DRO iterations)``,
         of type ``(int, int)``, or an integer for the number of DRO iterations
+    reduction: str | None
+         specifies the reduction to apply to the outer expectation of the
+         SkWDRO formula applied: ``'none'`` | ``'mean'`` | ``'sum'``.
+         - ``'none'``: no reduction will be applied,
+         - ``'mean'``: the sum of the output will be divided by the number of
+         elements in the output,
+         - ``'sum'``: the output will be summed.
+         Default: ``None`` which translates to ``'mean'``
     gradient_hypertuning: bool
         set to ``True`` to accumulate gradients in ``rho`` and ``epsilon``
         .. tip:: should almost always be kept to ``False``
@@ -126,7 +134,21 @@ class DualPostSampledLoss(_DualLoss):
         set the stepsize of the :py:class:`torch.optim.AdamW` algorithm. Defaults
         to ``None`` which will be parsed as ``5e-2``
     imp_samp: bool
-        set to false to disable importance sampling for ``(2, 2)`` ground-costs
+        set to ``True`` to enable importance sampling
+
+        .. warning::
+
+            Unlike the :py:func:`skwdro.torch.robustify` interface, there is no
+            protection against mistakes here. So please do not attempt to set
+            importance sampling for now if:
+            - your target is categorical
+            - your model is non-differentiable
+            - your model includes parts that use the regular ``.backwards()``
+                torch interface for inner autodiff utilities instead of the
+                functional API
+            - your cost functional does not implement the right functions (see
+                appropriate tutorials).
+
     adapt: Optional[str]
         set to either:
 
@@ -145,6 +167,7 @@ class DualPostSampledLoss(_DualLoss):
         rho_0: pt.Tensor,
         n_iter: Steps = 10000,
         *,
+        reduction: Optional[str] = None,
         gradient_hypertuning: bool = False,
         learning_rate: Optional[float] = None,
         imp_samp: bool = IMP_SAMP,
@@ -157,7 +180,8 @@ class DualPostSampledLoss(_DualLoss):
             epsilon_0,
             rho_0,
             n_iter,
-            gradient_hypertuning,
+            reduction=reduction,
+            gradient_hypertuning=gradient_hypertuning,
             imp_samp=imp_samp
         )
         if adapt:
@@ -198,7 +222,7 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: None = None,
         zeta_labels: None = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         pass
 
@@ -209,7 +233,7 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor],
         zeta: pt.Tensor,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         raise ValueError(
             "This class does not support forwarding pre-sampled zetas"
@@ -221,7 +245,7 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> Optional[pt.Tensor]:
         """
         Forward pass for the dual loss, with the sampling of the
@@ -234,7 +258,10 @@ class DualPostSampledLoss(_DualLoss):
         xi_labels : Optional[pt.Tensor]
             labels batch
         reset_sampler : bool
-            defaults to ``False``, if set resets the batch saved in the sampler
+            defaults to ``True``, if set resets the batch saved in the sampler
+
+            .. warning:: Must be set to ``True`` for any flavor of SGD, otherwise
+                the samples will never be redrawn
 
         Returns
         -------
@@ -247,8 +274,14 @@ class DualPostSampledLoss(_DualLoss):
         dl : (1,)
         """
         del zeta, zeta_labels
-        if reset_sampler:
+        if self.primal_loss.sampler is None:
+            # Means were never set in the first place, so initialize the sampler
+            # Warning: no seed is set, so set the sampler yourself if needed
+            self.init_sampler(xi, xi_labels, self.epsilon.detach().item(), None)
+        elif reset_sampler:
+            # Otherwise reset the mean
             self.reset_sampler_mean(xi, xi_labels)
+
         if self.rho < 0.:
             raise ValueError(' '.join([
                 "Rho < 0 detected: ->",
@@ -258,12 +291,13 @@ class DualPostSampledLoss(_DualLoss):
         elif self.rho == 0.:
             # Just to have a zero grad in lambda
             first_term = self.rho * self.lam
-            _pl: pt.Tensor = self.primal_loss(
+            batched_pl: pt.Tensor = self.primal_loss(
                 xi.unsqueeze(0),  # (1, m, d)
                 # (1, m, d') or None
                 xi_labels.unsqueeze(0) if xi_labels is not None else None
-            ).mean()  # (1,)
-            return first_term + _pl
+            )  # (1, m, 1)
+            primal_loss = self.reduce_loss_batch(batched_pl.squeeze(0))
+            return first_term + primal_loss
         else:
             zeta_, zeta_labels_ = self.generate_zetas(self.n_samples)
             return self.compute_dual(xi, xi_labels, zeta_, zeta_labels_)
@@ -300,6 +334,14 @@ class DualPreSampledLoss(_DualLoss):
     n_iter: Steps
         either a tuple ``(number of ERM iterations, number of DRO iterations)``,
         of type ``(int, int)``, or an integer for the number of DRO iterations
+    reduction: str | None
+         specifies the reduction to apply to the outer expectation of the
+         SkWDRO formula applied: ``'none'`` | ``'mean'`` | ``'sum'``.
+         - ``'none'``: no reduction will be applied,
+         - ``'mean'``: the sum of the output will be divided by the number of
+         elements in the output,
+         - ``'sum'``: the output will be summed.
+         Default: ``None`` which translates to ``'mean'``
     gradient_hypertuning: bool
         set to ``True`` to accumulate gradients in ``rho`` and ``epsilon``
         .. tip:: should almost always be kept to ``False``
@@ -307,7 +349,22 @@ class DualPreSampledLoss(_DualLoss):
         set the stepsize of the :py:class:`torch.optim.AdamW` algorithm. Defaults
         to ``None`` which will be parsed as ``5e-2``
     imp_samp: bool
-        set to false to disable importance sampling for ``(2, 2)`` ground-costs
+        set to ``True`` to enable importance sampling
+
+        .. warning::
+
+            Unlike the :py:func:`skwdro.torch.robustify` interface, there is no
+            protection against mistakes here. So please do not attempt to set
+            importance sampling for now if:
+            - your target is categorical
+            - your model is non-differentiable
+            - your model includes parts that use the regular ``.backwards()``
+                torch interface for inner autodiff utilities instead of the
+                functional API
+            - your cost functional does not implement the right functions (see
+                appropriate tutorials)
+            - the reduction for the outer expectation is set to none.
+
     adapt: Optional[str]
         set to either:
 
@@ -339,6 +396,7 @@ class DualPreSampledLoss(_DualLoss):
         n_iter: Steps = 50,
         gradient_hypertuning: bool = False,
         *,
+        reduction: Optional[str] = None,
         imp_samp: bool = IMP_SAMP,
         learning_rate: Optional[float] = None,
         adapt: Optional[str] = "prodigy",
@@ -351,7 +409,8 @@ class DualPreSampledLoss(_DualLoss):
             epsilon_0,
             rho_0,
             n_iter,
-            gradient_hypertuning,
+            reduction=reduction,
+            gradient_hypertuning=gradient_hypertuning,
             imp_samp=imp_samp
         )
 
@@ -375,7 +434,7 @@ class DualPreSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: None = None,
         zeta_labels: None = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         raise NotImplementedError(
             "This class must forward pre-sampled zeta values"
@@ -388,7 +447,7 @@ class DualPreSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor],
         zeta: pt.Tensor,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ):
         del xi, xi_labels, zeta, zeta_labels, reset_sampler
 
@@ -398,7 +457,7 @@ class DualPreSampledLoss(_DualLoss):
         xi_labels: Optional[pt.Tensor] = None,
         zeta: Optional[pt.Tensor] = None,
         zeta_labels: Optional[pt.Tensor] = None,
-        reset_sampler: bool = False
+        reset_sampler: bool = True
     ) -> pt.Tensor:
         r""" Forward pass for the dual loss, wrt the already sampled
         :math:`\zeta` values
@@ -413,6 +472,9 @@ class DualPreSampledLoss(_DualLoss):
             data batch
         zeta_labels : Optional[pt.Tensor]
             labels batch
+        reset_sampler: bool
+            This parameter plays no role for this class, and can be left to
+            ``True`` as anyway the sampler is never reset.
 
         Returns
         -------
@@ -434,13 +496,30 @@ class DualPreSampledLoss(_DualLoss):
                     "an instance of DualPostSampledLoss."
                 ]))
             else:
-                # Reuse the same samples as last forward pass
-                return self.compute_dual(
-                    xi,
-                    xi_labels,
-                    self.zeta,
-                    self.zeta_labels
-                )
+                if self.rho < 0.:
+                    raise ValueError(' '.join([
+                        "Rho < 0 detected: ->",
+                        str(self.rho.item()),
+                        ", please provide a positive rho value"
+                    ]))
+                elif self.rho == 0.:
+                    # Just to have a zero grad in lambda
+                    first_term = self.rho * self.lam
+                    batched_pl: pt.Tensor = self.primal_loss(
+                        xi.unsqueeze(0),  # (1, m, d)
+                        # (1, m, d') or None
+                        xi_labels.unsqueeze(0) if xi_labels is not None else None
+                    )  # (1, m, 1)
+                    primal_loss = self.reduce_loss_batch(batched_pl)
+                    return first_term + primal_loss
+                else:
+                    # Reuse the same samples as last forward pass
+                    return self.compute_dual(
+                        xi,
+                        xi_labels,
+                        self.zeta,
+                        self.zeta_labels
+                    )
         else:
             self.zeta = zeta
             self.zeta_labels = zeta_labels

@@ -36,7 +36,7 @@ def step(model, features, target, criterion, optimizer):
     # classes = model(features)
 
     # loss = criterion(classes, oh_target).mean()
-    loss = model(features, oh_target, reset_sampler=True).mean()
+    loss = model(features, oh_target).mean()
     loss.backward()
 
     optimizer.step()

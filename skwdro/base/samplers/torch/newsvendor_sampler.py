@@ -11,13 +11,30 @@ class NewsVendorNormalSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
     def __init__(
         self,
         xi,
-        seed: int,
         *,
         sigma: Optional[Union[pt.Tensor, float]] = None,
         tril: Optional[pt.Tensor] = None,
         prec: Optional[pt.Tensor] = None,
-        cov: Optional[pt.Tensor] = None
+        cov: Optional[pt.Tensor] = None,
+        seed: Optional[int] = None,
     ):
+        """
+        Example of an available sampler for the Newsvendor problem.
+
+        - inputs are sampled from a gaussian distribution
+
+        Specify the parameters of the distributions as keywords arguments.
+
+        Parameters
+        ----------
+        xi: pt.Tensor
+            mean for inputs
+        sigma: float|Tensor
+            scalar standard deviation shared through dimensions, for inputs.
+
+        See :py:class:`skwdro.base.samplers.torch.base_samplers.IsOptionalCovarianceSampler`
+        for other arguments.
+        """
         super(NewsVendorNormalSampler, self).__init__(
             dst.MultivariateNormal(
                 loc=xi,
@@ -32,4 +49,5 @@ class NewsVendorNormalSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
     def reset_mean(self, xi, xi_labels):
         del xi_labels
         self.__init__(
-            xi, self.seed, tril=self.data_s._unbroadcasted_scale_tril)
+            xi, seed=self.seed, tril=self.data_s._unbroadcasted_scale_tril
+        )

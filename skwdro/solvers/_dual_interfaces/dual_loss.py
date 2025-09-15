@@ -42,12 +42,13 @@ class _DualFormulation(_SampleDisplacer):
         dl : (1,)
         """
         if self.rho == 0. or self.erm_mode:
-            _pl: pt.Tensor = self.primal_loss(
+            batched_pl: pt.Tensor = self.primal_loss(
                 xi.unsqueeze(0),  # (1, m, d)
                 maybe_unsqueeze(xi_labels, dim=0),  # (1, m, d') or None
-            ).mean()  # (1,)
+            )  # (1, m, 1)
             first_term: pt.Tensor = self.rho * self.lam
-            return first_term + _pl
+            primal_loss = self.reduce_loss_batch(batched_pl.squeeze(0))
+            return first_term + primal_loss
         elif self.rho > 0.:
             p = pt.tensor(self.cost.power)
             first_term = self.lam * self.rho.pow(p)  # (1,)
@@ -125,9 +126,11 @@ class _DualFormulation(_SampleDisplacer):
                 integrand /= self.epsilon  # -> (n_samples, m, 1)
 
             # Expectation on the zeta samples (collapse 1st dim)
-            second_term = pt.logsumexp(integrand, 0).mean(dim=0)  # -> (m, 1)
+            second_term = self.reduce_loss_batch(
+                pt.logsumexp(integrand, 0)
+            )  # -> (m, 1)
             second_term -= pt.log(pt.tensor(zeta.size(0)))  # -> (m, 1)
-            return first_term + self.epsilon * second_term.mean()  # (1,)
+            return first_term + self.epsilon * second_term  # (1,)
         elif self.rho.isnan().any():
             return pt.tensor(pt.nan, requires_grad=True)
         else:

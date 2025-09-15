@@ -124,7 +124,7 @@ Assume now that the (training) data is given as a dataloader ``train_loader``.
 
 This is the simplest use of the ``PyTorch`` interface: just wrap the usual loss and model with the ``robustify`` function and use the resulting loss function in the training loop.
 
-To make the optimization of the robust model more efficient, we also provide an learning-rate free optimizer tailored to this problem, taken from pieces of the literature: [#CDM23]_ and [MD24]_. 
+To make the optimization of the robust model more efficient, we also provide an learning-rate free optimizer tailored to this problem, taken from pieces of the literature: [#CDM23]_ and [#MD24]_. 
 
 .. code-block:: python
    :caption: Fetch the optimizer from the robust loss!
