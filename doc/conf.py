@@ -46,6 +46,7 @@ extensions = [
     'numpydoc',
     'sphinx_gallery.gen_gallery',
     # 'sphinx.ext.autosectionlabel',
+    "sphinxcontrib.mermaid",
     # 'sphinx_copybutton',
     'sphinx_design',
     # 'myst_parser',
@@ -162,6 +163,9 @@ suppress_warnings = ['autosectionlabel.*']
 html_permalinks_icon = '<span>#</span>'
 html_theme = 'sphinxawesome_theme'
 html_css_files = ['_static/css/custom.css']
+html_js_files = [
+    "mermaid-fix.js"
+]
 
 html_theme_options = {}
 
@@ -169,11 +173,11 @@ html_theme_options = {}
 ### Furo style
 ### /!\ Maths in dark and end of paraph glyph (pycrow) are broken...
 # html_theme = 'furo'
-html_theme_options = {
-    "source_repository": "https://github.com/iutzeler/skwdro/",
-    "source_branch": "dev",
-    "source_directory": "doc/",
-}
+# html_theme_options = {
+#     "source_repository": "https://github.com/iutzeler/skwdro/",
+#     "source_branch": "dev",
+#     "source_directory": "doc/",
+# }
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -204,7 +208,7 @@ html_title = "skwdro Documentation"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-# html_static_path = ['_static']
+html_static_path = ['_static']
 
 # Add any extra paths that contain custom files (such as robots.txt or
 # .htaccess) here, relative to this directory. These files are copied

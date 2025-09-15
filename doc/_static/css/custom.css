@@ -1,0 +1,24 @@
+/* Force node label color (most reliable) */
+.mermaid svg g.node text {
+  fill: #000 !important;           /* black in light mode */
+  paint-order: stroke;             /* helps with legibility if you use stroke */
+}
+
+/* Edge label text (if any) */
+.mermaid svg g.edgeLabel text {
+  fill: #000 !important;
+}
+
+/* Dark-mode: adapt automatically using prefers-color-scheme */
+@media (prefers-color-scheme: dark) {
+  .mermaid svg g.node text,
+  .mermaid svg g.edgeLabel text {
+    fill: #fff !important;         /* white in dark mode */
+  }
+}
+
+/* If your theme toggles dark mode with a class like `.dark`, also include: */
+.dark .mermaid svg g.node text,
+.dark .mermaid svg g.edgeLabel text {
+  fill: #fff !important;
+}

@@ -209,14 +209,15 @@ def optim_presample(
 
 
 def optim_postsample(
-        optimizer: pt.optim.Optimizer,
-        xi: pt.Tensor,
-        xi_labels: Optional[pt.Tensor],
-        loss: _DualLoss,
-        opt_cond: OptCondTorch
+    optimizer: pt.optim.Optimizer,
+    xi: pt.Tensor,
+    xi_labels: Optional[pt.Tensor],
+    loss: _DualLoss,
+    opt_cond: OptCondTorch
 ) -> List[float]:
     r""" Optimize the dual loss by resampling the :math:`\zeta` values at each
     gradient descent step.
+    Note that the descent is performed fullbatch on :math:`\xi`.
 
     Parameters
     ----------
