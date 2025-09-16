@@ -71,7 +71,7 @@ coverage.xml
 # Sphinx documentation
 doc/_build/
 doc/generated/
-# doc/API/
+doc/API/
 doc/examples/
 doc/sg_execution_times.rst
 
