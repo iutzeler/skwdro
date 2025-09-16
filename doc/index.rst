@@ -136,7 +136,7 @@ Here is a quick reading order that we advise:
 .. toctree::
    :maxdepth: 2
    :hidden:
-   :caption: Learn about SkWDRO
+   :caption: Bird's eye view
 
    quick_start
    wdro
@@ -166,6 +166,7 @@ Here is a quick reading order that we advise:
    :hidden:
    :caption: Advanced topics
 
+   tutos/costs
    optim
    solvers
    tuning

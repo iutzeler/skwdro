@@ -1,4 +1,12 @@
-from .normcost import NormCost, TorchCost as Cost
+from .base_cost import TorchCost
+from .normcost import NormCost
 from .normlabelcost import NormLabelCost
 
-__all__ = ["NormCost", "NormLabelCost", "Cost"]
+
+"""
+Alias for :py:class:`TorchCost`.
+"""
+Cost = TorchCost
+
+
+__all__ = ["NormCost", "NormLabelCost", "Cost", "TorchCost"]
