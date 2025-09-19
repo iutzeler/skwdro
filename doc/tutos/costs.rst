@@ -2,7 +2,7 @@
 Recipe for a good ground-cost for Wasserstein-DRO
 =================================================
 
-.. tip:: Read the `tutorial on SkWDRO <why_skwdro.html>`__ to understand better this part.
+.. tip:: Read the `tutorial on SkWDRO <../why_skwdro.html>`__ to understand better this part.
 
 
 Recall the formula for SkWDRO:
@@ -47,7 +47,7 @@ Then, this opens a wide range of Wasserstein **distances**, called the :math:`W_
 The choice of `p` can be made in accordance with the behaviour of the loss function :math:`L_\theta` in its "worst regions".
 To learn more about the growth criteria that make most sense regarding this remark, take a look at [#GCK24]_.
 
-The interface of SkWDRO with regard to this matter is very simple to use: in the `robustification interface <api_deepdive/robustification.html>`__ you may directly specify such a structure by using a `decoded string following our simple grammar <api_deepdive/cost_decoding.html>`__.
+The interface of SkWDRO with regard to this matter is very simple to use: in the `robustification interface <../api_deepdive/robustification.html>`__ you may directly specify such a structure by using a `decoded string following our simple grammar <../api_deepdive/cost_decoding.html>`__.
 
 Here, this is done with the following cost specification:
 
@@ -95,8 +95,9 @@ So instead of trying to cover every case by hand, we allow users to subclass :py
 
 The documentation of this useful abstract class will guide you through the methods you need to implement:
 
-.. autofunction:: skwdro.base.costs_torch.TorchCost
-    :no-index:
+.. autoclass:: skwdro.base.costs_torch.TorchCost
+   :members:
+   :no-index:
 
 The methods you should override are the following:
 
@@ -120,92 +121,117 @@ Consider a problem stemming from some gaussian curvature prescription model, or 
 
 
 If we want to use this structure to build some WDRO model, you may implement this cost functional as is done bellow.
+As discussed previously, it is strongly advised to think imediately about the generating distribution :math:`\nu_\xi` at the same time as the
+cost function, as the interplay between them is crucial empirically.
 
 .. code-block:: python
    :linenos:
-   :caption: Cost function for gaussian curvature prescription
+   :caption: Build a relevant sampler tailored to our cost function
 
-   import torch as pt
+   import torch
    from skwdro.distributions import Distribution
    from skwdro.base.costs_torch import Cost
 
 
    class HalfSphereUniform(Distribution):
-      """
-      Proposition of a torch ``Distribution`` that samples uniformly on the half-sphere
-      pointing in the same direction as the "center" ``xi``. The expectation of this distribution is
-      thus ``xi``.
-      """
-      def __init__(self, xi):
-         super().__init__(pt.Size(), xi.shape, False)
-         self.center = xi
+       """
+       Proposition of a torch ``Distribution`` that samples uniformly on the half-sphere
+       pointing in the same direction as the "center" ``xi``. The expectation of this distribution is
+       thus ``xi``.
+       """
+       def __init__(self, xi):
+           super().__init__(torch.Size(), xi.shape, False)
+           self.center = xi
 
-      def rsample(self, sample_shape = pt.Size()) -> pt.Tensor:
-         """
-         Generates a sample_shape shaped reparameterized sample or sample_shape
-         shaped batch of reparameterized samples if the distribution parameters
-         are batched.
+       def rsample(self, sample_shape = torch.Size()) -> torch.Tensor:
+           """
+           Generates a sample_shape shaped reparameterized sample or sample_shape
+           shaped batch of reparameterized samples if the distribution parameters
+           are batched.
+           Samples an isotropic gaussian, then projects the samples to the right half-space of
+           positive scalar product with the "center" ``xi``, and finally projects them on the
+           sphere.
+           """
+           noise = torch.randn(sample_shape + self.center.size())
+           dim_range = tuple(range(len(sample_shape), noise.dim()))
+           projected_noise = noise * torch.sign(-torch.sum(self.center * noise, dim=dim_range, keepdim=True))
+           return projected_noise / torch.linalg.norm(projected_noise, dim=dim_range, keepdim=True)
 
-         Samples an isotropic gaussian, then projects the samples to the right half-space of
-         positive scalar product with the "center" ``xi``, and finally projects them on the
-         sphere.
-         """
-         noise = pt.randn(sample_shape + self.center.size())
-         dim_range = tuple(range(len(sample_shape), noise.dim()))
-         projected_noise = noise * pt.sign(-pt.sum(self.center * noise, dim=dim_range, keepdim=True))
-         return projected_noise / pt.linalg.norm(projected_noise, dim=dim_range, keepdim=True)
+Now that we have a nice distribution to associate with our cost function, we can specify it with the relevant 
+helper class.
 
+.. code-block:: python
+   :linenos:
+   :caption: Cost function for gaussian curvature prescription
 
    class GaussianPrescriptionCost(Cost):
-      def __init__(self):
-         # This initialization procedure is not important
-         super().__init__(
-            "Gaussian-curvature-prescription cost functional",
-            "pt"
-         )
-         # Here is the important line: the homogeneity for the radius
-         # is set bellow (see next section if you are curious).
-         self.power: float = 1.
+       def __init__(self):
+           # This initialization procedure is not important
+           super().__init__(
+              "Gaussian-curvature-prescription cost functional",
+              "pt"
+           )
+           # Here is the important line: the homogeneity for the radius
+           # is set bellow (see next section if you are curious).
+           self.power: float = 1.
 
-      def value(self, xi, xi_labels, zeta, zeta_labels):
-         r"""
-         This value function computes the cost of a pair (``xi``, ``zeta``).
+       def value(self, xi, xi_labels, zeta, zeta_labels):
+           r"""
+           This value function computes the cost of a pair (``xi``, ``zeta``).
 
-         .. math::
-             c(\xi, \zeta):=-\log\left([\langle\zeta,\xi\rangle]_+\right)
-         """
-         assert xi_labels is None
-         assert zeta_labels is None
-         # Write the cost function here, using only pytorch functions to
-         #    allow all the internal machinery to go smoothly. Here e.g.
-         #    we leverage the relu function to compute max(0, <x,y>)
-         scalar_prod = (xi * zeta).sum(dim=-1)
-         if scalar_prod <= 0.:
-            return pt.zeros_like(scalar_prod)
-         return pt.log(pt.nn.functional.relu(scalar_prod))
+           .. math::
+               c(\xi, \zeta):=-\log\left([\langle\zeta,\xi\rangle]_+\right)
+           """
+           assert xi_labels is None
+           assert zeta_labels is None
+           # Write the cost function here, using only pytorch functions to
+           #    allow all the internal machinery to go smoothly. Here e.g.
+           #    we leverage the relu function to compute max(0, <x,y>)
+           scalar_prod = (xi * zeta).sum(dim=-1)
+           if scalar_prod <= 0.:
+               return torch.zeros_like(scalar_prod)
+           return -torch.log(torch.nn.functional.relu(scalar_prod))
 
-      def _sampler_data(self, xi, epsilon):
-         del epsilon
-         return HalfSphereUniform(xi)
+       def _sampler_data(self, xi, epsilon):
+           del epsilon
+           return HalfSphereUniform(xi)
 
-      def _sampler_labels(self, xi_labels, epsilon) -> None:
-         assert xi_labels is None
-         return None
+       def _sampler_labels(self, xi_labels, epsilon):
+           assert xi_labels is None
+           return None
 
-      def solve_max_series_exp(self, xi, xi_labels, rhs, rhs_labels):
-         assert xi_labels is None
-         assert rhs_labels is None
-         return xi, xi_labels
+       def solve_max_series_exp(self, xi, xi_labels, rhs, rhs_labels):
+           assert xi_labels is None
+           assert rhs_labels is None
+           del rhs
+           return xi, xi_labels
 
 
-The definition of the half-sphere sampler is not mendatory! You may use any placeholder you want for the ``_sampler_data`` method overload, and follow the `user guide <user_guide.html>`_ to see how to implement you own custom sampler and integrate it to the dual-loss formulation.
+The definition of the half-sphere sampler is not mendatory! You may use any placeholder you want for the ``_sampler_data`` method overload, and follow the `user guide <../user_guide.html>`_ to see how to implement you own custom sampler and integrate it to the dual-loss formulation.
+
+.. code-block:: python
+   :caption: Testing our class on synthetic data
+
+   >>> c = GaussianPrescriptionCost()
+   >>> xi = torch.rand((2, 3))
+   >>> xi = xi / torch.norm(xi, dim=-1, keepdim=True)  # project on sphere
+   >>> # Try our sampler for validation: the cost should be > 0
+   >>> zeta = c._sampler_data(xi, torch.tensor(0.1)).sample(torch.Size((5,)))
+   >>> print(c(xi, zeta))
+   tensor([[3.7459, 0.5499],
+           [0.5176, 2.2018],
+           [0.1327, 0.0773],
+           [0.0441, 0.6632],
+           [0.7007, 0.0457]])
+   >>> print(c(xi, xi).abs().max())
+   tensor(1.1921e-07)
 
 This cost function is not associated trivially to any learning problems, but it showcases the way you can impose geometrical structure on the ``SkWDRO`` framework in general.
 
 To go further
 -------------
 
-Getting back to the first `WDRO tutorial <wdro.html>`_, you may recall that the transport cost constraint was cast as follows
+Getting back to the first `WDRO tutorial <../wdro.html>`_, you may recall that the transport cost constraint was cast as follows
 
 .. math::
 
@@ -219,7 +245,7 @@ For example, in the litterature, the distance is defined in a straightforward wa
 
    W_p(\hat{\mathbb{P}}^N, \mathbb{Q}) := \sqrt[p]{\inf_{\pi\in\Pi(\hat{\mathbb{P}}^N, \mathbb{Q})} \int_{\Xi^2}d(\xi, \zeta)^p d\pi(\xi, \zeta)} \le \rho
 
-To avoid changing all the theoretical derivations related to the duality results in the `SkWDRO framework <why_skwdro.html>`_, we just raise both sides of the equation to the power :math:`p`, which translates to appropriate tricks inside of the libraries solvers.
+To avoid changing all the theoretical derivations related to the duality results in the `SkWDRO framework <../why_skwdro.html>`_, we just raise both sides of the equation to the power :math:`p`, which translates to appropriate tricks inside of the libraries solvers.
 
 .. tip:: In fact the interface is flexible enough to specify this behavior for any loss! Set the :py:attr:`skwdro.base.costs_torch.TorchCost.p` attribute to any positive floating point number to allow for a power parameter, defining to what power you want to raise both sides of the equation so that the cost is of the same order of magnitude in average as :math:`\rho`. See the example above.
 

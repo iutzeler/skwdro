@@ -33,7 +33,7 @@ class TorchCost(nn.Module, ABC):
     ) -> pt.Tensor:
         """
         This function is called by default when using the __call__ dunder of
-        pytorch modules: it sends directly to the :py:method:`value` method.
+        pytorch modules: it sends directly to the :py:meth:`value` method.
         """
         return self.value(xi, zeta, xi_labels, zeta_labels)
 
@@ -101,7 +101,7 @@ class TorchCost(nn.Module, ABC):
         .. math::
 
             \zeta^\texttt{imp_samp}:=\text{arg}\min_{\zeta}
-            \left\langle\nabla_\xi L_theta(\xi)\mid{|}\zeta-\xi\right\rangle
+            \left\langle\nabla_\xi L_\theta(\xi)\mid\zeta-\xi\right\rangle
             - \lambda c(\xi, \zeta).
 
         .. important:: This is an unconstrained first-order approximation of the
