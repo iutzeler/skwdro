@@ -138,10 +138,11 @@ Here is a quick reading order that we advise:
    :hidden:
    :caption: Bird's eye view
 
-   quick_start
-   wdro
-   why_skwdro
-   user_guide
+   Welcome to the docs <self>
+   Getting started <quick_start>
+   Quick tour of WDRO <wdro>
+   Sinkhorn regularisation of WDRO: SkWDRO <why_skwdro>
+   User guide <user_guide>
 
 
 .. toctree::
@@ -167,6 +168,7 @@ Here is a quick reading order that we advise:
    :caption: Advanced topics
 
    tutos/costs
+   tutos/samplers
    optim
    solvers
    tuning
