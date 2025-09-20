@@ -63,7 +63,12 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
             seed
         )
 
-    def reset_mean(self, xi, xi_labels):
+    def reset_mean(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ):
+        assert xi_labels is not None
         self.__init__(
             xi,
             xi_labels,
@@ -75,8 +80,7 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
 
 class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler):
     data_s: dst.MultivariateNormal
-    # Just a placeholder to remember the mean. Dirac does not exist in torch...
-    labels_s: dst.MultivariateNormal
+    labels_s: dst.Dirac
 
     def __init__(
         self,
@@ -128,7 +132,12 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
         """
         return self.data_s.mean.unsqueeze(0).expand(n_sample, -1, -1)
 
-    def reset_mean(self, xi, xi_labels):
+    def reset_mean(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ):
+        assert xi_labels is not None
         self.__init__(
             xi,
             xi_labels,
@@ -203,7 +212,12 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
         assert isinstance(zeta_labels, pt.Tensor)
         return zeta_labels
 
-    def reset_mean(self, xi, xi_labels):
+    def reset_mean(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ):
+        assert xi_labels is not None
         self.__init__(
             self.p,
             xi,
