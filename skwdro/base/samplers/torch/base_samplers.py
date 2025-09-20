@@ -16,6 +16,8 @@ class BaseSampler(ABC):
         One must subclass this in order to make their samplers comply with the
         interfaces of this library.
 
+        .. note:: This class is iterable.
+
         Attributes
         ----------
         seed: int|None
@@ -32,6 +34,22 @@ class BaseSampler(ABC):
     def sample(
         self, n_samples: int
     ) -> Tuple[pt.Tensor, Optional[pt.Tensor]]:
+        """
+        Override this method to make a custom sampling mechanism from scratch.
+        It should output a pair of tensors for ``xi`` and ``xi_labels``.
+
+        Parameters
+        ----------
+        n_samples: int
+           number of samples to draw
+
+        Returns
+        -------
+        zeta: torch.Tensor
+           input samples drawn
+        zeta_labels: torch.Tensor|None
+           input targets drawn, if any
+        """
         raise NotImplementedError()
 
     def __iter__(self):
@@ -46,30 +64,55 @@ class BaseSampler(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def reset_mean(self, xi, xi_labels):
+    def reset_mean(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ):
+        """
+        Reset the sampler instance parametrization.
+        Must be overriden when a subclass is made to describe it.
+
+        Parameters
+        ----------
+        xi: torch.Tensor
+            part of the parametrization of the sampler that concerns the input
+            variables
+        xi_labels: torch.Tensor|None
+            part of the parametrization of the sampler that concerns the labels
+            variables
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def log_prob(
-            self,
-            zeta: pt.Tensor,
-            zeta_labels: Optional[pt.Tensor]
+        self,
+        zeta: pt.Tensor,
+        zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         raise NotImplementedError()
 
     @abstractmethod
     def log_prob_recentered(
-            self,
-            xi: pt.Tensor,
-            xi_labels: Optional[pt.Tensor],
-            zeta: pt.Tensor,
-            zeta_labels: Optional[pt.Tensor]
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor],
+        zeta: pt.Tensor,
+        zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         raise NotImplementedError()
 
 
 class NoLabelsSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, seed: Optional[int]):
+        """
+        Base class for all samplers that do not need targets (outputing ``None``)
+
+        Attributes
+        ----------
+        data_s: torch.distributions.Distribution
+            torch distribution to sample the input data from
+        """
         super(NoLabelsSampler, self).__init__(seed)
         self.data_s = data_sampler
 
@@ -106,6 +149,16 @@ class LabeledSampler(BaseSampler, ABC):
         labels_sampler: dst.Distribution,
         seed: Optional[int]
     ) -> None:
+        """
+        Base class for all samplers that do not need targets (outputing ``None``)
+
+        Attributes
+        ----------
+        data_s: torch.distributions.Distribution
+            torch distribution to sample the input data from
+        labels_s: torch.distributions.Distribution
+            torch distribution to sample the targets from
+        """
         super(LabeledSampler, self).__init__(seed)
         self.data_s = data_sampler
         self.labels_s = labels_sampler

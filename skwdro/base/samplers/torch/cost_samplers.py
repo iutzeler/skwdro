@@ -81,7 +81,12 @@ class LabeledCostSampler(LabeledSampler):
         self.generating_cost = cost
         self.sigma = sigma
 
-    def reset_mean(self, xi, xi_labels):
+    def reset_mean(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ):
+        assert xi_labels is not None
         self.__init__(
             self.generating_cost, xi,
             xi_labels, self.sigma, self.seed
