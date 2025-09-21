@@ -37,9 +37,13 @@ class NoLabelsCostSampler(NoLabelsSampler):
         self.generating_cost = cost
         self.sigma = sigma
 
-    def reset_mean(self, xi, xi_labels):
+    def reset_mean(
+        self,
+        xi: pt.Tensor,
+        xi_labels: Optional[pt.Tensor]
+    ):
         del xi_labels
-        self.__init__(self.generating_cost, xi, self.sigma, self.seed)
+        NoLabelsCostSampler.__init__(self, self.generating_cost, xi, self.sigma, self.seed)
 
 
 class LabeledCostSampler(LabeledSampler):
@@ -87,7 +91,8 @@ class LabeledCostSampler(LabeledSampler):
         xi_labels: Optional[pt.Tensor]
     ):
         assert xi_labels is not None
-        self.__init__(
+        LabeledCostSampler.__init__(
+            self,
             self.generating_cost, xi,
             xi_labels, self.sigma, self.seed
         )

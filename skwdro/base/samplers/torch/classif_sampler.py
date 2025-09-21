@@ -69,7 +69,8 @@ class ClassificationNormalNormalSampler(LabeledSampler, IsOptionalCovarianceSamp
         xi_labels: Optional[pt.Tensor]
     ):
         assert xi_labels is not None
-        self.__init__(
+        ClassificationNormalNormalSampler.__init__(
+            self,
             xi,
             xi_labels,
             seed=self.seed,
@@ -138,7 +139,8 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
         xi_labels: Optional[pt.Tensor]
     ):
         assert xi_labels is not None
-        self.__init__(
+        ClassificationNormalIdSampler.__init__(
+            self,
             xi,
             xi_labels,
             seed=self.seed,
@@ -218,7 +220,8 @@ class ClassificationNormalBernouilliSampler(LabeledSampler, IsOptionalCovariance
         xi_labels: Optional[pt.Tensor]
     ):
         assert xi_labels is not None
-        self.__init__(
+        ClassificationNormalBernouilliSampler.__init__(
+            self,
             self.p,
             xi,
             xi_labels,
