@@ -52,6 +52,9 @@ class NewsVendorNormalSampler(NoLabelsSampler, IsOptionalCovarianceSampler):
         xi_labels: Optional[pt.Tensor]
     ):
         del xi_labels
-        self.__init__(
-            xi, seed=self.seed, tril=self.data_s._unbroadcasted_scale_tril
+        NewsVendorNormalSampler.__init__(
+            self,
+            xi,
+            seed=self.seed,
+            tril=self.data_s._unbroadcasted_scale_tril
         )
