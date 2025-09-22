@@ -133,8 +133,8 @@ Thus in the ``SkWDRO`` team we attempted to provide meaningful but easy-to-use i
 * :py:class:`skwdro.solvers.DualLoss` and variations thereof are meant for people who already have a model complying with the assumptions above, and lets you have a lot more control on the precise pieces of the model.
 
 
-Interfaces: the simplest method
--------------------------------
+``robustify``: the simplest method
+----------------------------------
 
 Here comes the documentation of the main dish, the :py:func:`~skwdro.torch.robustify` function.
 
@@ -233,21 +233,21 @@ Before/after comparison for ``robustify``
                 print(robust_model.primal_loss(test_sample, test_target))
                 model.train()
 
-Interfaces: tune everything you want
-------------------------------------
+Dual losses: tune everything you want
+-------------------------------------
 
 Conceptually, :eq:`dual_loss` is specified in its most general form by the following building blocks:
 
 
-+-----------------------------+-------------------------------------------------------------------+------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| /                           | Math notation                                                     | Notation in the codebase (with link if relevant)                 | Examples                                                                                                                                                                                                     |
-+=============================+===================================================================+==================================================================+==============================================================================================================================================================================================================+
-| A loss function             | :math:`L_\theta(\zeta)`                                           | ``primal_loss``/``loss``                                         | :math:`(\zeta_y - \left\langle\theta|\zeta_x\right\rangle)^2`, :math:`\log\left(1+e^{\zeta_y\left\langle\theta|\zeta_x\right\rangle}\right)`, etc                                                            |
-+-----------------------------+-------------------------------------------------------------------+------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| A cost functional           | :math:`c(a, b)`                                                   | :py:class:`skwdro.base.costs_torch.Cost`                         | :math:`\|b-a\|_k^p`, :math:`\begin{cases}0&\text{if }a=b\\ 1&\text{otherwise}\end{cases}`, etc                                                                                                               |
-+-----------------------------+-------------------------------------------------------------------+------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| A reference transport plan  | :math:`\nu_\xi(\zeta):=\pi_0(\xi, \zeta)`                         | :py:class:`skwdro.base.samplers.torch.base_samplers.BaseSampler` | :math:`\mathcal{N}(\zeta | \xi, \sigma^2I)`, :math:`\mathcal{U}_{\left[\xi-\frac{\sigma}2, \xi+\frac{sigma}2\right]}(\zeta)`, :math:`\mathcal{U}_{\{0, \dots, 255\}}(\zeta)`, :math:`\delta_\xi(\zeta)`, etc |
-+-----------------------------+-------------------------------------------------------------------+------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
++-----------------------------+-------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| /                           | Math notation                                                     | Notation in the codebase (with link if relevant)                                                   | Examples                                                                                                                                                                                                     |
++=============================+===================================================================+====================================================================================================+==============================================================================================================================================================================================================+
+| A loss function             | :math:`L_\theta(\zeta)`                                           | ``primal_loss``/``loss``                                                                           | :math:`(\zeta_y - \left\langle\theta|\zeta_x\right\rangle)^2`, :math:`\log\left(1+e^{\zeta_y\left\langle\theta|\zeta_x\right\rangle}\right)`, etc                                                            |
++-----------------------------+-------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| A cost functional           | :math:`c(a, b)`                                                   | :py:class:`~skwdro.base.costs_torch.Cost` (`tuto <tutos/costs.html>`__)                            | :math:`\|b-a\|_k^p`, :math:`\begin{cases}0&\text{if }a=b\\ 1&\text{otherwise}\end{cases}`, etc                                                                                                               |
++-----------------------------+-------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| A reference transport plan  | :math:`\nu_\xi(\zeta):=\pi_0(\xi, \zeta)`                         | :py:class:`~skwdro.base.samplers.torch.base_samplers.BaseSampler` (`tuto <tutos/samplers.html>`__) | :math:`\mathcal{N}(\zeta | \xi, \sigma^2I)`, :math:`\mathcal{U}_{\left[\xi-\frac{\sigma}2, \xi+\frac{sigma}2\right]}(\zeta)`, :math:`\mathcal{U}_{\{0, \dots, 255\}}(\zeta)`, :math:`\delta_\xi(\zeta)`, etc |
++-----------------------------+-------------------------------------------------------------------+----------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 :py:mod:`skwdro` lets you build your custom robust loss function representing the dual formula :eq:`dual_loss` through its second main interface: :py:class:`skwdro.solvers.DualLoss`.
 
@@ -289,12 +289,12 @@ In order to get the building blocks for the first two arguments of the construct
         loss = skwdro.base.losses_torch.LogisticLoss(None, d=10)
         loss.sampler = loss.default_sampler(xi, xi_labels, sigma)
 
-Before/after comparison for ``robustify``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Before/after comparison for ``DualLoss``\ es
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: python
     :linenos:
-    :caption: Training procedure: SkWDRO with ``robustify``.
+    :caption: Training procedure: SkWDRO with ``DualLoss``.
     :emphasize-lines: 1-35
     :emphasize-added: 55,56,44
     :emphasize-removed: 42,43,54
@@ -303,6 +303,7 @@ Before/after comparison for ``robustify``
     xi_warmup, xi_labels_warmup = next(iter(my_dataloader)),
 
     # Ingredient 2: the cost functional
+    # Pick \|x-y\|_2^2
     cost = NormLabelCost(
         2., 2., 1000.
     )
