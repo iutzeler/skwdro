@@ -162,6 +162,7 @@ helper class.
 
 .. code-block:: python
    :linenos:
+   :emphasize-lines: 24,27
    :caption: Cost function for gaussian curvature prescription
 
    class GaussianPrescriptionCost(Cost):
