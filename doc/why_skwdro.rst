@@ -4,14 +4,23 @@ Why SkWDRO?
 
 Let us now present the ideas in this library.
 
-.. tip:: Read the previous `tutorial on WDRO <wdro.html>`__ to understand better this part.
+You may prefer to read the previous `tutorial on WDRO <wdro.html>`__ to understand better this part.
 
+About the library
+=================
+
+As we will see bellow, the WDRO approach has some issues that make it difficult to implement for arbitrary loss functions.
+Of course, if one has a very structured problem (say linear by part, :math:`c`\ -concave, etc), they **should** by all means `turn to WDRO <wdro.html>`__ or other DRO approaches via :math:`\phi`\ -divergences before trying our approach in ``SkWDRO``.
+**But**, when strugling with less structured cases, like deep learning applications with complicated distribution shifts, ``SkWDRO`` remains as one of the rare tractable approaches to (distributional) robustness.
+
+Thus, the library aims at providing easy-to-use interfaces in ``PyTorch`` (a ``Python`` library to perform machine learning on various backends) to do some minimal changes to your model in order to robustify it.
+ 
 Pronouncing its name
-====================
+--------------------
 
 The idea of ``SkWDRO`` comes from a modification of WDRO (see the previous `tutorial on the topic <wdro.html>`_).
 The prefix ``Sk`` is added as a pun mixing *"Sinkhorn"*, the name of the entropic regularization term we use, and *"scikit"*\ (-learn) which is the python library for some of the out-of-the-box (Sk-)WDRO examples we coded, as a layer of abstraction.
-In the dev team, we ended up pronouncing it by spelling the six letters, but we still believe it sounds great phonetically as well with a slight french accent (``s-qu-ou-drô``/``secoue-drô``, pun intended).
+In the dev team, we ended up pronouncing it by spelling the six letters, but we still believe it sounds great phonetically with a slight french accent as well (``s-qu-ou-drô``/``secoue-drô``, pun intended).
 
 What is wrong with WDRO?
 ========================
@@ -23,18 +32,41 @@ Recall the general "tractable" formula for WDRO:
 
     \min_{\theta, \lambda\ge 0} \lambda\rho + \mathbb{E}_{\xi\sim\hat{\mathbb{P}}^N}\left[\sup_{\zeta\in\Xi}\left\lbrace L_\theta(\zeta)-\lambda c(\xi, \zeta)\right\rbrace\right]
 
-While in small dimension :math:`d` and with a concave loss :math:`L_\theta` (or concave `math:`c`-transformed loss) this supremum expression in :eq:`WDRO_dual` might seem tractable at first, it becomes prohibtively complicated in any other setting: the optimality conditions may be non-obvious, spurious maxima are to be expected in the non-concave cases, and algorithms to solve the optimality conditions are not guarenteed to reach a good convergence.
+While in small dimension :math:`d` and with a concave loss :math:`L_\theta` (or concave :math:`c`-transformed loss) this supremum expression in :eq:`WDRO_dual` might seem tractable at first, it becomes prohibtively complicated in any other setting: the optimality conditions may be non-obvious, spurious maxima are to be expected in the non-concave cases, and algorithms to solve the optimality conditions are not guarenteed to reach a good convergence.
 One will also need to leverage some fashion of the implicit function theorem to sort out the dependency between the optimal :math:`\zeta^*` and the parameters :math:`\theta` in order to perform descent algorithms on the latter.
 
 Then what can we do about it?
 =============================
 
 A great solution to this problem is offered in [#AIM23]_, following [#WGX23]_.
-It relies on a regularization of the optimal transport problem, by adding an entropic term to the Wasserstein-DRO problem.
-As [#AIM23]_ explains, the term can be added either to the constraint term :math:`W_c(\hat{\mathbb{P}}^N, \mathbb{Q})` to soften the neighborhood's contours, close to what is proposed by [#WGX23]_, or one may add it to the objective function directly :math:`\sup_{\pi\in\Pi(\hat{\mathbb{P}}^N, \cdot)}\mathbb{E}_{(\xi, \zeta)\sim\pi}\left[L_\theta(\zeta)\right] - \varepsilon\mathcal{D}_{KL}(\pi\|\pi_0)`.
+It relies on a regularization of the optimal transport problem, by adding an entropic term :math:`- \varepsilon\mathcal{D}_{KL}(\pi\|\pi_0)` to the Wasserstein-DRO problem.
+
+.. note:: Notice the presence of a new hyperparameter :math:`\pi_0`, that we call the *"reference measure"*.
+   It encodes the beliefs that we have about the problem studied, related to the optimal transport plan. Its first marginal should be :math:`\hat{\mathbb{P}}^N` in order for the "true" optimal transport plan from WDRO to remain absolutely continuous with respect to it, as this is an important requirement for the regularization term to be finite.
+
+Smoothing and DRO
+-----------------
+
+This technique "smoothes" the notion of neighborhood introduced by the Wasserstein transport cost.
+Such smoothing has already been used for the computation of the transport cost itself, e.g. in the `POT library <https://pythonot.github.io/quickstart.html#regularized-optimal-transport>`_, for its great numerical advantages.
+The motivation here is similar and allows a tractable reformulation.
+
+Bellow is a graphical representation taken from [#WGX23]_, showcasing for some loss function the optimal transport plan computed analytically, for some reference distribution admitting a density function (:math:`\pi^*\ll\pi_0`).
+The red points correspond to :math:`\hat{\mathbb{P}}^N`. Notice how WDRO sends Diracs to Diracs, while its Sinkhorn regularization remains absolutely continuous with respect to :math:`\pi_0`.
+
++-----------------------------------------------------+-----------------------------------------------------+----------------------------------------------------+---------------------------------------------+
+| .. image:: assets/gao_sk/SDRO_transport_001.png     | .. image:: assets/gao_sk/SDRO_transport_005.png     | .. image:: assets/gao_sk/SDRO_transport_010.png    | .. image:: assets/gao_sk/WDRO_transport.png |
++=====================================================+=====================================================+====================================================+=============================================+
+| Optimal :math:`\pi^*` for :math:`\varepsilon=0.001` | Optimal :math:`\pi^*` for :math:`\varepsilon=0.005` | Optimal :math:`\pi^*` for :math:`\varepsilon=0.01` | Optimal :math:`\pi^*` for WDRO              |
++-----------------------------------------------------+-----------------------------------------------------+----------------------------------------------------+---------------------------------------------+
+
+Reformulation of the DRO problem with Sinkhorn-regularization of WDRO
+---------------------------------------------------------------------
+
+As [#AIM23]_ explains, the regularization term can either be added to the constraint term :math:`W_c(\hat{\mathbb{P}}^N, \mathbb{Q})` to soften the neighborhood's contours (close to what is proposed by [#WGX23]_), or to the objective function directly :math:`\sup_{\pi\in\Pi(\hat{\mathbb{P}}^N, \cdot)}\mathbb{E}_{(\xi, \zeta)\sim\pi}\left[L_\theta(\zeta)\right] - \varepsilon\mathcal{D}_{KL}(\pi\|\pi_0)`.
 
 There is no *a priori* theoretical reason to prefer one over the other, and [#AIM23]_ studies the combination of both.
-So in this library, for purely computational reasons, we prefer to perform the regularization directly in the objective because the dual formula that then emerges has less dependency on the dual parameter:
+So in this library, for purely computational reasons, we prefer to perform the regularization directly in the objective because the dual formula that then emerges has less dependency on the dual parameter :math:`\lambda` (thus avoiding some instablities):
 
 .. math::
     :label: dual_loss
