@@ -60,7 +60,7 @@ Some background to make educated guesses
 ----------------------------------------
 
 This measure stems theoretically from the `entropic regularization <../why_skwdro.html>`__ of the WDRO problem: the addition of the term :math:`\mathcal{D}_\text{KL}(\pi, \pi_0)` in the objective function of the primal problem will, after some lagrangian duality induced manipulations (see [#AIM23]_), produce the logsumexp structure of :eq:`dual_loss`.
-In this procedure, a disintegration lemma must be used to split the reference generator :math:`\pi_0(\xi, \zeta)` into
+In this procedure, a disintegration lemma must be used to split the reference generator :math:`\pi_0(\xi, \zeta)` into two parts. Under heavy abuse of notation, it would write as follows.
 
 .. math::
 
