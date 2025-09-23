@@ -135,6 +135,8 @@ function fixMermaidMarkerColors() {
     normalStrokeDark: '#0E0E0E',
     labelFillDark: '#333333',
     labelFillLight: '#EEEEEE',
+    tutoDark: '#5B1380',
+    tutoLight: '#ECECFF',
     normalDash: '3 3',
     rx: '20px',
     ry: '20px',
@@ -156,6 +158,7 @@ function fixMermaidMarkerColors() {
     const normalFill =  dark ? COLORS.normalFillDark : COLORS.normalFillLight;
     const normalStroke =  dark ? COLORS.normalStrokeDark : COLORS.normalStrokeLight;
     const labelFill =  dark ? COLORS.labelFillDark : COLORS.labelFillLight;
+    const tutoFill = dark ? COLORS.tutoDark : COLORS.tutoLight;
 
     // recolor the nodes
     document.querySelectorAll('.mermaid svg g.node').forEach((g) => {
@@ -174,6 +177,17 @@ function fixMermaidMarkerColors() {
         }
         rect.setAttribute('rx', COLORS.rx);
         rect.setAttribute('ry', COLORS.ry);
+      }
+      const circle = g.querySelector('circle.inner-circle');
+      if (circle) {
+        circle.style.setProperty('fill', importantFill, 'important');
+        circle.style.setProperty('stroke', importantStroke, 'important');
+        circle.style.setProperty('stroke-width', COLORS.importantStrokeWidth, 'important');
+        circle.style.removeProperty('stroke-dasharray');
+      }
+      const polygon = g.querySelector('polygon');
+      if (polygon) {
+        polygon.style.setProperty('fill', tutoFill, 'important');
       }
 
       const fo = g.querySelector('foreignObject');
