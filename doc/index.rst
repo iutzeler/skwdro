@@ -44,8 +44,8 @@ Here is a quick reading order that we advise:
    :hidden:
    :caption: PyTorch part of the library
 
-   pytorch
-   examples/Custom/index
+   Introduction to the PyTorch interface <pytorch>
+   Some torch examples for practice <examples/Custom/index>
    examples/Study/index
 
 .. toctree::
@@ -53,19 +53,19 @@ Here is a quick reading order that we advise:
    :hidden:
    :caption: Scikit part of the library
 
-   sklearn
-   examples/Builtin/index
+   How to use the available scikit-learn estimators <sklearn>
+   Some visual illustrations for scikit-learn estimators <examples/Builtin/index>
 
 .. toctree::
    :maxdepth: 2
    :hidden:
    :caption: Advanced topics
 
-   tutos/samplers
-   tutos/costs
-   optim
-   solvers
-   tuning
+   Samplers tutorial <tutos/samplers>
+   Cost functionals tutorial <tutos/costs>
+   About the tuning of the uncertainty radius <tuning>
+   More on specific solvers available through scikit-learn estimators <solvers>
+..   #More about optimizers <optim>
 
 .. toctree::
    :maxdepth: 2
@@ -80,7 +80,7 @@ Here is a quick reading order that we advise:
    :align: center
 
    flowchart TD
-      A["Getting started"]:::important
+      A(((Getting started))):::important
       A -->|"Dive in quickly"| B["User guide"]:::important
       A -->|"If you are a bit new to DRO"| C["What is WDRO?"]:::normal
       C --> D["Why SkWDRO?"]:::important
@@ -95,8 +95,8 @@ Here is a quick reading order that we advise:
       G --> J["API"]:::important
       I --> J
 
-      G -->|"In depth explanations"| K["Samplers"]
-      K --> L["Cost functionals"]
+      G -->|"In depth explanations"| K>"Samplers"]
+      K --> L>"Cost functionals"]
 
       %% Styles
       classDef important color:#EE8888,fill:#f9f2d0,stroke:#e6b800,stroke-width:2px,color:black,rx:10px,ry:10px;
@@ -147,6 +147,6 @@ Quick hitchhiker's guide to the interfaces available to guide you through the pr
 
 
 `In depth guide to the PyTorch customization functions <pytorch.html>`_
-----------------------------------------------------------------------
+-----------------------------------------------------------------------
 
 Learn more about the way you can robustify your own model with :eq:`ERMtoSkWDRO` and how to specify it to make it compatible with the library.
