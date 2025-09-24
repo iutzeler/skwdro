@@ -202,7 +202,7 @@ Before/after comparison for ``robustify``
     :emphasize-removed: 16,17,28
 
     robust_model = robustify(
-        loss,
+        my_loss_function,
         model,
         pt.tensor(0.01),  # the radius you picked for the Wasserstein ball
         *next(iter(my_dataloader)),
@@ -217,11 +217,11 @@ Before/after comparison for ``robustify``
 
         # Forward pass
         inference = model(sample)
-        loss = my_loss_function(inference, target)
-        loss = robust_model(inference, target)
+        sample_loss = my_loss_function(inference, target)
+        sample_loss = robust_model(sample, target)
 
         # Backward pass
-        loss.backward()
+        sample_loss.backward()
         my_optimizer.step()
 
         # Testing

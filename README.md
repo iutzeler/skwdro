@@ -115,7 +115,7 @@
 
 
 
-``skwdro`` is a Python package that offers **WDRO versions** for a large range of estimators, either by extending **``scikit-learn`` estimatora** or by providing a wrapper for **``pytorch`` modules**.
+``skwdro`` is a Python package that offers **WDRO versions** for a large range of estimators, either by extending **``scikit-learn`` estimators** or by providing a wrapper for **``pytorch`` modules**.
 
 Have a look at ``skwdro`` [documentation](https://skwdro.readthedocs.io/latest/)!
 
