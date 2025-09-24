@@ -1,21 +1,45 @@
-# Configuration for coverage.py
-
 [run]
 branch = True
-source = skwdro
-include = */skwdro/*
-omit =
-    */setup.py
+# restrict measurement to your package (adjust name if you rename it)
+source = 
+    skwdro
 
 [report]
+# show which lines are missing in terminal report
+show_missing = True
+# omit test files, example code, docs, and packaging cruft
+omit =
+    */tests/*
+    */test_*.py
+    */examples/*
+    */doc/*
+    setup.py
+    pyproject.toml
+    main.py
+    */__init__.py
+    */__main__.py
+    */conftest.py
+
+# treat these markers as "excluded" (useful for generated/conditional code)
 exclude_lines =
     pragma: no cover
-    def __repr__
-    if self.debug:
-    if settings.DEBUG
-    raise AssertionError
-    raise NotImplementedError
-    if 0:
+    # Don't complain about debug-only code
     if __name__ == .__main__.:
-    if self.verbose:
-show_missing = True
+    if __name__ == "__main__":
+    if typing.TYPE_CHECKING:
+    # typical library-level guards
+    if 0:
+    if False:
+    @abc.abstractmethod
+
+[html]
+directory = coverage_html_report
+
+[xml]
+output = coverage.xml
+
+[paths]
+# if you sometimes run coverage from a different working dir or with src layout
+source =
+    .
+    skwdro
