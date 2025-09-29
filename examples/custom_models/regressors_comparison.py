@@ -12,6 +12,7 @@ Regression problems are all written in a simple way, as explained in `other tuto
 We consider a simple 1D regression problem to highlight the possibility of using various losses in the library, not to showcase their specificities.
 
 We start with logistic regression, which is by far the most covered example of the library, and then present some minor modifications we can make to catter to some other classification techniques.
+All of those losses are taken from _[#IG08].
 
 .. hint:: All those models are optimized in the default library settings, which represent uncertainty sets of type Wasserstein-2-2 (regularized), even though some of them are Lipschitz and thus may benefit from lower-order neighborhoods.
 """
@@ -321,13 +322,13 @@ plot_linear_relation(X, y, A, model4)
 #
 # .. math::
 #
-#    \ell(a) = \frac12\|a\|
+#    \ell(a) = \|a\|
 
 class L1Loss(nn.Module):
     reduction: str = 'none'
     def forward(self, x, y):
         a = y - x
-        return .5 * a.abs()
+        return a.abs()
 
 model = nn.Linear(1, 1).to(X)
 loss  = L1Loss()
@@ -360,3 +361,64 @@ model5.eval()  # type: ignore
 #
 
 plot_linear_relation(X, y, A, model5)
+
+# %%
+# Sixth model: Quadratic SVR
+# ==========================
+#
+# As the SVR described above, except it is squared, and hence has common
+# properties with the OLS.
+#
+# .. math::
+#
+#    \ell(a) = \max\{0, \|a\|\}^2
+
+class L2InsensitiveLoss(nn.Module):
+    reduction: str = 'none'
+    insensitivity: float = .3
+
+    def __init__(self, insensitivity=.3):
+        super().__init__()
+        self.insensitivity = insensitivity
+
+    def forward(self, x, y):
+        return nn.functional.relu(pt.abs(y - x) - self.insensitivity) ** 2
+
+model = nn.Linear(1, 1).to(X)
+loss  = L2InsensitiveLoss()
+dro_model = robustify(
+    loss,
+    model,
+    radius,
+    X, y,
+    seed=SEED,
+    imp_samp=False
+)
+
+plt.plot(X, loss(X, A*X))
+plt.title("Squared-$\\tau$-insensitive loss")
+pass
+
+
+# %%
+# Sixth model: Training
+# ~~~~~~~~~~~~~~~~~~~~~
+
+model6 = train(dro_model, (X, y), epochs=1000) # type: ignore
+
+model6.eval()  # type: ignore
+
+
+# %%
+# Sixth model: Results
+# ~~~~~~~~~~~~~~~~~~~~
+#
+
+plot_linear_relation(X, y, A, model6)
+
+# %%
+# References
+# ==========
+#
+# .. [#IG08] Ingo and Christmann. **Support vector machines**,
+#    *Springer Science*, 2008
