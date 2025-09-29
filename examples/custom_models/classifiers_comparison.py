@@ -12,6 +12,7 @@ Classification problems are all written in a simple way, as explained in `other 
 We consider a simple classification problem to highlight the possibility of classifying samples with various methods, not to showcase their specificities.
 
 We start with logistic regression, which is by far the most covered example of the library, and then present some minor modifications we can make to catter to some other classification techniques.
+All of those losses are taken from _[#IG08].
 
 .. hint:: All those models are optimized in the default library settings, which represent uncertainty sets of type Wasserstein-2-2 (regularized), even though some of them are Lipschitz and thus may benefit from lower-order neighborhoods.
 """
@@ -229,3 +230,196 @@ model3.eval()  # type: ignore
 #
 
 plot_decision_boundary(model3, X, y, n_levels=20)
+
+# %%
+# Fourth model: The Perceptron
+# ============================
+#
+# This example covers the classical perceptron for classification task.
+#
+# .. math::
+#
+#    \ell(a) = \begin{cases}
+#       \frac1{2}\max\{0, 1-a\}^2 & \text{if} a\ge 0\\
+#       \frac{1}2-a & \text{otherwise.}
+#    \end{cases}
+#
+# We solve it in exactly the same way.
+
+class PerceptronLoss(nn.Module):
+    reduction: str = 'none'
+    def forward(self, x, y):
+        return nn.functional.relu(-y*x)
+
+model = nn.Linear(2, 1).to(X)
+loss  = PerceptronLoss()
+dro_model = robustify(
+    loss,
+    model,
+    radius,
+    X, y,
+    seed=SEED,
+    imp_samp=False
+)
+
+
+# %%
+# Fourth model: Training
+# ~~~~~~~~~~~~~~~~~~~~~~
+
+model4 = train(dro_model, (X, y), epochs=50) # type: ignore
+
+model4.eval()  # type: ignore
+
+
+# %%
+# Fourth model: Results
+# ~~~~~~~~~~~~~~~~~~~~~
+#
+
+plot_decision_boundary(model4, X, y, n_levels=20)
+
+# %%
+# Fifth model: Quadratic margin loss
+# ==================================
+#
+# This example covers a margin loss that is modeled as a quadratic form.
+# It is substantially different from the other losses because it forces the
+# cross-product :math:`\xi^\texttt{labels}\langle\theta\mid\xi^\texttt{input}\rangle`
+# to be equal to one precisely, not to be greater to a margin like most others.
+#
+# .. math::
+#
+#    \ell(a) = (1-a)^2
+
+class L2MarginLoss(nn.Module):
+    reduction: str = 'none'
+    def forward(self, x, y):
+        return pt.pow(1. - y*x, 2)
+
+model = nn.Linear(2, 1).to(X)
+loss  = L2MarginLoss()
+dro_model = robustify(
+    loss,
+    model,
+    radius,
+    X, y,
+    seed=SEED,
+    imp_samp=False
+)
+
+
+# %%
+# Fifth model: Training
+# ~~~~~~~~~~~~~~~~~~~~~
+
+model5 = train(dro_model, (X, y), epochs=50) # type: ignore
+
+model5.eval()  # type: ignore
+
+
+# %%
+# Fifth model: Results
+# ~~~~~~~~~~~~~~~~~~~~
+#
+
+plot_decision_boundary(model5, X, y, n_levels=20)
+
+# %%
+# Sixth model: Quadratic Hinge loss
+# =================================
+#
+# Same as last example, without the restriction mentioned: only the negative part
+# of the margin is penalized by this loss.
+#
+# .. math::
+#
+#    \ell(a) = \max\{0, 1-a\}^2
+
+class L2HingeLoss(nn.Module):
+    reduction: str = 'none'
+    def forward(self, x, y):
+        return pt.pow(
+            pt.nn.functional.relu(1. - y*x),
+            2
+        )
+
+model = nn.Linear(2, 1).to(X)
+loss  = L2HingeLoss()
+dro_model = robustify(
+    loss,
+    model,
+    radius,
+    X, y,
+    seed=SEED,
+    imp_samp=False
+)
+
+
+# %%
+# Sixth model: Training
+# ~~~~~~~~~~~~~~~~~~~~~
+
+model6 = train(dro_model, (X, y), epochs=50) # type: ignore
+
+model6.eval()  # type: ignore
+
+
+# %%
+# Sixth model: Results
+# ~~~~~~~~~~~~~~~~~~~~
+#
+
+plot_decision_boundary(model6, X, y, n_levels=20)
+
+# %%
+# Bonus: Exponential Loss
+# =======================
+#
+# From a theoretical perspective, this loss is interesting for its lack of usual
+# properties for the WDRO framework: it is not Lipschitz, and does not validate
+# a 2nd order growth condition. It is not strongly convex either and not bounded.
+#
+# .. math::
+#
+#    \ell(a) = e^{-a}
+
+class ExpLoss(nn.Module):
+    reduction: str = 'none'
+    def forward(self, x, y):
+        return pt.exp(-y*x)
+
+model = nn.Linear(2, 1).to(X)
+loss  = ExpLoss()
+dro_model = robustify(
+    loss,
+    model,
+    radius,
+    X, y,
+    seed=SEED,
+    imp_samp=False
+)
+
+
+# %%
+# Bonus model: Training
+# ~~~~~~~~~~~~~~~~~~~~~
+
+model7 = train(dro_model, (X, y), epochs=50) # type: ignore
+
+model7.eval()  # type: ignore
+
+
+# %%
+# Bonus model: Results
+# ~~~~~~~~~~~~~~~~~~~~
+#
+
+plot_decision_boundary(model7, X, y, n_levels=20)
+
+# %%
+# References
+# ==========
+#
+# .. [#IG08] Ingo and Christmann. **Support vector machines**,
+#    *Springer Science*, 2008
