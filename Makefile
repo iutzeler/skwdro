@@ -35,6 +35,12 @@ test_misc:
 	@echo "Solo tests:"
 	@hatch -e $(TEST_ENV) run env-test:test-misc
 
+coverage:
+	@echo "Converage computation"
+	coverage run -m pytest
+	coverage report
+
+
 epsilon_plotting_in_source:
 	mv skwdro/solvers/entropic_dual_torch.py skwdro/solvers/entropic_dual_torch.cp.py
 	mv skwdro/solvers/entropic_dual_torch_epsilon.py skwdro/solvers/entropic_dual_torch.py

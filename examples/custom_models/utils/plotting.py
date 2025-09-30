@@ -5,8 +5,17 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 
+def plot_linear_relation(X, y, A, model):
+    model.eval()
+    model.to('cpu')
+    y_true = A*X
+    plt.plot(X, y_true, 'r', label='true underlying model')
+    plt.scatter(X, y, marker='+', label='$\\xi_i$')
+    plt.plot(X, model(X).detach(), 'g', label='$\\theta^*$')
+    plt.legend()
+
 # TK - this could go in the helper_functions.py and be explained there
-def plot_decision_boundary(model, X, y):
+def plot_decision_boundary(model, X, y, n_levels=5):
 
     # Put everything to CPU (works better with NumPy + Matplotlib)
     model.to("cpu")
@@ -31,11 +40,11 @@ def plot_decision_boundary(model, X, y):
     if len(torch.unique(y)) > 2:
         y_pred = torch.softmax(y_logits, dim=1).argmax(dim=1) # mutli-class
     else:
-        y_pred = torch.round(torch.sigmoid(y_logits)) # binary
+        y_pred = torch.sigmoid(y_logits)  # torch.round(torch.sigmoid(y_logits)) # binary
 
     # Reshape preds and plot
     y_pred = y_pred.reshape(xx.shape).detach().numpy()
-    plt.contourf(xx, yy, y_pred, cmap=plt.cm.RdYlBu, alpha=0.7)
+    plt.contourf(xx, yy, y_pred, cmap=plt.cm.RdYlBu, alpha=0.7, levels=n_levels)
     plt.scatter(X[:, 0], X[:, 1], c=y, s=40, cmap=plt.cm.RdYlBu)
     plt.xlim(xx.min(), xx.max())
     plt.ylim(yy.min(), yy.max())
