@@ -8,7 +8,6 @@ Recipe for a good ground-cost for Wasserstein-DRO
 Recall the formula for SkWDRO:
 
 .. math::
-    :label: dual_loss
 
     L_\theta^\texttt{robust}(\xi) := \lambda\rho + \varepsilon\log\mathbb{E}_{\zeta\sim\nu_\xi}\left[e^{\frac{L_\theta(\zeta)-\lambda c(\xi, \zeta)}{\varepsilon}}\right].
 
@@ -33,16 +32,14 @@ Simple cases: turn to euclidean geometry
 If your problem is formulated in simple cases in which no structure is prescribed on the space of samples :math:`\Xi`, your cost should look like the euclidean norm:
 
 .. math::
-   :label: euclidean_cost
 
-   c(\xi, \zeta) := \|zeta-\xi\|_2
+   c(\xi, \zeta) := \|\zeta-\xi\|_2
 
 Then, this opens a wide range of Wasserstein **distances**, called the :math:`W_p` distances in the litterature, for which you raise this norm to some power and change the allowed radius :math:`\rho` accordingly.
 
 .. math::
-   :label: wp_cost
 
-   c(\xi, \zeta) := \|zeta-\xi\|_2^p
+   c(\xi, \zeta) := \|\zeta-\xi\|_2^p
 
 The choice of `p` can be made in accordance with the behaviour of the loss function :math:`L_\theta` in its "worst regions".
 To learn more about the growth criteria that make most sense regarding this remark, take a look at [#GCK24]_.
@@ -115,7 +112,6 @@ Consider a problem stemming from some gaussian curvature prescription model, or 
 - the cost function is log-bilinear for samples pointing in the same half-space
 
    .. math::
-      :label: cost-GCP
 
       c(\xi, \zeta) = -\log(\texttt{ReLU}[\left\langle\zeta, \xi\right\rangle]) + \chi_{\{(x, y)|\langle x, y\rangle > 0\}}(\xi, \zeta).
 
