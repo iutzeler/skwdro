@@ -128,7 +128,7 @@ erm_loss = robustify(
 # Then the robust model solving
 #
 # .. math::
-#    \min_{\theta, \lambda\ge 0} \rho\lambda+\frac{1}{N}\sum_{i=1}^N\texttt{LogSumExp}_\varepsilon \{L_\theta(\cdot)-\|\cdot-\xi_i\|_2^2\}
+#    \min_{\theta, \lambda\ge 0} \rho\lambda+\frac{1}{N}\sum_{i=1}^N\texttt{LogSumExp}_\varepsilon \{L_\theta(\cdot)-\lambda\|\cdot-\xi_i\|_2^2\}
 #
 
 robust_model = SimpleNN(
