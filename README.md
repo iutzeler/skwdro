@@ -121,6 +121,7 @@ Have a look at ``skwdro`` [documentation](https://skwdro.readthedocs.io/latest/)
 
 (Saw a figure at one of our presentation that is not in the doc, and want to see the code? Take a look at our [experiments repo](https://github.com/floffy-f/skwdro-experiments)!)
 
+
 <!-- 
 # Why WDRO & ``skwdro``?
  -->
