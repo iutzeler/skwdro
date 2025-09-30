@@ -33,14 +33,14 @@ We assume that we are given ``X_train`` of shape ``(n_train, n_features)`` and `
    :linenos:
    :caption: Scikit's ``LinearRegression`` interface
 
-    from sklearn.linear_model import LinearRegression
+   from sklearn.linear_model import LinearRegression
 
-    # Fit the model
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+   # Fit the model
+   model = LinearRegression()
+   model.fit(X_train, y_train)
 
-    # Predict the target values
-    y_pred = model.predict(X_test)
+   # Predict the target values
+   y_pred = model.predict(X_test)
 
 
 Solving the robust regression problem with ``skwdro``
@@ -53,22 +53,36 @@ Robust estimators from ``skwdro`` can be used as drop-in replacements for ``scik
 .. code-block:: python
    :linenos:
    :caption: SkWDRO's ``LinearRegression`` interface
-   :emphasize-added: 2,5,9
-   :emphasize-removed: 1,8
+   :emphasize-added: 3,12,13,17,19
+   :emphasize-removed: 2,16,18
 
-   from sklearn.linear_model import LinearRegression
-   from skwdro.linear_model import LinearRegression
-
-   # Uncertainty radius
-   rho = 0.1
-
-   # Fit the model
-   model = LinearRegression()
-   robust_model = LinearRegression(rho=rho)
-   robust_model.fit(X_train, y_train)
-
-   # Predict the target values
-   y_pred = robust_model.predict(X_test)
+   >>> import numpy as np
+   >>> from sklearn.linear_model import LinearRegression as ERMRegression
+   >>> from skwdro.linear_models import LinearRegression as DRORegression
+   >>> 
+   >>> # Some toy linear problem: e.g. additive noise level shift
+   >>> rng = np.random.RandomState(666)
+   >>> X_train = rng.randn(10, 1)
+   >>> X_test = rng.randn(5, 1) + .5
+   >>> y_train = 2. * X_train.flatten() + .01 * rng.randn(10)
+   >>> y_test = 2. * X_test.flatten() + .1 * rng.randn(5)
+   >>> 
+   >>> # Uncertainty radius
+   >>> rho = 0.1
+   >>> 
+   >>> # Fit the model
+   >>> erm_model = ERMRegression()
+   >>> robust_model = DRORegression(rho=rho)
+   >>> erm_model.fit(X_train, y_train)
+   >>> robust_model.fit(X_train, y_train)
+   >>> 
+   >>> # Predict the target values
+   >>> y_pred = erm_model.predict(X_test)
+   >>> print(np.mean((y_pred - y_test)**2))
+   0.009900357816198937
+   >>> y_pred = robust_model.predict(X_test)
+   >>> print(np.mean((y_pred - y_test)**2))
+   0.009643423384431925
 
 As a consequence, robust estimators can be tried and used without much change to existing pipelines!
 
@@ -88,39 +102,52 @@ Assume now that the (training) data is given as a dataloader ``train_loader``.
 .. code-block:: python
    :linenos:
    :caption: SkWDRO's ``PyTorch``-type interface
-   :emphasize-lines: 8,20
+   :emphasize-lines: 17,20,26,29,37,40
 
-    import torch
-    import torch.nn as nn
-    import torch.optim as optim
+   import torch as pt
+   import torch.nn as nn
+   import torch.optim as optim
 
-    from skwdro.torch import robustify
+   from skwdro.torch import robustify
 
-    # Uncertainty radius
-    rho = 0.1
+   # Toy data
+   n_features = 3
+   X = pt.randn(32, n_features)
+   y = X @ pt.rand(n_features, 1) + 1.
+   train_loader = pt.utils.data.DataLoader(
+       pt.utils.data.TensorDataset(X, y),
+       batch_size=4
+   )
 
-    # Define the model
-    model = nn.Linear(n_features, 1)
+   # Uncertainty radius
+   rho = pt.tensor(.1)
 
-    # Define the loss function
-    loss_fn = nn.MSELoss()
+   # Define the model
+   model = nn.Linear(n_features, 1)
 
-    # Define a sample batch for initialization
-    sample_batch_x, sample_batch_y = next(iter(train_loader))
+   # Define the loss function
+   loss_fn = nn.MSELoss(reduction='none')
 
-    # Robust loss
-    robust_loss = robustify(loss_fn, model, rho, sample_batch_x, sample_batch_y)
+   # Define a sample batch for initialization
+   sample_batch_x, sample_batch_y = X[:16, :], y[:16, :]
 
-    # Define the optimizer
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
+   # Robust loss
+   robust_loss = robustify(loss_fn, model, rho, sample_batch_x, sample_batch_y)
 
-    # Training loop
-    for epoch in range(100):
-        for batch_x, batch_y in train_loader:
-            optimizer.zero_grad()
-            loss = robust_loss(batch_x, batch_y, reset_sampler=True)
-            loss.backward()
-            optimizer.step()
+   # Define the optimizer
+   optimizer = optim.AdamW(model.parameters(), lr=.1)
+
+   # Training loop
+   for epoch in range(100):
+       avg_loss = 0.
+       robust_loss.get_initial_guess_at_dual(X, y)
+       for batch_x, batch_y in train_loader:
+           optimizer.zero_grad()
+           loss = robust_loss(batch_x, batch_y)
+           loss.backward()
+           optimizer.step()
+           avg_loss += loss.detach().item()
+       print(f"=== Loss (epoch \t{epoch}): {avg_loss/len(train_loader)}")
 
 This is the simplest use of the ``PyTorch`` interface: just wrap the usual loss and model with the ``robustify`` function and use the resulting loss function in the training loop.
 
