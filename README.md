@@ -103,7 +103,7 @@
 
 
 <div align="center">
-  <h1>SkWDRO - Wasserstein Distributionaly Robust Optimization</h1>
+  <h1>SkWDRO - Tractable Wasserstein Distributionally Robust Optimization</h1>
   <h4>Model robustification with thin interface</h4>
   <h6><q cite="https://adversarial-ml-tutorial.org/introduction">You can make pigs fly</q>, <a href="https://adversarial-ml-tutorial.org/introduction">[Kolter&Madry, 2018]</a></h6>
 </div>
@@ -168,18 +168,31 @@ Robust estimators from ``skwdro`` can be used as drop-in replacements for ``scik
 We assume that we are given ``X_train`` of shape ``(n_train, n_features)`` and ``y_train`` of shape ``(n_train,)`` as training data and ``X_test`` of shape ``(n_test, n_features)`` as test data.
 
 ```python
-from skwdro.linear_model import LinearRegression
+import numpy as np
+from sklearn.linear_model import LinearRegression as ERMRegression
+from skwdro.linear_models import LinearRegression as DRORegression
+
+# Some toy linear problem: e.g. additive noise level shift
+rng = np.random.RandomState(666)
+X_train = rng.randn(10, 1)
+X_test = rng.randn(5, 1) + .5
+y_train = 2. * X_train.flatten() + .01 * rng.randn(10)
+y_test = 2. * X_test.flatten() + .1 * rng.randn(5)
 
 # Uncertainty radius
 rho = 0.1
 
 # Fit the model
-robust_model = LinearRegression(rho=rho)
+erm_model = ERMRegression()
+robust_model = DRORegression(rho=rho)
+erm_model.fit(X_train, y_train)
 robust_model.fit(X_train, y_train)
 
 # Predict the target values
+y_pred = erm_model.predict(X_test)
 y_pred = robust_model.predict(X_test)
 ```
+
 You can refer to the documentation to explore the list of ``skwdro``'s already-made estimators.
 
 
@@ -190,37 +203,50 @@ Didn't find a estimator that suits you? You can compose your own using the ``pyt
 Assume now that the data is given as a dataloader `train_loader`.
 
 ```python
-import torch
+import torch as pt
 import torch.nn as nn
 import torch.optim as optim
 
 from skwdro.torch import robustify
 
+# Toy data
+n_features = 3
+X = pt.randn(32, n_features)
+y = X @ pt.rand(n_features, 1) + 1.
+train_loader = pt.utils.data.DataLoader(
+    pt.utils.data.TensorDataset(X, y),
+    batch_size=4
+)
+
 # Uncertainty radius
-rho = 0.1
+rho = pt.tensor(.1)
 
 # Define the model
 model = nn.Linear(n_features, 1)
 
 # Define the loss function
-loss_fn = nn.MSELoss()
+loss_fn = nn.MSELoss(reduction='none')
 
 # Define a sample batch for initialization
-sample_batch_x, sample_batch_y = next(iter(train_loader))
+sample_batch_x, sample_batch_y = X[:16, :], y[:16, :]
 
 # Robust loss
 robust_loss = robustify(loss_fn, model, rho, sample_batch_x, sample_batch_y)
 
 # Define the optimizer
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+optimizer = optim.AdamW(model.parameters(), lr=.1)
 
 # Training loop
 for epoch in range(100):
+    avg_loss = 0.
+    robust_loss.get_initial_guess_at_dual(X, y)
     for batch_x, batch_y in train_loader:
         optimizer.zero_grad()
-        loss = robust_loss(model(batch_x), batch_y)
+        loss = robust_loss(batch_x, batch_y)
         loss.backward()
         optimizer.step()
+        avg_loss += loss.detach().item()
+    print(f"=== Loss (epoch \t{epoch}): {avg_loss/len(train_loader)}")
 ```
 
 You will find detailed description on how to `robustify` modules in the documentation.
