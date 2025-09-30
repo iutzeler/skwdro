@@ -15,7 +15,7 @@ For instance, in linear regression, we have :math:`\xi=(x,y)\in\mathbb{R}^d\time
 
 It is formally written as :math:`L_\theta(\xi) = \frac{1}{2}(y- \langle \theta , x \rangle)^2`.
 In general for regression, this will be framed as :math:`L_\theta(\xi):=\ell(y-\langle\theta, x\rangle)` for some scalar function :math:`\ell: \mathbb{R}\to\mathbb{R}` such that *wolog* :math:`\ell(0)=0`.
-On the other hand, for classification tasks, we have :math:`\xi=(x,y)\in\mathbb{R}^d\times\{0, 1\}` with  :math:`x` the data and  :math:`y` the label. One may use the soft-margin loss function for logistic regression :math:`L_\theta(\xi):=\log\left(1+e^{-y\langle\theta, x\rangle}\right)`.
+On the other hand, for classification tasks, we have :math:`\xi=(x,y)\in\mathbb{R}^d\times\{0, 1\}` with  :math:`x` the data and  :math:`y` the target/label. One may use the soft-margin loss function for logistic regression :math:`L_\theta(\xi):=\log\left(1+e^{-y\langle\theta, x\rangle}\right)`.
 In general for linear classification, as can be seen in the logistic regression case, the losses will instead be framed as :math:`L_\theta(\xi):=\ell(-y\langle\theta, x\rangle)` for some scalar function :math:`\ell: \mathbb{R}\to\mathbb{R}` such that *wolog* :math:`\ell(+\infty)=0`.
 
 You can learn more about how you can use the library to build a ``PyTorch`` optimization model by reading through the user guide.
@@ -23,8 +23,9 @@ You can learn more about how you can use the library to build a ``PyTorch`` opti
 In machine learning, it is usual to train our model (or fit, i.e. optimize on :math:`\theta`) using a finite amount of data samples :math:`(\xi_i)_{i=1}^N`, by minimizing the **Empirical Risk** over this available dataset, which leads to the problem: 
 
 .. math::
-    \min_{\theta} \frac{1}{N} \sum_{i=1}^N  L_\theta(\xi_i)
-    :label: ERM
+   :label: ERM
+
+   \min_{\theta} \frac{1}{N} \sum_{i=1}^N  L_\theta(\xi_i)
 
 Formally, one may view this dataset as an empirical distribution, that may be sampled at will through a query function (e.g. for ``PyTorch``, which is favored by ``SkWDRO``'s internals and interfaces, see `their tutorial <https://docs.pytorch.org/tutorials/beginner/basics/data_tutorial.html>`__ as well as the `implementation <https://github.com/pytorch/pytorch/blob/ba56102387ef21a3b04b357e5b183d48f0afefc7/torch/utils/data/dataloader.py#L481C9-L481C17>`__ to see how this query mechanism is used in practice).
 Equation :eq:`ERM` is usually called Empirical Risk Minimization (ERM) in the literature.
@@ -45,8 +46,8 @@ Distributionally Robust Optimization (DRO) introduces a solution by considering 
 The problem ends up being formulated as follows in the general case:
 
 .. math::
+
    \min_\theta \sup_{\mathbb{Q}\in \mathcal{U}_\rho((\xi_i)_{i=1}^N)} \mathbb{E}_{\zeta\sim\mathbb{Q}}[L_\theta(\zeta)]
-   :label: DRO
 
 This formulation leaves to be chosen the size of the neighborhood :math:`\rho` and the notion of "proximity" between the samples and the robust distribution :math:`\mathbb{Q}`.
 
@@ -64,8 +65,8 @@ In order to define the ambiguity sets, various tools have been proposed [#BtHWMR
 The most popular class of techniques up to recently has been the use of :math:`\phi`-divergences, i.e. distances of the form:
 
 .. math::
+
    \mathcal{D}_\phi(\mathbb{P} \| \mathbb{Q}) := \mathbb{E}_\mathbb{Q}\left[\phi\left(\frac{\mathrm{d}\mathbb{P}}{\mathrm{d}\mathbb{Q}}\right)\right].
-   :label: PhiDiv
 
 They are appealing for their apparent simplicity, and because a lot of commonly used divergences in other fields, such as statistics, admit this representation. E.g., for the :math:`KL`-divergence :math:`\phi(s)=\begin{cases}s\log(s) - s + 1 & \text{if } s\ge 0\\ +\infty & \text{otherwise}\end{cases}`, for total variation :math:`\phi(s)=\begin{cases}(s-1)^2 & \text{if } s\ge 0\\ +\infty & \text{otherwise}\end{cases}`.
 See [#KSW24]_ §2.2 for a detailed explanation of the ambiguity sets related to these divergences.
@@ -109,8 +110,8 @@ Now that we have this notion of transport between distribution, we can recall th
    Let :math:`c` a *ground cost*, and two distributions on :math:`\Xi`, :math:`\mathbb{X}` and :math:`\mathbb{Y}`.
 
    .. math::
+
       W_c(\mathbb{X}, \mathbb{Y}) := \inf_{\pi\in\Pi(\mathbb{X}, \mathbb{Y})}\mathbb{E}_{(\xi, \zeta)\sim\pi}\left[c(\xi, \zeta)\right]
-      :label: Wasserstein_ot
 
 .. note:: An interesting property of the transport cost with respect to its ground cost is that if :math:`c` is a distance risen to some power :math:`1\le p\le\infty`, then :math:`\sqrt[p]{W_c}` becomes a distance on the space of measures :math:`\mathcal{M}(\Xi)`.
    This yields the acclaimed **Wasserstein distance**:
