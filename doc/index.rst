@@ -1,9 +1,8 @@
 .. raw:: html
 
     <div align="center">
-      <h1>SkWDRO - Wasserstein Distributionaly Robust Optimization</h1>
-      <h4>Model robustification with thin interface</h4>
-      <h6><q cite="https://adversarial-ml-tutorial.org/introduction">You can make pigs fly</q>, <a href="https://adversarial-ml-tutorial.org/introduction">[Kolter&Madry, 2018]</a></h6>
+      <h1>SkWDRO - Tractable Wasserstein Distributionally Robust Optimization</h1>
+      <a href="https://github.com/iutzeler/skwdro"><img src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white"></a>
     </div>
 
     <p style="display:inline"><nobr>
@@ -15,7 +14,6 @@
         <table>
             <td><a href="https://pypi.org/project/skwdro/"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/skwdro?style=for-the-badge"></a></td>
             <td><a href="https://anaconda.org/flvincen/skwdro"> <img src="https://anaconda.org/flvincen/skwdro/badges/version.svg" /></a></td>
-            <td><a href="https://github.com/iutzeler/skwdro"><img src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white"></a></td>
             <td><a href="https://arxiv.org/abs/2410.21231"><img src="https://img.shields.io/badge/arXiv-2410.21231-b31b1b.svg?style=for-the-badge&logo=arXiv&logoColor=b31b1b"></a></td>
         </table>
     </nobr><p>
@@ -128,14 +126,13 @@ Here is a quick reading order that we advise:
 See the getting-started guide to see how to install the package and get to learn its basic usage.
 Then you can take a look at `some of the theory <why_skwdro.html>`__ that goes behind the duality result we use to make Sinkhorn-WDRO tractable.
 
-.. admonition:: SkWDRO magic formula
+.. admonition:: SkWDRO main formula
 
    If you are performing "Empirical Risk Minimization", and wish to robustify it, we can do it through the following transformation:
 
    .. math::
-      :label: ERMtoSkWDRO
 
-      \frac{1}{N}\sum_{i=1}^N L(\xi_i) \to \min_{\lambda\ge 0}\rho\lambda+\varepsilon\frac{1}{N}\sum_{i=1}^N \log\mathbb{E}_{\zeta\sim\nu_{\xi_i}}\left[\frac{L(\zeta)-\lambda c(\xi_i, \zeta)}{\varepsilon}\right]
+      \frac{1}{N}\sum_{i=1}^N L(\xi_i) ~ \longmapsto ~ \min_{\lambda\ge 0}\rho\lambda+\varepsilon\frac{1}{N}\sum_{i=1}^N \log\mathbb{E}_{\zeta\sim\nu_{\xi_i}}\left[\frac{L(\zeta)-\lambda c(\xi_i, \zeta)}{\varepsilon}\right]
 
    This transformation introduces computational difficulties, so let us handle it for you!
 
@@ -149,4 +146,4 @@ Quick hitchhiker's guide to the interfaces available to guide you through the pr
 `In depth guide to the PyTorch customization functions <pytorch.html>`_
 -----------------------------------------------------------------------
 
-Learn more about the way you can robustify your own model with :eq:`ERMtoSkWDRO` and how to specify it to make it compatible with the library.
+Learn more about the way you can robustify your own model with ``SkWDRO`` and how to specify it to make it compatible with the library.

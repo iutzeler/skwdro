@@ -85,7 +85,7 @@ The main idea of the interface comes from the fact that machine-learning models 
 
 * Others that prescribe some cost to available samples to be minimized (or reward, or likelihood, etc, conversly to be maximized - wolog), i.e. learn :math:`c_\theta` such that on average :math:`c_\theta` is small.
 
-This means that the loss functions :math:`L_\theta` that we study will always look like follows for some function :math:`\ell`:
+This means that loss functions :math:`L_\theta` will always look like follows for some function :math:`\ell`:
 
 .. math::
     :label: losses_types
