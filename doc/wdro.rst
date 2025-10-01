@@ -197,7 +197,6 @@ While it remains very relevant to some of the problems mentionned above, this qu
 
 See the next tutorial on `Sinkhorn-WDRO <why_skwdro.html>`_ to understand how we make it happen.
 
-==========
 References
 ==========
 .. [#SaKE19] Shafieezadeh-Abadeh, Kuhn and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
