@@ -13,3 +13,4 @@ They may then wish to turn to the helper functions :py:func:`~skwdro.base.cost_d
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:

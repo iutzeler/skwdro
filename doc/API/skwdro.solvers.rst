@@ -12,14 +12,6 @@ skwdro.solvers.entropic\_dual\_torch module
    :show-inheritance:
    :undoc-members:
 
-skwdro.solvers.entropic\_dual\_torch\_epsilon module
-----------------------------------------------------
-
-.. automodule:: skwdro.solvers.entropic_dual_torch_epsilon
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 skwdro.solvers.hybrid\_opt module
 ---------------------------------
 
