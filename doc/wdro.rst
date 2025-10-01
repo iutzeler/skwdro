@@ -74,8 +74,7 @@ See [#KSW24]_ §2.2 for a detailed explanation of the ambiguity sets related to 
 Fortunately, there so happens to exist a recent line of work aiming to engineer those ambiguity sets in a real-world setting, head of which is a python library called `python-dro <https://python-dro.org/>`__.
 We encourage curious users to take a look at `their implementation of some problems <https://python-dro.org/tutorials/linear_fdro.html>`__ using this framework.
 
-.. note::
-   .. warning:: About :math:`\phi`-divergences.
+.. note:: About :math:`\phi`-divergences.
 
    These divergences have a common noteworthy property: the "true" (and inaccessible) distribution that the observed samples originate from, denoted :math:`\mathbb{P}`, lies out of the neighborhood around the empirical distribution :math:`\hat{\mathbb{P}}^N` with probability 1 as long as it is absolutely continuous with respect to the Lebesgue measure.
    Depending on the nature of the problem at hand, this may be a real issue, which can be adressed by picking a different notion of neighborhood, as explained bellow.
@@ -178,6 +177,17 @@ Many of those can be found in the seminal work of [#EK17]_.
 
 Note that the convex case is the most general, but it requires a good knowledge of the loss function through the :math:`\kappa` constant.
 
+What should I turn to?
+----------------------
+
+If you just want to rebalance the histograms of the dataset to robustify your model against lack of balanceness, you should try directly divergence-based DRO, as it is almost always easier to formulate.Otherwise, if you want to see the support of your samples be perturbated as well, between all the techniques available WDRO is one of the most promising ones in the litterature.
+
+- If the model you study admits a disciplined-programming reformulation as described above, you should implement it as is because it will usually be efficient enough.
+- Otherwise, if it is too complex, classical WDRO will usually be untractable as is. ``SkWDRO`` may thus turn out to be quite handy to still robustify your model, without turning your back on the WDRO framework, by smoothing its formulation.
+
+.. note:: Whatever model you pick, empirically, adding complexity will almost always result in higher computational cost in this case.
+   So as a rule of thumb, you should first try simpler robustification techniques that catter to your needs.
+   Then add complexity layers if the framework you are considering does not handle your specific model, with our library handling the most general cases to the best of our knowledge, at the cost of some computation time.
 
 Conclusion
 ==========
