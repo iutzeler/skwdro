@@ -8,7 +8,6 @@ Recipe for a good sampling strategy for SkWDRO
 Recall the formula for SkWDRO:
 
 .. math::
-    :label: dual_loss
 
     L_\theta^\texttt{robust}(\xi) := \lambda\rho + \varepsilon\log\mathbb{E}_{\zeta\sim\nu_\xi}\left[e^{\frac{L_\theta(\zeta)-\lambda c(\xi, \zeta)}{\varepsilon}}\right].
 

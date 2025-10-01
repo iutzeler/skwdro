@@ -139,23 +139,27 @@ class DualPostSampledLoss(_DualLoss):
         .. warning::
 
             Unlike the :py:func:`skwdro.torch.robustify` interface, there is no
-            protection against mistakes here. So please do not attempt to set
-            importance sampling for now if:
-            - your target is categorical
-            - your model is non-differentiable
-            - your model includes parts that use the regular ``.backwards()``
-                torch interface for inner autodiff utilities instead of the
-                functional API
-            - your cost functional does not implement the right functions (see
-                appropriate tutorials).
+            protection against mistakes here.
+            So please do not attempt to set importance sampling for now if:
+
+            * your target is categorical
+            * your model is non-differentiable
+            * your model includes parts that use the regular ``.backwards()``
+              torch interface for inner autodiff utilities instead of the
+              functional API
+            * your cost functional does not implement the right functions (see
+              appropriate tutorials).
 
     adapt: Optional[str]
         set to either:
 
-        * ``"prodigy"`` or ``"mechanic"`` to get automatic learning rate tuning
         * ``None`` to use :py:class:`torch.optim.AdamW`.
-            .. tip:: Set the learning rate with the above parameter
-                ``learning_rate``.
+
+          .. tip:: 
+
+              Set the learning rate with the above parameter ``learning_rate``.
+
+        * ``"prodigy"`` or ``"mechanic"`` to get automatic learning rate tuning
     """
 
     def __init__(
@@ -251,6 +255,15 @@ class DualPostSampledLoss(_DualLoss):
         Forward pass for the dual loss, with the sampling of the
         adversarial samples
 
+        .. admonition:: Shapes
+
+            of input/output tensors.
+
+            * xi : (m, d)
+            * xi_labels : (m, d')
+            * dl : (1,)
+
+
         Parameters
         ----------
         xi : pt.Tensor
@@ -261,17 +274,12 @@ class DualPostSampledLoss(_DualLoss):
             defaults to ``True``, if set resets the batch saved in the sampler
 
             .. warning:: Must be set to ``True`` for any flavor of SGD, otherwise
+
                 the samples will never be redrawn
 
         Returns
         -------
         dl : pt.Tensor
-
-        Shapes
-        ------
-        xi : (m, d)
-        xi_labels : (m, d')
-        dl : (1,)
         """
         del zeta, zeta_labels
         if self.primal_loss.sampler is None:
@@ -335,13 +343,13 @@ class DualPreSampledLoss(_DualLoss):
         either a tuple ``(number of ERM iterations, number of DRO iterations)``,
         of type ``(int, int)``, or an integer for the number of DRO iterations
     reduction: str | None
-         specifies the reduction to apply to the outer expectation of the
-         SkWDRO formula applied: ``'none'`` | ``'mean'`` | ``'sum'``.
-         - ``'none'``: no reduction will be applied,
-         - ``'mean'``: the sum of the output will be divided by the number of
-         elements in the output,
-         - ``'sum'``: the output will be summed.
-         Default: ``None`` which translates to ``'mean'``
+        specifies the reduction to apply to the outer expectation of the
+        SkWDRO formula applied: ``'none'`` | ``'mean'`` | ``'sum'``.
+        - ``'none'``: no reduction will be applied,
+        - ``'mean'``: the sum of the output will be divided by the number of
+        elements in the output,
+        - ``'sum'``: the output will be summed.
+        Default: ``None`` which translates to ``'mean'``
     gradient_hypertuning: bool
         set to ``True`` to accumulate gradients in ``rho`` and ``epsilon``
         .. tip:: should almost always be kept to ``False``
@@ -356,22 +364,27 @@ class DualPreSampledLoss(_DualLoss):
             Unlike the :py:func:`skwdro.torch.robustify` interface, there is no
             protection against mistakes here. So please do not attempt to set
             importance sampling for now if:
+
             - your target is categorical
             - your model is non-differentiable
             - your model includes parts that use the regular ``.backwards()``
-                torch interface for inner autodiff utilities instead of the
-                functional API
+              torch interface for inner autodiff utilities instead of the
+              functional API
             - your cost functional does not implement the right functions (see
-                appropriate tutorials)
+              appropriate tutorials)
             - the reduction for the outer expectation is set to none.
 
     adapt: Optional[str]
         set to either:
 
-            * ``None`` to use :py:class:`torch.optim.LBFGS`
-                .. tip:: Set the learning rate with the above parameter
-                    ``learning_rate``.
-            * ``"prodigy"`` or ``"mechanic"`` to get automatic learning rate tuning
+        * ``None`` to use :py:class:`torch.optim.LBFGS`
+
+          .. tip::
+
+              Set the learning rate with the above parameter
+              ``learning_rate``.
+
+        * ``"prodigy"`` or ``"mechanic"`` to get automatic learning rate tuning
 
     Attributes
     ----------
@@ -480,11 +493,14 @@ class DualPreSampledLoss(_DualLoss):
         -------
         dl : pt.Tensor
 
-        Shapes
-        ------
-        xi : (m, d)
-        xi_labels : (m, d')
-        dl : (1,)
+        .. admonition:: Shapes
+
+            of input/output tensors.
+
+            * xi : (m, d)
+            * xi_labels : (m, d')
+            * dl : (1,)
+
         """
         del reset_sampler
         if zeta is None:

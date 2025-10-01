@@ -8,7 +8,6 @@ Recipe for a good ground-cost for Wasserstein-DRO
 Recall the formula for SkWDRO:
 
 .. math::
-    :label: dual_loss
 
     L_\theta^\texttt{robust}(\xi) := \lambda\rho + \varepsilon\log\mathbb{E}_{\zeta\sim\nu_\xi}\left[e^{\frac{L_\theta(\zeta)-\lambda c(\xi, \zeta)}{\varepsilon}}\right].
 
@@ -33,16 +32,14 @@ Simple cases: turn to euclidean geometry
 If your problem is formulated in simple cases in which no structure is prescribed on the space of samples :math:`\Xi`, your cost should look like the euclidean norm:
 
 .. math::
-   :label: euclidean_cost
 
-   c(\xi, \zeta) := \|zeta-\xi\|_2
+   c(\xi, \zeta) := \|\zeta-\xi\|_2
 
 Then, this opens a wide range of Wasserstein **distances**, called the :math:`W_p` distances in the litterature, for which you raise this norm to some power and change the allowed radius :math:`\rho` accordingly.
 
 .. math::
-   :label: wp_cost
 
-   c(\xi, \zeta) := \|zeta-\xi\|_2^p
+   c(\xi, \zeta) := \|\zeta-\xi\|_2^p
 
 The choice of `p` can be made in accordance with the behaviour of the loss function :math:`L_\theta` in its "worst regions".
 To learn more about the growth criteria that make most sense regarding this remark, take a look at [#GCK24]_.
@@ -86,6 +83,50 @@ The cost specification interface lets you account for that as well, by switching
 
 .. tip:: Again, picking the ``2-2`` combination unlocks the importance-sampling algorithm.
 
+Checking the litterature on WDRO (see [#SaKE19]_ Remark 8), one may see that there is a range of ways to interpolate between no target transport being allowed, and a cost of the same magnitude for changes of targets as changes to the inputs.
+We can introduce a hyperparameter :math:`\kapppa` that lets us weight the contribution of a target change to the transport cost.
+
+.. math::
+
+   c(\xi, \zeta) = \|\xi^\texttt{input} - \zeta^\texttt{input}\|_k^p + \mathbf{\kappa}\|\xi^\texttt{target} - \zeta^\texttt{target}\|_k^p
+
+This can be specified to the ``NLC`` cost parser easiuly as the last optional parameter.
+
+.. code-block:: python
+   :caption: specification of the norm type
+
+   p: float = 1.
+   k: float = 1.  # pick to your liking
+   cost_spec = f"t-NLC-{k}-{p}-10.0"
+
+.. tip:: As a guideline, using :math:`\kappa=\infty` amounts to using ``NC`` (rule of thumb: moving a target is now infinitely costly, so it is "not allowed"), while putting it to a small value will make it comparatively easier/"cheaper" to move an target than an input.
+   The formula is stabilized numerically, so you may try various values of :math:`\kappa` without unbalencing the transport cost. It ends up being implemented as follows:
+
+   .. math::
+
+      c(\xi, \zeta) = \left(\frac1{1+\kappa}\|\xi^\texttt{input} - \zeta^\texttt{input}\|_k^p + \frac\kappa{1+\kappa}\|\xi^\texttt{target} - \zeta^\texttt{target}\|_k\right)^p
+
+   Also note that for :py:class:`~skwdro.base.samplers.torch.LabeledCostSampler`\ s, the variance of the labels samplers is cattered to your choice of :math:`\kappa`.
+
+For reference, the grammar of this specification string is the following, with ``FLOAT`` representig a python floating point number interpolated in a string:
+
+.. code-block:: antlr
+    :caption: Grammar for the cost-specification strings.
+    :linenos:
+
+    // Entry point
+    spec: engine DASH type DASH FLOAT DASH FLOAT kappa? ;
+
+    DASH: '-' ;
+
+    FLOAT: .* ; // Python-parseable positive floating point number
+
+    // NC for simple p-powered k-norm cost
+    // NLC for same with a penalization of label switches with weight kappa
+    type: 'NC' | 'NLC' ;
+
+    kappa: DASH FLOAT ; // Python-parseable positive floating point number
+
 Building you own cost function
 ==============================
 
@@ -115,7 +156,6 @@ Consider a problem stemming from some gaussian curvature prescription model, or 
 - the cost function is log-bilinear for samples pointing in the same half-space
 
    .. math::
-      :label: cost-GCP
 
       c(\xi, \zeta) = -\log(\texttt{ReLU}[\left\langle\zeta, \xi\right\rangle]) + \chi_{\{(x, y)|\langle x, y\rangle > 0\}}(\xi, \zeta).
 
@@ -252,6 +292,7 @@ To avoid changing all the theoretical derivations related to the duality results
 
 References
 ==========
+.. [#SaKE19] Shafieezadeh-Abadeh, Kuhn and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
 .. [#V09] Villani: **Optimal transport: old and new**, 2009
 .. [#GCK24] Gao, Chen and Kleywegt: **Wasserstein Distributionally Robust Optimization and Variation Regularization**, *Operations Research*, 2024
 .. [#GGV21] Gallouët, Ghezzi, and Vialard: **Regularity theory and geometry of unbalanced optimal transport**, 2021
