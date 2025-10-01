@@ -11,6 +11,7 @@ Those classes have a :py:meth:`BaseSampler.reset_mean` method to dynamicaly chan
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 
 References
