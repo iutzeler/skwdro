@@ -25,3 +25,4 @@ This module exposes mainly the :py:func:`cost_from_str` function, which translat
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
