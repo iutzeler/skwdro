@@ -155,7 +155,7 @@ class DualPostSampledLoss(_DualLoss):
 
         * ``None`` to use :py:class:`torch.optim.AdamW`.
 
-          .. tip:: 
+          .. tip::
 
               Set the learning rate with the above parameter ``learning_rate``.
 
