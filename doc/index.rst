@@ -2,7 +2,7 @@
 
     <div align="center">
       <h1>SkWDRO - Tractable Wasserstein Distributionally Robust Optimization</h1>
-      <a href="https://github.com/iutzeler/skwdro"><img src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white"></a>
+      <a href="https://github.com/iutzeler/skwdro"><img style='border:2px solid #ffffff' src="https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white"></a>
     </div>
 
     <p style="display:inline"><nobr>

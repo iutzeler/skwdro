@@ -2,6 +2,8 @@
 Tuning of the Wasserstein radius hyperparameter
 ################################################
 
+:bdg-success:`Theory`
+
 The following hyperparameter tuning methods are implemented in skwdro.
 
 .. currentmodule:: skwdro
