@@ -2,6 +2,8 @@
 Recipe for a good sampling strategy for SkWDRO
 ==============================================
 
+:bdg-primary:`Practice`
+
 .. tip:: Read the `tutorial on SkWDRO <../why_skwdro.html>`__ to understand better this part.
 
 

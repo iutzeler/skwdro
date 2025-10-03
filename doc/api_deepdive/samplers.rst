@@ -1,6 +1,8 @@
 skwdro.base.samplers.torch module
 ---------------------------------
 
+:bdg-secondary:`API`
+
 This module exposes a base class :py:class:`BaseSampler` that you can subclass to build your own :math:`\pi_0` reference transport plan.
 It is defined through its right-conditional :math:`\nu_\xi(\zeta)=\pi_0(\zeta|\xi)` (by slight abuse of notation), as its first marginal is fixed to be :math:`\hat{\mathbb{P}}^N` the dataset.
 Formally it is defined through the disintegration lemma and its marginal property is required in order to achieve some technical feasability conditions, cf. [#AIM23]_ for clear explanations of these purposes.

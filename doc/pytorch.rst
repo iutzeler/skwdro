@@ -4,6 +4,7 @@ PyTorch interface
 
 .. currentmodule:: skwdro
 
+:bdg-primary:`Practice`
 
 In a general machine-learning setting, any practitionners turn to deep-learning techniques that require the use of very specific tools that cater to the "big-data" setting with massively parallel operations.
 This begs for other computational architectures (e.g. GPUs, TPUs, etc), and adapted codebases.

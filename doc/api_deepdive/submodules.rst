@@ -1,6 +1,8 @@
 Main APIs
 =========
 
+:bdg-secondary:`API`
+
 Here are the main building blocks of :py:mod:`skwdro`.
 
 

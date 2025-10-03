@@ -1,11 +1,12 @@
-#######################
+######################
 scikit-learn interface
-#######################
+######################
 
 The following models are implemented in skwdro
 
 .. currentmodule:: skwdro
 
+:bdg-primary:`Practice`
 
 Linear Models
 =============
