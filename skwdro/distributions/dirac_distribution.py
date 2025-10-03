@@ -33,6 +33,30 @@ class Dirac(dst.ExponentialFamily):
             self,
             batch_shape: Shapeoid,
             _instance=None):
+        """
+        Returns a new distribution instance (or populates an existing instance
+        provided by a derived class) with batch dimensions expanded to
+        `batch_shape`. This method calls :class:`~torch.Tensor.expand` on
+        the distribution's parameters. As such, this does not allocate new
+        memory for the expanded distribution instance. Additionally,
+        this does not repeat any args checking or parameter broadcasting in
+        `__init__.py`, when an instance is first created.
+
+        Parameters
+        ----------
+
+        batch_shape: torch.Size
+            the desired expanded size.
+        _instance: None|Dirac
+            new instance provided by subclasses that
+            need to override `.expand`.
+
+        Returns
+        -------
+        new: Dirac
+            New distribution instance with batch dimensions expanded to
+            `batch_size`.
+        """
         new: Dirac = self._get_checked_instance(Dirac, _instance)
         batch_shape = cast_to_size(batch_shape)
         loc_shape = batch_shape + self.event_shape

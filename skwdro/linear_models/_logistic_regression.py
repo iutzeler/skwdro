@@ -26,10 +26,17 @@ from skwdro.wrap_problem import dualize_primal_loss
 class LogisticRegression(BaseEstimator, ClassifierMixin):
     r""" A Wasserstein Distributionally Robust logistic regression classifier.
 
+    The cost function is
 
-    The cost function is XXX
+    .. math::
+        \ell(\theta,\xi=(x,y)) = \log(1+e^{-y\langle \theta,x \rangle})
 
-    Uncertainty is XXX
+
+    The WDRO problem solved at fitting is
+
+    .. math::
+
+        \min_{\theta} \max_{\mathbb{Q} | W(\mathbb{P}^n,\mathbb{Q}) \le\rho} \mathbb{E}_{\zeta\sim\mathbb{Q}} \ell(\theta,\zeta=(x,y))
 
     Parameters
     ----------
