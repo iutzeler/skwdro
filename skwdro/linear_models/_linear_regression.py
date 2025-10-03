@@ -35,7 +35,8 @@ class LinearRegression(BaseEstimator, RegressorMixin):
     The WDRO problem solved at fitting is
 
     .. math::
-        \min_{\theta} \max_{\mathbb{Q} : W(\mathbb{P}_n,\mathbb{Q})} \mathbb{E}_{\xi\sim\mathbb{Q}} \ell(\theta,\xi=(x,y))
+
+        \min_{\theta} \max_{\mathbb{Q} | W(\mathbb{P}^n,\mathbb{Q}) \le\rho} \mathbb{E}_{\zeta\sim\mathbb{Q}} \ell(\theta,\zeta=(x,y))
 
     Parameters
     ----------
@@ -72,18 +73,21 @@ class LinearRegression(BaseEstimator, RegressorMixin):
 
     Examples
     --------
-    >>> import numpy as np
-    >>> from skwdro.linear_models import LinearRegression as RobustLinearRegression
-    >>> from sklearn.model_selection import train_test_split
-    >>> d = 10; m = 100
-    >>> x0 = np.random.randn(d)
-    >>> X = np.random.randn(m,d)
-    >>> y = X.dot(x0) +  np.random.randn(m)
-    >>> X_train, X_test, y_train, y_test = train_test_split(X,y)
-    >>> rob_lin = RobustLinearRegression(rho=0.1,solver="entropic",fit_intercept=True)
-    >>> rob_lin.fit(X_train, y_train)
-    LinearRegression(rho=0.1)
-    >>> y_pred_rob = rob_lin.predict(X_test)
+
+    .. doctest::
+
+        >>> import numpy as np
+        >>> from skwdro.linear_models import LinearRegression as RobustLinearRegression
+        >>> from sklearn.model_selection import train_test_split
+        >>> d = 10; m = 100
+        >>> x0 = np.random.randn(d)
+        >>> X = np.random.randn(m,d)
+        >>> y = X.dot(x0) +  np.random.randn(m)
+        >>> X_train, X_test, y_train, y_test = train_test_split(X,y)
+        >>> rob_lin = RobustLinearRegression(rho=0.1,solver="entropic",fit_intercept=True)
+        >>> rob_lin.fit(X_train, y_train)
+        LinearRegression(rho=0.1)
+        >>> rob_lin.predict(X_test)
     """
 
     def __init__(self,

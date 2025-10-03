@@ -12,7 +12,7 @@ Regression problems are all written in a simple way, as explained in `other tuto
 We consider a simple 1D regression problem to highlight the possibility of using various losses in the library, not to showcase their specificities.
 
 We start with logistic regression, which is by far the most covered example of the library, and then present some minor modifications we can make to catter to some other classification techniques.
-All of those losses are taken from _[#IG08].
+All of those losses are taken from [#IG08]_.
 
 .. hint:: All those models are optimized in the default library settings, which represent uncertainty sets of type Wasserstein-2-2 (regularized), even though some of them are Lipschitz and thus may benefit from lower-order neighborhoods.
 """

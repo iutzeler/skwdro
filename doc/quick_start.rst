@@ -204,3 +204,28 @@ This option is untested and probably not stable, but ``uv`` may be used to run t
    :caption: Example: run one of the available files
 
    $ uv run python examples/builtin_models/linear_regression.py
+
+Next
+====
+
+.. card-carousel:: 2
+
+   .. card:: User guide
+      :link: user_guide.html
+
+      Learn about the most basic usecases of the library.
+
+   .. card:: What is WDRO?
+      :link: wdro.html
+
+      Gentle introduction to the world of Distributionally Robust Optimization, and motivations for its Wasserstein version.
+
+   .. card:: PyTorch part of the library
+      :link: pytorch.html
+
+      Tutorial on how to robustify your model easily with the pytorch wrappers.
+
+   .. card:: API
+      :link: api_deepdive/submodules.html
+
+      More details about the exposed API.

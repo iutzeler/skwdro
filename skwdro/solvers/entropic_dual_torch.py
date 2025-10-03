@@ -43,10 +43,12 @@ def extract_data(dist: Distribution):
     xi_labels: Optional[pt.Tensor]
         label tensor if the distribution yields them, else ``None``
 
-    Shapes
-    ------
-    xi: (m, d)
-    xi_labels: None or (m, d')
+    .. admonition:: Shapes
+
+        Shapes of input/output tensors.
+
+        - xi: (m, d)
+        - xi_labels: None or (m, d')
     """
     if dist.with_labels:
         xi = pt.Tensor(dist.samples_x)
@@ -84,12 +86,13 @@ def solve_dual_wdro(loss: _DualLoss, p_hat: Distribution, opt: OptCondTorch):
     lambd: Union[np.ndarray, float]
         Dual variable :math:`\lambda` of the problem
 
-    Shapes
-    ------
-    sigma_: (1,) or (d, d)
-    theta: (n_params,)
-    intercept: (n_intercepts,) or None
-    lambd: (1,)
+    .. admonition:: Shapes
+
+        of input/output tensors.
+
+        - theta: (n_params,)
+        - intercept: (n_intercepts,) or None
+        - lambd: (1,)
     """
 
     # Cast our raw data into tensors
@@ -147,12 +150,14 @@ def optim_presample(
 
     Returns
     -------
-    List[float]
+    losses: list[float]
 
-    Shapes
-    ------
-    xi: (m, d)
-    xi_labels: (m, d')
+    .. admonition:: Shapes
+
+        of input/output tensors.
+
+        - xi: (m, d)
+        - xi_labels: (m, d')
     """
 
     if loss.primal_loss.sampler is None:
@@ -236,10 +241,13 @@ def optim_postsample(
     -------
     List[float]
 
-    Shapes
-    ------
-    xi: (m, d)
-    xi_labels: (m, d')
+    .. admonition:: Shapes
+
+        of input/output tensors.
+
+        - xi: (m, d)
+        - xi_labels: (m, d')
+
     """
     losses = []
 

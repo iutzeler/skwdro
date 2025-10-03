@@ -1,6 +1,8 @@
 skwdro.base.cost_decoder module
 -------------------------------
 
+:bdg-secondary:`API`
+
 This module exposes mainly the :py:func:`cost_from_str` function, which translates strings with the following grammar to a cost class inheriting :py:class:`~skwdro.base.costs_torch.Cost`.
 
 .. code-block:: antlr
@@ -25,3 +27,4 @@ This module exposes mainly the :py:func:`cost_from_str` function, which translat
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
