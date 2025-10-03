@@ -2,6 +2,8 @@
 What is WDRO?
 #############
 
+:bdg-success:`Theory`
+
 Wasserstein Distributionally Robust Optimization (WDRO) is a mathematical framework that can provide robustness to data shifts, in machine learning models as well as many settings.
 Bellow is a contextualized explanation on its usecases, alternatives, foundations, and core advantages.
 

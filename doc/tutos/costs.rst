@@ -2,6 +2,8 @@
 Recipe for a good ground-cost for Wasserstein-DRO
 =================================================
 
+:bdg-primary:`Practice`
+
 .. tip:: Read the `tutorial on SkWDRO <../why_skwdro.html>`__ to understand better this part.
 
 

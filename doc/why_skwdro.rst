@@ -2,6 +2,8 @@
 Why SkWDRO?
 ===========
 
+:bdg-success:`Theory`
+
 Let us now present the ideas in this library.
 
 You may prefer to read the previous `tutorial on WDRO <wdro.html>`__ to understand better this part.

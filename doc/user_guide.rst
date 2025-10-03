@@ -6,6 +6,8 @@
 User guide
 ==========
 
+:bdg-primary:`Practice`
+
 The goal of this page is to point to the parts of the documentation that showcase the main features of the package: the ``scikit-learn`` and the ``PyTorch`` interfaces. We will demonstrate the main functionalities on a simple Linear Regression example.
 
 
