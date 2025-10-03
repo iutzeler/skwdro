@@ -59,7 +59,9 @@ X_train, y_train = make_blobs(n_samples=n, centers=centers, cluster_std=sdevs) #
 #
 # We build a classifier and plot its SkWDRO-loss as a function of lambda (unoptimized).
 # Its parameters are set to the ERM solution, i.e.
+#
 # .. math::
+#
 #    \theta_0 := {\min_\theta}^{-1}\frac{1}{N}\sum_{i=1}^N L_\theta(\xi_i)
 
 # Rho is chosen small enough for the curves to be readable
@@ -85,6 +87,7 @@ erm_params = (erm_model.coef_, erm_model.intercept_)
 # SkWDRO-defined classifier's data needs to be torch tensor objects, so we cast it from numpy.
 #
 # .. note::
+#
 #    One must verify that the labels `y` have a `(N, 1)` shape
 #
 # The ERM weights are then copied
@@ -100,6 +103,7 @@ linear_model = linear_model.to(X_train)
 # The 1-WDRO loss (without Sinkhorn regularization) is:
 #
 # .. math::
+#
 #    \frac{1}{N}\sum_{i=1}^NL_\theta(\xi_i) + \rho\|\theta\|_*
 #
 # For the approximate classifiers, we pick various regularization coefficients :math:`\{\varepsilon_i\}_{i\le 10}`
@@ -146,6 +150,7 @@ plt.show()
 # .. code-block:: python
 #   :caption: Save data
 #   :linenos:
+#
 #   np.savez_compressed(
 #       "lambda_stiff.npz",
 #       l=ls_track,
