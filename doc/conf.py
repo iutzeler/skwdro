@@ -74,7 +74,22 @@ import sphinx
 #     imgmath_latex_preamble = r'\usepackage[active]{preview}' # + other custom stuff for inline math, such as non-default math fonts etc.
 #     imgmath_use_preview = True
 
-autodoc_default_flags = ['members', 'inherited-members']
+autodoc_default_flags = ['members', 'inherited-members', 'show-inheritance']
+
+def autodoc_skip_member(app, what, name, obj, skip, options):
+    # Ref: https://stackoverflow.com/a/21449475/
+    exclusions = ('__weakref__',  # special-members
+                  '__doc__', '__module__', '__dict__',  # undoc-members
+                  # custom:
+                  '_logistic_regression',
+                  '_linear_regression',
+                  )
+    exclude = name in exclusions
+    # return True if (skip or exclude) else None  # Can interfere with subsequent skip functions.
+    return True if exclude else None
+ 
+def setup(app):
+    app.connect('autodoc-skip-member', autodoc_skip_member)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
