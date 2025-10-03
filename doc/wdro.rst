@@ -197,6 +197,31 @@ While it remains very relevant to some of the problems mentionned above, this qu
 
 See the next tutorial on `Sinkhorn-WDRO <why_skwdro.html>`_ to understand how we make it happen.
 
+Next
+----
+
+.. card-carousel:: 2
+
+   .. card:: Sinkhorn-WDRO
+      :link: why_skwdro.html
+
+      More about why and how to regularize the WDRO formulation with the Sinkhorn divergence.
+
+   .. card:: Scikit part of the library
+      :link: sklearn.html
+
+      Tutorial on how to use pre-implemented examples with their scikit-learn interface.
+
+   .. card:: PyTorch part of the library
+      :link: pytorch.html
+
+      Tutorial on how to robustify your model easily with the pytorch wrappers.
+
+   .. card:: API
+      :link: api_deepdive/submodules.html
+
+      More details about the exposed API.
+
 References
 ==========
 .. [#SaKE19] Shafieezadeh-Abadeh, Kuhn and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019

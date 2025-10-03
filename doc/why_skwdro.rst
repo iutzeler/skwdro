@@ -54,11 +54,11 @@ The motivation here is similar and allows a tractable reformulation.
 Bellow is a graphical representation taken from [#WGX23]_, showcasing for some loss function the optimal transport plan computed analytically, for some reference distribution admitting a density function (:math:`\pi^*\ll\pi_0`).
 The red points correspond to :math:`\hat{\mathbb{P}}^N`. Notice how WDRO sends Diracs to Diracs, while its Sinkhorn regularization remains absolutely continuous with respect to :math:`\pi_0`.
 
-+-----------------------------------------------------+-----------------------------------------------------+----------------------------------------------------+---------------------------------------------+
-| .. image:: assets/gao_sk/SDRO_transport_001.png     | .. image:: assets/gao_sk/SDRO_transport_005.png     | .. image:: assets/gao_sk/SDRO_transport_010.png    | .. image:: assets/gao_sk/WDRO_transport.png |
-+=====================================================+=====================================================+====================================================+=============================================+
-| Optimal :math:`\pi^*` for :math:`\varepsilon=0.001` | Optimal :math:`\pi^*` for :math:`\varepsilon=0.005` | Optimal :math:`\pi^*` for :math:`\varepsilon=0.01` | Optimal :math:`\pi^*` for WDRO              |
-+-----------------------------------------------------+-----------------------------------------------------+----------------------------------------------------+---------------------------------------------+
++---------------------------------------------+-----------------------------------------------------+-----------------------------------------------------+----------------------------------------------------+
+| .. image:: assets/gao_sk/WDRO_transport.png | .. image:: assets/gao_sk/SDRO_transport_001.png     | .. image:: assets/gao_sk/SDRO_transport_005.png     | .. image:: assets/gao_sk/SDRO_transport_010.png    |
++=============================================+=====================================================+=====================================================+====================================================+
+| Optimal :math:`\pi^*` for WDRO              | Optimal :math:`\pi^*` for :math:`\varepsilon=0.01`  | Optimal :math:`\pi^*` for :math:`\varepsilon=0.05`  | Optimal :math:`\pi^*` for :math:`\varepsilon=0.1`  |
++---------------------------------------------+-----------------------------------------------------+-----------------------------------------------------+----------------------------------------------------+
 
 Reformulation of the DRO problem with Sinkhorn-regularization of WDRO
 ---------------------------------------------------------------------
@@ -94,6 +94,26 @@ But in most cases, its application will not be directly possible: you shoud then
 The smoothness of the *"log-average-exponential"* (i.e. log-sum-exp) expression in :eq:`dual_loss_remind` is its main selling point: you can now plug it in you favorite SGD algorithm to get a solution, skipping theoretical work.
 One of the main goals of the library is to offer the estimation of :eq:`dual_loss_remind` on a plater, battery-included: the loss is differentiable by autodiff capabilities in order to plug it in your usual descent algotithm and some freedom is left for you to tune it through the ``PyTorch`` library.
 Thus we advise readers to take a good look at the `PyTorch interface tutorial <pytorch.html>`_ to learn how to use the interfaces.
+
+Next
+====
+
+.. card-carousel:: 2
+
+   .. card:: Scikit part of the library
+      :link: sklearn.html
+
+      Tutorial on how to use pre-implemented examples with their scikit-learn interface.
+
+   .. card:: PyTorch part of the library
+      :link: pytorch.html
+
+      Tutorial on how to robustify your model easily with the pytorch wrappers.
+
+   .. card:: API
+      :link: api_deepdive/submodules.html
+
+      More details about the exposed API.
 
 References
 ==========

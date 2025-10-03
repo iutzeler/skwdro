@@ -364,6 +364,31 @@ Conclusion
 The take away message of this small tutorial is that you can either use the simple interface of :py:func:`skwdro.torch.robustify` to change only a few lines in your codebase, or you can get more control over the details of the algorithm by using the :py:class:`skwdro.solvers.DualLoss` interfaces.
 We advise new users to turn to the first, while users who try to study the behavior of ``SkWDRO`` in more details may take a look at various strategies proposed by the latter through the various aforementioned modules (for costs, samplers, losses, etc).
 
+Next
+----
+
+.. card-carousel:: 2
+
+   .. card:: Cost tutorial
+      :link: tutos/costs.html
+
+      More about how to design and implement a ground-cost functional in ``SkWDRO``.
+
+   .. card:: Samplers tutorial
+      :link: tutos/samplers.html
+
+      More about how to design and implement a reference sampler for the reference distribution :math:`\pi_0` in ``SkWDRO``.
+
+   .. card:: What is WDRO?
+      :link: why_skwdro.html
+
+      Gentle introduction to the world of Distributionally Robust Optimization, and motivations for its Wasserstein version.
+
+   .. card:: API
+      :link: api_deepdive/submodules.html
+
+      More details about the exposed API.
+
 References
 ==========
 

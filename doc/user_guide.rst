@@ -159,6 +159,36 @@ To make the optimization of the robust model more efficient, we also provide an 
     # Adaptive optimizer
     optimizer = robust_loss.optimizer
 
+Next
+----
+
+.. card-carousel:: 2
+
+   .. card:: Scikit part of the library
+      :link: sklearn.html
+
+      Tutorial on how to use pre-implemented examples with their scikit-learn interface.
+
+   .. card:: PyTorch part of the library
+      :link: pytorch.html
+
+      Tutorial on how to robustify your model easily with the pytorch wrappers.
+
+   .. card:: What is WDRO
+      :link: wdro.html
+
+      Gentle introduction to the world of Distributionally Robust Optimization, and motivations for its Wasserstein version.
+
+   .. card:: Sinkhorn-WDRO
+      :link: why_skwdro.html
+
+      More about why and how to regularize the WDRO formulation with the Sinkhorn divergence.
+
+   .. card:: API
+      :link: api_deepdive/submodules.html
+
+      More details about the exposed API.
+
 References
 ==========
 

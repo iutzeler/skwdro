@@ -80,6 +80,20 @@ where :math:`\eta \geq 0`  and  :math:`\alpha \in (0,1]` are the risk aversion p
 
 where :math:`\mathrm{VaR}_{\alpha}` is the Value at Risk of order :math:`\alpha`, which corresponds exactly to the quantile of order :math:`\alpha`. The CVaR is therefore the average expected value for the portfolio following the returns on investments, given that this value is greater than the Value at Risk.
 
+Next
+----
+
+.. card-carousel:: 2
+
+   .. card:: PyTorch part of the library
+      :link: pytorch.html
+
+      Tutorial on how to robustify your model easily with the pytorch wrappers.
+
+   .. card:: API
+      :link: api_deepdive/submodules.html
+
+      More details about the exposed API.
 
 .. Weber problem
 .. -------------

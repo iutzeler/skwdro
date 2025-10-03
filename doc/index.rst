@@ -147,3 +147,28 @@ Quick hitchhiker's guide to the interfaces available to guide you through the pr
 -----------------------------------------------------------------------
 
 Learn more about the way you can robustify your own model with ``SkWDRO`` and how to specify it to make it compatible with the library.
+
+Next
+----
+
+.. card-carousel:: 2
+
+   .. card:: Getting started
+      :link: quick_start.html
+
+      Install everything needed.
+
+   .. card:: User guide
+      :link: user_guide.html
+
+      Learn about the most basic usecases of the library.
+
+   .. card:: What is WDRO?
+      :link: why_skwdro.html
+
+      Gentle introduction to the world of Distributionally Robust Optimization, and motivations for its Wasserstein version.
+
+   .. card:: API
+      :link: api_deepdive/submodules.html
+
+      More details about the exposed API.
