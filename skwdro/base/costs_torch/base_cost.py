@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Tuple
+from typing import Optional, Tuple, overload
 import torch as pt
 import torch.nn as nn
 import skwdro.distributions as dst
@@ -66,6 +66,26 @@ class TorchCost(nn.Module, ABC):
         epsilon: Optional[pt.Tensor]
     ) -> dst.Distribution:
         del xi, epsilon
+        raise NotImplementedError()
+
+    @overload
+    @abstractmethod
+    def _sampler_labels(
+        self,
+        xi_labels: pt.Tensor,
+        epsilon: Optional[pt.Tensor]
+    ) -> dst.Distribution:
+        del xi_labels, epsilon
+        raise NotImplementedError()
+
+    @overload
+    @abstractmethod
+    def _sampler_labels(
+        self,
+        xi_labels: None,
+        epsilon: Optional[pt.Tensor]
+    ) -> None:
+        del xi_labels, epsilon
         raise NotImplementedError()
 
     @abstractmethod
