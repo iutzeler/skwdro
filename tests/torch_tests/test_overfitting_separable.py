@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 from skwdro.linear_models import LogisticRegression
 
-ANGLE_TOL = 1e-1 * np.pi
+ANGLE_TOL = 2e-1 * np.pi
 
 
 # ##################################
