@@ -168,7 +168,6 @@ def optim_presample(
             objective = loss(xi, xi_labels, zeta, zeta_labels)
             loss.train()
 
-
         assert isinstance(objective, pt.Tensor)
         return objective.item()
 

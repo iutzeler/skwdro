@@ -21,6 +21,7 @@ from skwdro.solvers.utils import Steps, detach_tensor
 
 class CustomNewsvendorLoss(nn.Module):
     reduction: str = 'none'
+
     def __init__(self, k: float, u: float):
         super().__init__()
         self.k = pt.tensor(k)
@@ -73,7 +74,6 @@ class NewsVendor(BaseEstimator):
     >>> estimator.fit(X)
     NewsVendor()
     """
-
     def __init__(
         self,
         rho: float = 1e-2,
@@ -86,7 +86,7 @@ class NewsVendor(BaseEstimator):
         n_zeta_samples: int = 10,
         solver: str = "entropic",
         random_state: int = 0,
-        n_iter: Optional[Steps]=None,
+        n_iter: Optional[Steps] = None,
         opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
     ):
 

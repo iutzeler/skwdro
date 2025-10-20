@@ -56,7 +56,6 @@ class Weber(BaseEstimator):
     >>> estimator.fit(X,w)
     Weber()
     """
-
     def __init__(
         self,
         rho: float = 1e-1,
@@ -69,7 +68,7 @@ class Weber(BaseEstimator):
         cost: str = "t-NLC-2-2",
         solver="entropic_torch",
         random_state: int = 0,
-        n_iter: Optional[Steps]=None,
+        n_iter: Optional[Steps] = None,
         opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
     ):
 

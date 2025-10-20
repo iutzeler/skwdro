@@ -80,7 +80,6 @@ class Portfolio(BaseEstimator):
     --------
 
     """
-
     def __init__(
         self,
         rho=1e-2,
@@ -96,7 +95,7 @@ class Portfolio(BaseEstimator):
         learning_rate: Optional[float] = None,
         n_zeta_samples: int = 10,
         random_state: int = 0,
-        n_iter: Optional[Steps]=None,
+        n_iter: Optional[Steps] = None,
         opt_cond: Optional[OptCondTorch] = OptCondTorch(
             2
         )  # type: ignore
