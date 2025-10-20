@@ -1,5 +1,3 @@
-from typing import Optional
-
 import torch as pt
 import torch.nn as nn
 
