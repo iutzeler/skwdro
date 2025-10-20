@@ -36,9 +36,14 @@ test_misc:
 
 coverage:
 	@echo "Converage computation"
-	coverage run -m pytest
+	bash -O extglob -c 'coverage run -m pytest -v ./tests/torch_tests/!(test_regularized_linear_exact.py) -W ignore::FutureWarning'
+	coverage run -a -m pytest -v ./skwdro/tests -W ignore::FutureWarning
+	coverage run -a -m pytest -v ./tests/test_interfaces -W ignore::FutureWarning
+	coverage run -a -m pytest -v ./tests/dirac_test.py -W ignore::FutureWarning
 	coverage report
 	coverage html
+	coverage xml
+	genbadge coverage -i coverage.xml
 
 
 epsilon_plotting_in_source:

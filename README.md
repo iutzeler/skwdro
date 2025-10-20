@@ -28,6 +28,14 @@
     </tr>
     <tr>
         <td>
+            Coverage
+        </td>
+        <td>
+            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Coverage report"><img alt="Coverage badge" src="./coverage-badge.svg"></a>
+        </td>
+    </tr>
+    <tr>
+        <td>
             <b> Doc </b>
         </td>
         <td>
