@@ -119,7 +119,10 @@ def test_sampling_prob():
             DUMMY_COST, xi, xi_labels.unsqueeze(-1),
             s, seed=SEED
         ),
-        smplr.NoLabelsCostSampler(DUMMY_COST, xi, s, seed=SEED)
+        smplr.NoLabelsCostSampler(DUMMY_COST, xi, s, seed=SEED),
+        smplr.NewsVendorNormalSampler(xi, sigma=s, seed=SEED),
+        smplr.PortfolioNormalSampler(xi, sigma=s, seed=SEED),
+        smplr.PortfolioLaplaceSampler(xi, sigma=s, seed=SEED),
     ]:
         assert_probs(sampler, xi, xi_labels)
 
