@@ -11,7 +11,7 @@ from typing import Optional
 
 from skwdro.solvers.optim_cond import OptCondTorch
 
-from skwdro.solvers.utils import detach_tensor
+from skwdro.solvers.utils import Steps, detach_tensor
 from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.losses_torch.weber import SimpleWeber
 from skwdro.wrap_problem import dualize_primal_loss
@@ -69,6 +69,7 @@ class Weber(BaseEstimator):
         cost: str = "t-NLC-2-2",
         solver="entropic_torch",
         random_state: int = 0,
+        n_iter: Optional[Steps]=None,
         opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
     ):
 
@@ -86,6 +87,7 @@ class Weber(BaseEstimator):
         self.n_zeta_samples = n_zeta_samples
         self.random_state = random_state
         self.cost = cost
+        self.n_iter = n_iter
         self.opt_cond = opt_cond
 
     def fit(self, X, y):
@@ -109,7 +111,7 @@ class Weber(BaseEstimator):
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
-            except ValueError:
+            except BaseException:
                 raise TypeError(
                     f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
@@ -118,8 +120,15 @@ class Weber(BaseEstimator):
         emp = EmpiricalDistributionWithLabels(
             m=m, samples_x=X, samples_y=y.reshape(-1, 1))
 
-        if "torch" in self.solver:
-            assert self.opt_cond is not None
+        if self.solver == "entropic":
+            raise (DeprecationWarning(
+                "The entropic (numpy) solver is now deprecated"
+            ))
+        elif "torch" in self.solver:
+
+            if self.opt_cond is None:
+                self.opt_cond = OptCondTorch(2)
+
             _post_sample = self.solver == "entropic_torch" or self.solver == "entropic_torch_post"
             self._wdro_loss = dualize_primal_loss(
                 SimpleWeber(d),
@@ -135,27 +144,27 @@ class Weber(BaseEstimator):
                 epsilon=self.solver_reg,
                 sigma=self.sampler_reg,
                 adapt="prodigy" if self.learning_rate is None else None,
+                n_iter=self.n_iter,
                 l2reg=self.l2_reg
             )
-            self._wdro_loss.n_iter = 300
+            if self.n_iter is None:
+                # Change default to a more sensible value
+                self._wdro_loss.n_iter = 300
             self.coef_, self.intercept_, self.dual_var_, self.robust_loss_ = entTorch.solve_dual_wdro(
                 self._wdro_loss,
                 emp,
                 self.opt_cond,
             )
             self.coef_ = detach_tensor(
-                self.problem_.loss.primal_loss.loss.pos).flatten()  # type: ignore
+                self._wdro_loss.primal_loss.loss.pos  # type: ignore
+            ).flatten()
 
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Designation for solver not recognized")
 
         self.is_fitted_ = True
 
-        self.n_features_in_ = d
-
-        self.position_ = self.coef_
-
-        # `fit` should always return `self`
+        # Return the estimator
         return self
 
     def score(self, X, y=None):
@@ -167,7 +176,7 @@ class Weber(BaseEstimator):
         X : array-like, shape (n_samples_test,m)
             The testing input samples.
         y : None
-            The prediction. Always None for a Newsvendor estimator.
+            The prediction. Always None for a Portfolio estimator.
         '''
         del y
         return -self.eval(X)
@@ -182,12 +191,14 @@ class Weber(BaseEstimator):
             The testing input samples.
         '''
 
-        assert self.is_fitted_  # We have to fit before evaluating
-
         # Check that X has correct shape
         X = check_array(X)
 
+        assert self.is_fitted_  # We have to fit before evaluating
+
         if "entropic" in self.solver:
             return self._wdro_loss.primal_loss.forward(pt.from_numpy(X)).mean()
+        elif self.solver == "dedicated":
+            return -np.mean(X, axis=0) @ self.coef_
         else:
             raise (ValueError("Solver not recognized"))

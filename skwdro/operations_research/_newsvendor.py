@@ -16,10 +16,11 @@ import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_torch as entTorch
 from skwdro.base.cost_decoder import cost_from_str
 from skwdro.wrap_problem import dualize_primal_loss
-from skwdro.solvers.utils import detach_tensor
+from skwdro.solvers.utils import Steps, detach_tensor
 
 
 class CustomNewsvendorLoss(nn.Module):
+    reduction: str = 'none'
     def __init__(self, k: float, u: float):
         super().__init__()
         self.k = pt.tensor(k)
@@ -85,6 +86,7 @@ class NewsVendor(BaseEstimator):
         n_zeta_samples: int = 10,
         solver: str = "entropic",
         random_state: int = 0,
+        n_iter: Optional[Steps]=None,
         opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
     ):
 
@@ -102,6 +104,7 @@ class NewsVendor(BaseEstimator):
         self.n_zeta_samples = n_zeta_samples
         self.learning_rate = learning_rate
         self.random_state = random_state
+        self.n_iter = n_iter
         self.opt_cond = opt_cond
 
     def fit(self, X, y=None):
@@ -127,7 +130,7 @@ class NewsVendor(BaseEstimator):
         if self.rho is not float:
             try:
                 self.rho = float(self.rho)
-            except ValueError:
+            except BaseException:
                 raise TypeError(
                     f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
 
@@ -143,7 +146,15 @@ class NewsVendor(BaseEstimator):
         emp = EmpiricalDistributionWithoutLabels(m=m, samples=X)
         # #################################
 
-        if "torch" in self.solver:
+        if self.solver == "entropic":
+            raise (DeprecationWarning(
+                "The entropic (numpy) solver is now deprecated"
+            ))
+        elif "torch" in self.solver:
+
+            if self.opt_cond is None:
+                self.opt_cond = OptCondTorch(2)
+
             self._wdro_loss = dualize_primal_loss(
                 CustomNewsvendorLoss(self.k, self.u),
                 None,
@@ -156,6 +167,7 @@ class NewsVendor(BaseEstimator):
                 seed=self.random_state,
                 epsilon=self.solver_reg,
                 learning_rate=self.learning_rate,
+                n_iter=self.n_iter,
                 adapt="prodigy" if self.learning_rate is None else None,
             )
             # Solve dual problem
@@ -165,7 +177,7 @@ class NewsVendor(BaseEstimator):
                 self.opt_cond,  # type: ignore
             )
             self.coef_ = detach_tensor(
-                self._wdro_loss.primal_loss.loss.assets.weight)  # type: ignore
+                self._wdro_loss.primal_loss.loss.theta_)  # type: ignore
 
         elif self.solver == "dedicated":
             # Use cvx solver to solve Kuhn MP formulation
@@ -179,7 +191,7 @@ class NewsVendor(BaseEstimator):
                 self.dual_var_ = self.u
 
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("Designation for solver not recognized")
 
         self.is_fitted_ = True
 
