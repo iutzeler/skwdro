@@ -39,6 +39,7 @@ coverage:
 	@echo "Converage computation"
 	coverage run -m pytest
 	coverage report
+	coverage html
 
 
 epsilon_plotting_in_source:
