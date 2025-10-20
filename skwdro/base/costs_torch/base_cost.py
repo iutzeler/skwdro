@@ -51,8 +51,8 @@ class TorchCost(nn.Module, ABC):
     def sampler(
         self,
         xi: pt.Tensor,
-        xi_labels: pt.Tensor,
-        epsilon: pt.Tensor
+        xi_labels: Optional[pt.Tensor],
+        epsilon: Optional[pt.Tensor]
     ) -> Tuple[dst.Distribution, Optional[dst.Distribution]]:
         return (
             self._sampler_data(xi, epsilon),
@@ -63,7 +63,7 @@ class TorchCost(nn.Module, ABC):
     def _sampler_data(
         self,
         xi: pt.Tensor,
-        epsilon: pt.Tensor
+        epsilon: Optional[pt.Tensor]
     ) -> dst.Distribution:
         del xi, epsilon
         raise NotImplementedError()
@@ -71,8 +71,8 @@ class TorchCost(nn.Module, ABC):
     @abstractmethod
     def _sampler_labels(
         self,
-        xi_labels: pt.Tensor,
-        epsilon: pt.Tensor
+        xi_labels: Optional[pt.Tensor],
+        epsilon: Optional[pt.Tensor]
     ) -> Optional[dst.Distribution]:
         del xi_labels, epsilon
         raise NotImplementedError()
