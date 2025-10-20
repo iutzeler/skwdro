@@ -5,6 +5,7 @@ import torch.nn as nn
 
 
 class SimpleWeber(nn.Module):
+    reduction = 'none'
     def __init__(self, d: int) -> None:
         super(SimpleWeber, self).__init__()
         self.pos = nn.Parameter(pt.zeros(d))

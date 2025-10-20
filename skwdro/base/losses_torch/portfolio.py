@@ -5,6 +5,7 @@ import torch.nn.utils.parametrize as pz
 
 
 class SimplePortfolio(nn.Module):
+    reduction: str = 'none'
     def __init__(
         self,
         d: int,
