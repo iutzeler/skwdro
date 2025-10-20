@@ -1,6 +1,6 @@
 <table>
     <tr>
-        <td rowspan=3>
+        <td rowspan=4>
             <b> CI </b>
         </td>
         <td>
@@ -31,7 +31,7 @@
             Coverage
         </td>
         <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Coverage report"><img alt="Coverage badge" src="./coverage-badge.svg"></a>
+            <a href="https://github.com/iutzeler/skwdro/actions/workflows/test.yml" alt="Coverage report"><img alt="Coverage badge" src="./coverage-badge.svg"></a>
         </td>
     </tr>
     <tr>
