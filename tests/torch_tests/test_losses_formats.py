@@ -2,7 +2,7 @@ import pytest
 from skwdro.base.losses_torch.wrapper import WrappingError, WrappedPrimalLoss
 from skwdro.torch import robustify
 from skwdro.solvers import DualLoss
-from skwdro.base.samplers.torch import ClassificationNormalIdSampler, NoLabelsCostSampler
+from skwdro.base.samplers.torch import ClassificationNormalIdSampler, NoLabelsCostSampler, BaseSampler
 from skwdro.base.costs_torch import NormCost
 
 import torch as pt
@@ -32,15 +32,29 @@ def fake_data(b: bool = False):
 
     return X, y
 
-def assert_no_sampler(dual_loss):
+def assert_no_sampler(dual_loss, X, y):
     with pytest.raises(WrappingError) as e_err:
         dual_loss.primal_loss.default_sampler(
             None, None, None, None
         )
     assert "No default" in str(e_err.value)
+    dual_loss.primal_loss.sampler = None
+    with pytest.raises(ValueError) as e_err:
+        dual_loss.generate_zetas()
+    assert "not initialized properly" in str(e_err.value)
+    s = dual_loss.init_sampler(X, y, 0.1, None)
+    assert isinstance(s, BaseSampler)
 
 def assert_has_theta(dual_loss):
     assert isinstance(dual_loss.primal_loss.theta, pt.Tensor)
+
+def assert_optim_is_robust(dual_loss):
+    o = dual_loss.optimizer
+    dual_loss._opti = None  # Should raise a type warning
+    with pytest.raises(AttributeError):
+        check = dual_loss.optimizer is None
+        assert check
+    dual_loss.optimizer = o
 
 def build_model(loss, X, y, interface_: int, red: str|None, lb: bool):
     inference_model = pt.nn.Linear(3, 3, bias=False)
@@ -73,6 +87,7 @@ def build_model(loss, X, y, interface_: int, red: str|None, lb: bool):
             pt.tensor(1.),
             pt.tensor(1.),
             1000,
+            adapt=None,
             reduction=red
         )
     else:
@@ -91,16 +106,44 @@ def test_functional(b: bool, interface_: int, red: str|None, lb: bool):
         y = None
     model = build_model(loss, X, y, interface_, red, lb)
     assert_has_theta(model)
-    assert_no_sampler(model)
-    l = model(X, y)
-    if red == 'none':
-        if b:
-            assert l.shape == pt.Size([100])
+    assert_no_sampler(model, X, y)
+    assert_optim_is_robust(model)
+    for rs in (True, False):
+        l = model(X, y, reset_sampler=rs)
+        if red == 'none':
+            if b:
+                assert l.shape == pt.Size([100])
+            else:
+                assert l.shape == pt.Size([1])
+            assert_weird_input_shapes(model.primal_loss, X, y, b, lb)
         else:
-            assert l.shape == pt.Size([1])
-        assert_weird_input_shapes(model.primal_loss, X, y, b, lb)
-    else:
-        assert l.shape == pt.Size([])
+            assert l.shape == pt.Size([])
+
+def test_bad_rhos():
+    X, y = fake_data(False)
+    loss = pt.nn.functional.binary_cross_entropy_with_logits
+    model = robustify(
+        loss,
+        pt.nn.Linear(3, 3, bias=False),
+        pt.tensor(-1.),
+        X, y,
+        cost_spec='t-NC-2-2',
+        reduction='sum',
+        loss_reduces_spatial_dims=False
+    )
+    with pytest.raises(ValueError) as e:
+        model(X, y)
+    assert "Rho < 0 detected" in str(e.value)
+    model = robustify(
+        loss,
+        pt.nn.Linear(3, 3, bias=False),
+        pt.tensor(0.),
+        X, y,
+        cost_spec='t-NC-2-2',
+        reduction='sum',
+        loss_reduces_spatial_dims=False
+    )
+    assert model(X, y).shape == pt.Size([])
 
 class MyClassifLoss(pt.nn.Module):
     reduction = None
@@ -126,20 +169,17 @@ def assert_weird_input_shapes(model, X, y, b, lb: bool):
     # red always to none
     if b:
         # (1, 100, 3), ?(100, 3)
-        print("(1, 100, 3), ?(100, 3)", X.unsqueeze(0).shape, y.shape if y is not None else ' - ')
         l = model(X.unsqueeze(0), y)
         # (1, 100, 1)
         assert l.shape == pt.Size([1, 100, 1])
     elif lb:
         assert y is not None
         # (3,), (3,)
-        print("(3,), (3,)", X.squeeze(0).shape, y.squeeze(0).shape)
         l = model(X.squeeze(0), y.squeeze(0))
         # (,)
         assert l.shape == pt.Size([])
     else:
         # (3,)
-        print("(3,)", X.squeeze(0).shape, ' - ')
         l = model(X.squeeze(0), None)
         # (,)
         assert l.shape == pt.Size([])
@@ -154,7 +194,8 @@ def test_oop(b: bool, interface_: int, red: str|None, lb: bool):
         y = None
     model = build_model(loss, X, y, interface_, red, lb)
     assert_has_theta(model)
-    assert_no_sampler(model)
+    assert_no_sampler(model, X, y)
+    assert_optim_is_robust(model)
     l = model(X, y)
     if red == 'none':
         if b:
