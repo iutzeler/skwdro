@@ -44,7 +44,14 @@ class OptCondTorch:
     * only :math:`\theta`
     * only :math:`\lambda`
     * both
-    * or either
+    * or either.
+
+    .. warning:: If setting ``mode='grad'``, verify that your backward pass does
+
+       populate the ``.grad`` attribute of the parameter tensors of your model.
+       If not, verify ``NaN`` values or the connectivity of the compute graph at
+       the forward pass.
+       This helper class **does not perform those verifications**.
 
     Parameters
     ----------
