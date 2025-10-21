@@ -102,6 +102,20 @@ class BaseSampler(ABC):
     ) -> pt.Tensor:
         raise NotImplementedError()
 
+    def _format_logprobs(
+        self,
+        dist: dst.Distribution,
+        data: pt.Tensor
+    ) -> pt.Tensor:
+        lp = dist.log_prob(data)
+        if lp.dim() == 3:
+            return lp.sum(dim=-1, keepdim=True)
+        elif lp.dim() == 2:
+            return lp.unsqueeze(-1)
+        else:
+            return lp.unsqueeze(-1)
+            raise NotImplementedError()
+
 
 class NoLabelsSampler(BaseSampler, ABC):
     def __init__(self, data_sampler: dst.Distribution, seed: Optional[int]):
@@ -129,7 +143,8 @@ class NoLabelsSampler(BaseSampler, ABC):
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert zeta_labels is None
-        return self.data_s.log_prob(zeta).sum(-1, keepdim=True)
+        return self._format_logprobs(self.data_s, zeta)
+        # return self.data_s.log_prob(zeta).sum(-1, keepdim=True)
 
     def log_prob_recentered(
             self,
@@ -139,7 +154,8 @@ class NoLabelsSampler(BaseSampler, ABC):
             zeta_labels: Optional[pt.Tensor]
     ) -> pt.Tensor:
         assert xi_labels is None and zeta_labels is None
-        return self.data_s.log_prob(zeta - xi + self.data_s.mean).sum(-1, keepdim=True)
+        return self._format_logprobs(self.data_s, zeta - xi + self.data_s.mean)
+        # return self.data_s.log_prob(zeta - xi + self.data_s.mean).sum(-1, keepdim=True)
 
 
 class LabeledSampler(BaseSampler, ABC):
@@ -177,20 +193,6 @@ class LabeledSampler(BaseSampler, ABC):
     @property
     def produces_labels(self):
         return True
-
-    def _format_logprobs(
-        self,
-        dist: dst.Distribution,
-        data: pt.Tensor
-    ) -> pt.Tensor:
-        lp = dist.log_prob(data)
-        if lp.dim() == 3:
-            return lp.sum(dim=-1, keepdim=True)
-        elif lp.dim() == 2:
-            return lp.unsqueeze(-1)
-        else:
-            return lp.unsqueeze(-1)
-            raise NotImplementedError()
 
     def log_prob(
             self,
