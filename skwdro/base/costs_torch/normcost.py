@@ -80,7 +80,11 @@ class NormCost(TorchCost):
         assert isinstance(diff, pt.Tensor)
         return diff
 
-    def _sampler_data(self, xi, epsilon) -> pt.distributions.Distribution:
+    def _sampler_data(
+        self,
+        xi: pt.Tensor,
+        epsilon: Optional[pt.Tensor]
+    ) -> pt.distributions.Distribution:
         if epsilon is None:
             epsilon = pt.tensor(1e-3)
         elif not isinstance(epsilon, pt.Tensor):
@@ -96,7 +100,7 @@ class NormCost(TorchCost):
                     loc=xi,
                     scale=epsilon.to(xi)
                 )
-            elif self.p == pt.inf:
+            elif self.p == float('inf'):
                 Warning("For sup norm, we use a gaussian sampler by default.")
                 return dst.Normal(
                     loc=xi,
@@ -119,7 +123,7 @@ class NormCost(TorchCost):
     def _sampler_labels(
         self,
         xi_labels: pt.Tensor,
-        epsilon: pt.Tensor
+        epsilon: Optional[pt.Tensor]
     ) -> dst.Distribution:
         pass
 
@@ -127,14 +131,14 @@ class NormCost(TorchCost):
     def _sampler_labels(
         self,
         xi_labels: None,
-        epsilon: pt.Tensor
+        epsilon: Optional[pt.Tensor]
     ) -> None:
         return None
 
     def _sampler_labels(
         self,
         xi_labels: Optional[pt.Tensor],
-        epsilon: pt.Tensor
+        epsilon: Optional[pt.Tensor]
     ) -> Optional[dst.Distribution]:
         del epsilon
         if xi_labels is None:
