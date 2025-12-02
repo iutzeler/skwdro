@@ -294,7 +294,7 @@ To avoid changing all the theoretical derivations related to the duality results
 
 References
 ==========
-.. [#SaKE19] Shafieezadeh-Abadeh, Kuhn and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
+.. [#SaKE19] Shafieezadeh-Abadeh, Kuhn, and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
 .. [#V09] Villani: **Optimal transport: old and new**, 2009
-.. [#GCK24] Gao, Chen and Kleywegt: **Wasserstein Distributionally Robust Optimization and Variation Regularization**, *Operations Research*, 2024
+.. [#GCK24] Gao, Chen, and Kleywegt: **Wasserstein Distributionally Robust Optimization and Variation Regularization**, *Operations Research*, 2024
 .. [#GGV21] Gallouët, Ghezzi, and Vialard: **Regularity theory and geometry of unbalanced optimal transport**, 2021

@@ -226,9 +226,9 @@ Next
 
 References
 ==========
-.. [#SaKE19] Shafieezadeh-Abadeh, Kuhn and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
-.. [#SaEK15] Shafieezadeh-Abadeh, Esfahani and Kuhn: **Distributionally Robust Logistic Regression**, *NIPS*, 2015
-.. [#BtHWMR11] Ben-Tal, Hertog, DeWaegenaere, Melenberg and Rennen: **Robust solutions of optimization problems affected by uncertain probabilities**, *Management Sciences*, 2011
+.. [#SaKE19] Shafieezadeh-Abadeh, Kuhn, and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
+.. [#SaEK15] Shafieezadeh-Abadeh, Esfahani, and Kuhn: **Distributionally Robust Logistic Regression**, *NIPS*, 2015
+.. [#BtHWMR11] Ben-Tal, Hertog, DeWaegenaere, Melenberg, and Rennen: **Robust solutions of optimization problems affected by uncertain probabilities**, *Management Sciences*, 2011
 .. [#EK17] Esfahani and Kuhn: **Data-Driven Distributionally Robust Optimization Using the Wasserstein Metric: Performance Guarentees and Tractable Reformulations**, *Mathematical Programming*, 2017
-.. [#KSW24] Kuhn, Shafiee and Wiesemann: **Distributionally Robust Optimization**, *Acta Numerica*, 2024
-.. [#GCK24] Gao, Chen and Kleywegt: **Wasserstein Distributionally Robust Optimization and Variation Regularization**, *Operations Research*, 2024
+.. [#KSW24] Kuhn, Shafiee, and Wiesemann: **Distributionally Robust Optimization**, *Acta Numerica*, 2024
+.. [#GCK24] Gao, Chen, and Kleywegt: **Wasserstein Distributionally Robust Optimization and Variation Regularization**, *Operations Research*, 2024
