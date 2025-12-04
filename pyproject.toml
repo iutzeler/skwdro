@@ -58,7 +58,8 @@ docs = [
     "sphinx_design",
     "myst_parser",
     "sphinxcontrib-mermaid",
-    "furo"
+    "seaborn",
+    "dro"
 ]
 test = [
     "pytest",
