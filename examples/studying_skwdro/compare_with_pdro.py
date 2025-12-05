@@ -3,7 +3,12 @@ r"""
 Comparison with the python-dro package
 ######################################
 
-As us authors of ``SkWDRO`` were developping this library, an amazing new challenger has appeared in the scene of libraries for distributionally robust optimisation: `python-dro <https://python-dro.org>`_ emerged to tackle a **very** wide range of ambiguity sets (as we explain in the `wdro tutorial <wdro.html#distributional-robustness-divergences>`__), and they propose both the Wasserstein anbiguity set as well as its Sinkhorn regularized counterpart.
+.. admonition:: TLDR
+
+   A new toolbok appeared for general DRO. Their support for Wasserstein ambiguity sets is limited to certain specific models; ``SkWDRO`` is thus complementary to it.
+   In the intersection of our two playgrounds, one can find (regularized) WDRO linear regressions. So we run a quick comparison notebook bellow. In short: both get similar accuracy performances, but ``SkWDRO`` often yields similar or better running times.
+
+As us authors of ``SkWDRO`` were developping this library, an amazing new challenger has appeared in the scene of libraries for distributionally robust optimisation: `python-dro <https://python-dro.org>`_ emerged to tackle a **very** wide range of ambiguity sets (as we explain in the `wdro tutorial <wdro.html#distributional-robustness-divergences>`__), and they propose both the Wasserstein ambiguity set as well as its Sinkhorn regularized counterpart.
 As of the version `0.3.3 <https://github.com/namkoong-lab/dro/releases/tag/v0.3.3>`__ of their repository, those are implemented for specific cases:
 
 * for WDRO: only for linear models, and for specific neural networks under :math:`W_\infty` uncertainty (i.e. adversarial attacks, of the same flavor as so-called "*fast-gradient-sign attacks*"),
@@ -81,6 +86,8 @@ assert isinstance(X_test, np.ndarray)
 # refer to the formula we present in
 # `the Sinkhorn regularization tutorial <why_skwdro.html>`__ as compared to the
 # work of Gao [#WGX23]_.
+# We set a fixed number of SGD iterations for the two libraries (5000 here, which
+# seems to be enough).
 
 rhos = [1e-6, 1e-3, 1e-1]
 SIGMA = 1e-2
@@ -225,7 +232,9 @@ assert isinstance(wdro_time, pd.DataFrame)
 # %%
 # Test loss plot
 plt.figure(figsize=(10,5))
-sns.barplot(data=wdro_test, x='rho', y='test_error', hue='method', palette='viridis')
+ax = sns.barplot(data=wdro_test, x='rho', y='test_error', hue='method', palette='viridis')
+for container in ax.containers:
+    ax.bar_label(container)
 plt.yscale('log')
 plt.title('WDRO Test Errors Across Libraries')
 plt.tight_layout()
@@ -241,7 +250,9 @@ plt.tight_layout()
 # %%
 # Timing plot
 plt.figure(figsize=(10,5))
-sns.barplot(data=wdro_time, x='rho', y='time', hue='method', palette='coolwarm')
+ax = sns.barplot(data=wdro_time, x='rho', y='time', hue='method', palette='coolwarm')
+for container in ax.containers:
+    ax.bar_label(container)
 plt.yscale('log')
 plt.title('WDRO Timing Across Libraries')
 plt.tight_layout()
@@ -280,7 +291,9 @@ assert isinstance(sk_time, pd.DataFrame)
 # %%
 # Test loss plot
 plt.figure(figsize=(10,5))
-sns.barplot(data=sk_test, x='rho', y='test_error', hue='method', palette='magma')
+ax = sns.barplot(data=sk_test, x='rho', y='test_error', hue='method', palette='viridis')
+for container in ax.containers:
+    ax.bar_label(container)
 plt.yscale('log')
 plt.title('Sk-WDRO Test Errors Across Libraries')
 plt.tight_layout()
@@ -292,7 +305,9 @@ plt.tight_layout()
 # %%
 # Timing plot
 plt.figure(figsize=(10,5))
-sns.barplot(data=sk_time, x='rho', y='time', hue='method', palette='crest')
+ax = sns.barplot(data=sk_time, x='rho', y='time', hue='method', palette='coolwarm')
+for container in ax.containers:
+    ax.bar_label(container)
 plt.yscale('log')
 plt.title('Sk-WDRO Timing Across Libraries')
 plt.tight_layout()
@@ -301,6 +316,21 @@ plt.tight_layout()
 # plt.close()
 
 # %%
+# The speed of ``SkWDRO`` is substantially higher (:math:`\approx\times 100` faster)
+# in this low dimensional setting with a medium-sized dataset.
+# Other experiments could be run to show more balanced results with fewer samples
+# (e.g. we obtained closer timings with :math:`n=100`), or more drastic difference
+# of running time performance.
+#
+# For the test accuracy though, it seems to depend heavily on the chosen
+# robustness radius: for smaller radii ``SkWDRO`` is more performant while
+# the technique from [#WGX23]_ is more suited for higher radii.
+# We have the intuition that this comes from the implementation in ``python-dro``
+# which fixes the dual parameter :math:`\lambda`, removing the need to optimize
+# it. In exchange, this forces the user to pick a good starting value for it.
+# We invite curious readers to tune it by hand for their code in order to see
+# better and more radius-agnostic convergence properties.
+#
 # Tackling non-linear models
 # ==========================
 #

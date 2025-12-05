@@ -48,7 +48,12 @@ running the following command:
    :caption: Launch this command in your terminal to run the Wilds experiments
 
    $ uv run optim_script.v2.py -s 0.001 -is on -l -m train
-   $ uv run optim_script.v2.py -s 0.001 -is on -l -m plot_acc_train
+   $ uv run optim_script.v2.py -s 0.001 -is on -l -m plot_acc
+
+.. warning:: As a disclaimer: this part of the code is not per se part of the
+   ``SkWDRO`` library, hence it does not abide to its quality standards. It is
+   meant as a research script to investigate this specific dataset, and did not
+   receive the same care as the library itself.
 
 You may of course play with the hyperparameters available. By default, the
 options let you train a shallow network with one hidden layer (of 64 neurons).
@@ -80,9 +85,22 @@ Notice how the overfitting behaviour changes substantially with the robustness r
 
 As a followup on
 `the explanations we give on the lambda optimisation landscape <examples/Study/plot_lambda_landscape.html>`__,
-we show bellow the behaviour of the :math:`\lambda` optimisation depending on the chosen radius.
+one may study the results of the :math:`\lambda` optimisation depending on the
+chosen radius, and how much it changes. This way we may deduce how much importance
+we give to its optimisation.
 
-.. image:: assets/wilds/train_wilds_lambda.png
+.. code-block:: console
+   :caption: See how much lambda varies depending on the problem studied.
+
+   $ uv run optim_script.v2.py -s 0.001 -is on -l -m tb_lam
+   Rho      | Lmin  | Lmax  | ratio
+   -       -       -       -
+   ρ=1.0e-06        | 109672        | 109752 | 1.00
+   ρ=1.0e-05        | 10975         | 11054 | 1.01
+   ρ=1.0e-04        | 1098  | 1180 | 1.08
+   ρ=1.0e-03        | 110   | 188 | 1.71
+   ρ=1.0e-02        | 11    | 102 | 9.32
+   -       -       -       -
 
 A linear separator
 ------------------
