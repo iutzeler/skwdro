@@ -18,7 +18,7 @@ Network on a real dataset: iWildsCam.
 The dataset
 ===========
 
-The `iWildsCam dataset <https://wilds.stanford.edu/>`_\ [KSMX21]_ is composed of images
+The `iWildsCam dataset <https://wilds.stanford.edu/>`_\ [#KSMX21]_ is composed of images
 of animals from various places on earth. They are labeled with their specie
 title among 60 possible labels, as well as a location on earth.
 The dataset is then split in such a way that the training/validation set contains
@@ -45,13 +45,13 @@ pretrained on Imagenet.
 Both a multiclass logistic regression classifier and a shallow (two-layers)
 neural network are tested.
 They are fit for a regularized Wasserstein ambiguity set of type :math:`W_2`,
-measured as the WDRO dual objective described in `this tutorial <why_skwdro>`__, for
-the Euclidean metric squared as ground cost, without allowing label switches.
+measured as the WDRO dual objective described in `this tutorial <why_skwdro.html>`__,
+for the Euclidean metric squared as ground cost, without allowing label switches.
 The dual variable :math:`\lambda` is optimized together with the parameters of the
 neural network, with the ``Adam`` optimisation algorithm, and we discuss its impact
 on the procedure below.
 The ambiguity set's radius :math:`\rho` is set to a range of pre-defined values
-:math:`10^{\{-6\dots -2\}},0` that we compare by linking it to the color codes of the
+:math:`\{10^{\{-6\dots -2\}}, 0\}` that we compare by linking it to the color codes of the
 curves below.
 The ERM optimisation procedure is shown as reference in black.
 We report those results below, showing how the optimisation procedure manages to
@@ -139,7 +139,7 @@ other interpretation as of the linear separability of the frozen features:
 
 .. image:: assets/wilds/train_wilds_logreg.png
 
-.. _.. note::
+.. .. note::
 .. The plot above illustrate the training of the linear model on a smaller number of iterations.
 .. On 10000 iterations, we would observe the same overfitting behaviour as above in the long run.
 .. We zoom on the first iterations to show the difference between radii that yield monotonous

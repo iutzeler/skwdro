@@ -217,12 +217,83 @@ for rho in tqdm.tqdm(rhos, desc='Radii', position=0, leave=True):
 # Plotting
 # ========
 
-# Build pandas DataFrames for seaborn
-# Build pandas DataFrames for seaborn (rho treated as categorical)
+# ----------------------------------------------------------------------
+# Generic comparison plotting helper
+# Author: chat-gpt
+# ----------------------------------------------------------------------
+
+def plot_library_comparison(
+    df: pd.DataFrame,
+    methods_python_dro: list,
+    methods_skwdro: list,
+    y_key: str,
+    title: str,
+    fname: str,
+    cmap_python='viridis',
+    cmap_skwdro='magma'
+):
+    """
+    df: dataframe with columns ['rho', 'method', y_key]
+    methods_python_dro: methods to plot with square markers + dashed line
+    methods_skwdro: methods to plot with filled circle markers + solid line
+    y_key: 'test_error' or 'time'
+    """
+
+    plt.figure(figsize=(10, 5))
+    ax = plt.gca()
+
+    # Create numeric x-axis from categorical rhos
+    x_vals = np.arange(df['rho'].nunique())
+    rho_labels = sorted(df['rho'].unique(), key=lambda x: int(x[4:-1]))  # sort by exponent
+    rho_to_x = {rho: i for i, rho in enumerate(rho_labels)}
+
+    # Build colormaps
+    cmap_py = plt.get_cmap(cmap_python, len(methods_python_dro))
+    cmap_sk = plt.get_cmap(cmap_skwdro, len(methods_skwdro))
+
+    # Python-DRO models → dashed lines + empty squares
+    for k, method in enumerate(methods_python_dro):
+        sub = df[df['method'] == method]
+        xs = [rho_to_x[r] for r in sub['rho']]
+        ys = sub[y_key].values
+        ax.plot(xs, ys,
+                linestyle='--',
+                marker='s',
+                markersize=10,
+                markerfacecolor='none',
+                markeredgecolor=cmap_py(k),
+                color=cmap_py(k),
+                linewidth=2,
+                label=f"{method} (python-dro)")
+
+    # SkWDRO models → solid lines + filled circles
+    for k, method in enumerate(methods_skwdro):
+        sub = df[df['method'] == method]
+        xs = [rho_to_x[r] for r in sub['rho']]
+        ys = sub[y_key].values
+        ax.plot(xs, ys,
+                linestyle='-',
+                marker='o',
+                markersize=9,
+                markerfacecolor=cmap_sk(k),
+                markeredgecolor=cmap_sk(k),
+                color=cmap_sk(k),
+                linewidth=2,
+                label=f"{method} (skwdro)")
+
+    ax.set_xticks(x_vals)
+    ax.set_xticklabels(rho_labels)
+    ax.set_yscale('log')
+    ax.set_xlabel("ρ (Wasserstein radius)")
+    ax.set_ylabel(y_key.replace('_', ' ').title())
+    ax.set_title(title)
+    ax.legend()
+    return ax
 
 def _rho_formatter(rho: float) -> str:
     return f"$10^{int(np.log10(rho))}$"
 
+# Build pandas DataFrames for seaborn (rho treated as categorical)
 train_df = pd.DataFrame([
     {'rho': _rho_formatter(rhos[i]), 'method': method_names[j], 'train_error': all_train_errors[i][j]}
         for i in range(len(rhos)) for j in range(len(method_names))
@@ -254,16 +325,15 @@ assert isinstance(wdro_time, pd.DataFrame)
 
 # %%
 # Test loss plot
-plt.figure(figsize=(10,5))
-ax = sns.barplot(data=wdro_test, x='rho', y='test_error', hue='method', palette='viridis')
-for container in ax.containers:
-    ax.bar_label(container)
-plt.yscale('log')
-plt.title('WDRO Test Errors Across Libraries')
-plt.tight_layout()
-# plt.savefig('/tmp/wdro_test_errors.png')
-# plt.show()
-# plt.close()
+plot_library_comparison(
+    df=wdro_test,
+    methods_python_dro=['WDRO (p-dro)'],
+    methods_skwdro=['WDRO (skwdro)'],
+    y_key='test_error',
+    title='WDRO Test Errors Across Libraries',
+    fname='/tmp/wdro_test_errors.png'
+)
+
 
 # %%
 # We see that the two libraries are relatively similar, especially for small
@@ -273,16 +343,15 @@ plt.tight_layout()
 
 # %%
 # Timing plot
-plt.figure(figsize=(10,5))
-ax = sns.barplot(data=wdro_time, x='rho', y='time', hue='method', palette='coolwarm')
-for container in ax.containers:
-    ax.bar_label(container)
-plt.yscale('log')
-plt.title('WDRO Timing Across Libraries')
-plt.tight_layout()
-# plt.savefig('/tmp/wdro_timing.png')
-# plt.show()
-# plt.close()
+
+plot_library_comparison(
+    df=wdro_time,
+    methods_python_dro=['WDRO (p-dro)'],
+    methods_skwdro=['WDRO (skwdro)'],
+    y_key='time',
+    title='WDRO Timing Across Libraries',
+    fname='/tmp/wdro_timing.png'
+)
 
 # %%
 # The running times of the two libraries are usually
@@ -316,30 +385,28 @@ assert isinstance(sk_time, pd.DataFrame)
 
 # %%
 # Test loss plot
-plt.figure(figsize=(10,5))
-ax = sns.barplot(data=sk_test, x='rho', y='test_error', hue='method', palette='viridis')
-for container in ax.containers:
-    ax.bar_label(container)
-plt.yscale('log')
-plt.title('Sk-WDRO Test Errors Across Libraries')
-plt.tight_layout()
-# plt.savefig('/tmp/skwdro_test_errors.png')
-# plt.show()
-# plt.close()
+
+plot_library_comparison(
+    df=sk_test,
+    methods_python_dro=['Sk-WDRO (p-dro)'],
+    methods_skwdro=['Sk-WDRO (skwdro)'],
+    y_key='test_error',
+    title='Sk-WDRO Test Errors Across Libraries',
+    fname='/tmp/skwdro_test_errors.png'
+)
 
 
 # %%
 # Timing plot
-plt.figure(figsize=(10,5))
-ax = sns.barplot(data=sk_time, x='rho', y='time', hue='method', palette='coolwarm')
-for container in ax.containers:
-    ax.bar_label(container)
-plt.yscale('log')
-plt.title('Sk-WDRO Timing Across Libraries')
-plt.tight_layout()
-# plt.savefig('/tmp/skwdro_timing.png')
-# plt.show()
-# plt.close()
+
+plot_library_comparison(
+    df=sk_time,
+    methods_python_dro=['Sk-WDRO (p-dro)'],
+    methods_skwdro=['Sk-WDRO (skwdro)'],
+    y_key='time',
+    title='Sk-WDRO Timing Across Libraries',
+    fname='/tmp/skwdro_timing.png'
+)
 
 # %%
 # The speed of ``SkWDRO`` is substantially higher (:math:`\approx\times 100` faster)
