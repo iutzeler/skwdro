@@ -5,17 +5,37 @@ Comparison with the python-dro package
 
 .. admonition:: TLDR
 
-   A new toolbok appeared for general DRO. Their support for Wasserstein ambiguity sets is limited to certain specific models; ``SkWDRO`` is thus complementary to it.
-   In the intersection of our two playgrounds, one can find (regularized) WDRO linear regressions. So we run a quick comparison notebook bellow. In short: both get similar accuracy performances, but ``SkWDRO`` often yields similar or better running times.
+   A new toolbok appeared for general DRO. Their support for Wasserstein
+   ambiguity sets is limited to certain specific models; ``SkWDRO`` is thus
+   complementary to it.
+   In the intersection of our two playgrounds, one can find (regularized) WDRO
+   linear regressions. So we run a quick comparison notebook below.
+   In short: both get similar accuracy performances, but ``SkWDRO`` often yields
+   similar or better running times.
 
-As us authors of ``SkWDRO`` were developping this library, an amazing new challenger has appeared in the scene of libraries for distributionally robust optimisation: `python-dro <https://python-dro.org>`_ emerged to tackle a **very** wide range of ambiguity sets (as we explain in the `wdro tutorial <wdro.html#distributional-robustness-divergences>`__), and they propose both the Wasserstein ambiguity set as well as its Sinkhorn regularized counterpart.
-As of the version `0.3.3 <https://github.com/namkoong-lab/dro/releases/tag/v0.3.3>`__ of their repository, those are implemented for specific cases:
+In December 2023, the library `python-dro <https://python-dro.org>`_ was released
+by a team of experts of Distributionally Robust Optimisation.
+It tackles a **very** wide range of ambiguity sets (for Maximum-Mean-Discrepancy,
+KL, etc). They propose both the Wasserstein ambiguity set as well as its
+Sinkhorn-regularized counterpart.
+The version `0.3.3 <https://github.com/namkoong-lab/dro/releases/tag/v0.3.3>`__
+of their repository is limited to what follows:
 
-* for WDRO: only for linear models, and for specific neural networks under :math:`W_\infty` uncertainty (i.e. adversarial attacks, of the same flavor as so-called "*fast-gradient-sign attacks*"),
-* for Sinkhorn-regularized-WDRO: only for linear models (even though to be fair, generalization of their interface to neural networks seems achievable at first glance).
+.. As us authors of ``SkWDRO`` were developping this library, an amazing new challenger has appeared in the scene of libraries for distributionally robust optimization: `python-dro <https://python-dro.org>`_ emerged to tackle a **very** wide range of ambiguity sets (as we explain in the `wdro tutorial <wdro.html#distributional-robustness-divergences>`__), and they propose both the Wasserstein ambiguity set as well as its Sinkhorn regularized counterpart.
+.. As of the version `0.3.3 <https://github.com/namkoong-lab/dro/releases/tag/v0.3.3>`__ of their repository, those are implemented for specific cases:
+
+* for WDRO: only for linear models, and for specific neural networks under
+  :math:`W_\infty` uncertainty (i.e. adversarial attacks, of the same flavor as
+  so-called "*fast-gradient-sign attacks*"),
+* for Sinkhorn-regularized-WDRO: only for linear models
+
+.. (even though to be fair, generalization of their interface to neural networks seems achievable at first glance).
 
 This example notebook illustrates the use of the :class:`skwdro.linear_models.LinearRegression` side to side with the (KL-regularized or not) version of WDRO implemented by the python-dro library.
-The aim is to compare fairly the two libraries with similar hyperparameters settings, on a similar task.
+The aim is to illustrate the two libraries on the intersection of their application
+domains.
+
+.. with similar hyperparameters settings, on a similar task.
 """
 import timeit
 import tqdm.auto as tqdm
@@ -63,31 +83,34 @@ assert isinstance(X_test, np.ndarray)
 # WDRO linear regression
 # ======================
 #
-# Bellow we define multiple models for the robust optimisation of a
+# Bellow we define multiple models for the robust optimization of a
 # linear regression problem (OLS):
 #
-# * the non-regularized original WDRO formulation, cast as a convex optimisation
+# * the non-regularized original WDRO formulation, cast as a convex optimization
 #   problem for the 2-norm squared (i.e. :math:`W_2` measure transport cost,
 #   for the Mahalanobis distance),
 # * the regularized Sinkhorn-Wasserstein distance according to the two similar
-#   but subtly divergent approaches of Gao et al. [#WGX23]_ and
+#   approaches of Gao et al. [#WGX23]_ and
 #   Azizian et al. [#AIM23]_ with regard to the way the problem is dualized,
 #   both in the same hyperparameter settings.
 #
-# Those cases are treated in a low dimensional setting for ease of reproduction
-# with the two libraries at hand.
+# .. Those cases are treated in a low dimensional setting for ease of reproduction
+# .. with the two libraries at hand.
 #
-# In terms of reproducibility, we set a few of the hyperparameters: the distance
+# .. In terms of reproducibility, w
+#
+# We set a few of the hyperparameters: the distance
 # used for the ground-cost is the norm (squared) with unit metric tensor (
 # implying also an isotropic covariance matrix for the sampler), and no target
 # switches allowed.
 # The variance of the sampler is fixed, as well as the regularization parameter.
-# Recall that the latter bears slightly different meanings in the two approaches,
-# refer to the formula we present in
-# `the Sinkhorn regularization tutorial <why_skwdro.html>`__ as compared to the
-# work of Gao [#WGX23]_.
-# We set a fixed number of SGD iterations for the two libraries (5000 here, which
-# seems to be enough).
+#
+# .. Recall that the latter bears slightly different meanings in the two approaches,
+# .. refer to the formula we present in
+# .. `the Sinkhorn regularization tutorial <why_skwdro.html>`__ as compared to the
+# .. work of Gao [#WGX23]_.
+# .. We set a fixed number of SGD iterations for the two libraries (5000 here, which
+# .. seems to be enough).
 
 rhos = [1e-6, 1e-3, 1e-1]
 SIGMA = 1e-2
@@ -245,7 +268,8 @@ plt.tight_layout()
 # %%
 # We see that the two libraries are relatively similar, especially for small
 # Wasserstein radii, which is to be expected considering the similarity between
-# the implementations.
+# the implementations, based on the standard techniques of [#SaKE19]_ and
+# [#EK17]_.
 
 # %%
 # Timing plot
@@ -261,23 +285,25 @@ plt.tight_layout()
 # plt.close()
 
 # %%
-# Again to no surprise, the running times of the two libraries are usually
+# The running times of the two libraries are usually
 # comparable, even though it seems like the implementation in ``SkWDRO`` seems
 # faster in some setting.
-# For fair comparison, we may impute this difference to the prior factorization
-# that python-dro performs on the Mahalanobis metric (here the identity matrix),
-# which is not handled by ``SkWDRO``. We argue that whitening the data prior to
-# the optimisation procedure might yield equivalent results in cases where this
-# geometry is important, and on another hand that using the regularized
-# formulation from our library would allow one to use the Mahalanobis distance
-# as their transport cost (see the `costs tutorial <tutos/costs.html>`__ for
-# more details on how to do that).
+#
+# .. For fair comparison, we may impute this difference to the prior factorization
+# .. that python-dro performs on the Mahalanobis metric (here the identity matrix),
+# .. which is not handled by ``SkWDRO``. We argue that whitening the data prior to
+# .. the optimization procedure might yield equivalent results in cases where this
+# .. geometry is important, and on another hand that using the regularized
+# .. formulation from our library would allow one to use the Mahalanobis distance
+# .. as their transport cost (see the `costs tutorial <tutos/costs.html>`__ for
+# .. more details on how to do that).
 
 # %%
 # SK-WDRO comparison plots
 # ^^^^^^^^^^^^^^^^^^^^^^^^
-# Here is another set of plots comparing Sinkhorn-regularized WDRO ("*sk-wdro*")
-# implementations, both relying under the hood on ``PyTorch``.
+# Here is another set of plots comparing regularized WDRO
+# implementations, for the two libraries, both relying under the hood on
+# ``PyTorch``.
 
 # %%
 # Let's compare Sinkhorn-based WDRO models from both libraries
@@ -334,10 +360,10 @@ plt.tight_layout()
 # Tackling non-linear models
 # ==========================
 #
-# To mark the difference in goals between ``SkWDRO`` and ``python-dro``, we highlight
+# To highlight the difference between ``SkWDRO`` and ``python-dro``, we argue
 # that our library's approach focuses on large parameters space models like
-# neural networks that are not implementable in other frameworks. This is
-# illustrated in other tutorials in this documentation.
+# neural networks that are not implementable in ``python-dro`` nor in other
+# frameworks. This is illustrated in other tutorials in this documentation.
 #
 # Neural nets on simple examples
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -351,15 +377,15 @@ plt.tight_layout()
 # Neural net on more difficult datasets
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# This approach can scale, thanks to pytorch, to higher-dimensional settings,
+# This approach scales to higher-dimensional settings,
 # at the expense of computation time.
 # We showcase this on the `iWildsCam dataset <https://wilds.stanford.edu/>`__,
 # in a
-# `separate documentation page explaining the experiments <../../wilds.html>`__.
-# This example also shows how the optimisation procedure behaves in more
-# challenging setting.
+# `separate documentation page <../../wilds.html>`__.
 #
 # References
 # ==========
 # .. [#AIM23] Azizian, Iutzeler, and Malick: **Regularization for Wasserstein Distributionally Robust Optimization**, *COCV*, 2023
 # .. [#WGX23] Wang, Gao, and Xie: **Sinkhorn Distributionally Robust Optimization**, *arXiv (2109.11926)*, 2023
+# .. [#SaKE19] Shafieezadeh-Abadeh, Kuhn, and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
+# .. [#EK17] Esfahani and Kuhn: **Data-Driven Distributionally Robust Optimization Using the Wasserstein Metric: Performance Guarentees and Tractable Reformulations**, *Mathematical Programming*, 2017

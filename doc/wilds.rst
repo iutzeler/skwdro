@@ -1,26 +1,34 @@
-==============================
-Some results on a real dataset
-==============================
+=========================
+Illustration on iWildsCam
+=========================
 
 The library can be applied to a wide range of difficult problems in machine
-learning, and since it has been mostly showcased on more simple cases (either
-linear problems or low dimensional ones), this short page aims at describing
-some results related to a more realistic example of difficult model.
+learning.
+
+.. and since it has been mostly showcased on more simple cases (either
+.. linear problems or low dimensional ones),
+
+This short page aims at
+illustrating the use of ``SkWDRO`` to robustify the performances of a Neural
+Network on a real dataset: iWildsCam.
+
+.. describing
+.. some results related to a more realistic example of difficult model.
 
 The dataset
 ===========
 
-The `iWildsCam dataset <https://wilds.stanford.edu/>`_ is composed of images
+The `iWildsCam dataset <https://wilds.stanford.edu/>`_\ [KSMX21]_ is composed of images
 of animals from various places on earth. They are labeled with their specie
 title among 60 possible labels, as well as a location on earth.
 The dataset is then split in such a way that the training/validation set contains
-images from a fixed (non-exhaustive) set of locations, and the test set contains
+images from a fixed set of locations, and the test set contains
 images from other locations, absent from the training set.
 
-This specific split of the dataset presents a practical example of a
-**distribution shift** in the dataset. Indeed the testing set contains visual
+This split of the dataset is an example of a
+**distribution shift**. Indeed the testing set contains visual
 features that are absent of the training set for a given animal, and hence cannot
-be seen by the machine learning model used. So it must accomodate for this shift
+be seen by the machine learning model used. So this model must accomodate for this shift
 during its training in order to obtain good test results.
 
 Methodology
@@ -29,12 +37,24 @@ Methodology
 The data receives a pre-treatement as described in [#MRPH24]_, using their trained
 neural network to provide a fix set of pretrained features that must be classified.
 As described in their paper, those pretrained features come from a Resnet50 network
-pretrained on Imagenet, reusing their rich intermediate representations at late
-layers.
+pretrained on Imagenet.
+
+.. , reusing their rich intermediate representations at late
+.. layers.
 
 Both a multiclass logistic regression classifier and a shallow (two-layers)
 neural network are tested.
-We report those results bellow, showing how the optimisation procedure manages to
+They are fit for a regularized Wasserstein ambiguity set of type :math:`W_2`,
+measured as the WDRO dual objective described in `this tutorial <why_skwdro>`__, for
+the Euclidean metric squared as ground cost, without allowing label switches.
+The dual variable :math:`\lambda` is optimized together with the parameters of the
+neural network, with the ``Adam`` optimisation algorithm, and we discuss its impact
+on the procedure below.
+The ambiguity set's radius :math:`\rho` is set to a range of pre-defined values
+:math:`10^{\{-6\dots -2\}},0` that we compare by linking it to the color codes of the
+curves below.
+The ERM optimisation procedure is shown as reference in black.
+We report those results below, showing how the optimisation procedure manages to
 achieve good accuracies in multiple hyperparameters setting.
 
 Results
@@ -47,7 +67,9 @@ running the following command:
 .. code-block:: console
    :caption: Launch this command in your terminal to run the Wilds experiments
 
-   $ uv run optim_script.v2.py -s 0.001 -is on -l -m train
+   $ # Optional: relaunch the experiments
+   $ # uv run optim_script.v2.py -s 0.001 -is on -l -m train
+   $ # Plot results
    $ uv run optim_script.v2.py -s 0.001 -is on -l -m plot_acc
 
 .. warning:: As a disclaimer: this part of the code is not per se part of the
@@ -75,19 +97,20 @@ The training outcomes for the neural network is as follows:
 
 .. image:: assets/wilds/train_wilds.png
 
-Notice how the overfitting behaviour changes substantially with the robustness radius.
+Notice how the overfitting behaviour changes substantially with the robustness radius :math:`\rho`.
 
 * For small values of :math:`\rho`, the accuracy raises in the first hundred iterations,
-  and then goes down as the training procedure overfits the training set in the long run.
-* In contrast for higher values of the radius, the accuracy raises steadily. The training
-  loss (measured as the WDRO dual objective described in `this tutorial <why_skwdro>`__)
-  is higher, displaying its more pessimistic nature.
+  and then goes down as the training procedure overfits the training set.
+* In contrast, for higher values of :math:`\rho`, the accuracy raises steadily. The training
+  loss is higher, displaying its more pessimistic nature.
 
-As a followup on
-`the explanations we give on the lambda optimisation landscape <examples/Study/plot_lambda_landscape.html>`__,
+.. As a followup on
+
+As a side-result,
 one may study the results of the :math:`\lambda` optimisation depending on the
 chosen radius, and how much it changes. This way we may deduce how much importance
-we give to its optimisation.
+we give to its optimisation (recall the
+`experiments on lambda optimisation landscape <examples/Study/plot_lambda_landscape.html>`__).
 
 .. code-block:: console
    :caption: See how much lambda varies depending on the problem studied.
@@ -111,19 +134,18 @@ other interpretation as of the linear separability of the frozen features:
 .. code-block:: console
    :caption: Here is a slightly different setting for the linear case
 
-   $ uv run optim_script.v2.py -s 0.0001 -is on -l -c -m train
+   $ # uv run optim_script.v2.py -s 0.0001 -is on -l -c -m train
    $ uv run optim_script.v2.py -s 0.0001 -is on -l -c -m plot_acc_train
 
 .. image:: assets/wilds/train_wilds_logreg.png
 
-.. note::
+.. _.. note::
+.. The plot above illustrate the training of the linear model on a smaller number of iterations.
+.. On 10000 iterations, we would observe the same overfitting behaviour as above in the long run.
+.. We zoom on the first iterations to show the difference between radii that yield monotonous
+.. accuracy increases and others that start to decrease after 800 iterations.
 
-   The plot above illustrate the training of the linear model on a smaller number of iterations.
-   On 10000 iterations, we would observe the same overfitting behaviour as above in the long run.
-   We zoom on the first iterations to show the difference between radii that yield monotonous
-   accuracy increases and others that start to decrease after 800 iterations.
-
-The behaviour of the optimisation procedure provides some cues on how to find a suitable radius
+The behaviour of the optimisation procedure provides some clues on how to find a suitable radius
 :math:`\rho`: we want it to yield a fast and stable optimisation procedure (unlike
 :math:`\rho=10^{-2}` above), but still avoiding overfitting (unlike :math:`\rho\le 10^{-4}`
 above). So here a radius around ``1e-3`` seems fitting.
@@ -132,3 +154,4 @@ References
 ==========
 
 .. [#MRPH24] Mehta, Roulet, Pillutla, and Harchaoui: **Distributionally Robust Optimization with Bias and Variance Reduction**, *ICLR*, 2024
+.. [#KSMX21] Koh, Sagawa, Marklund, Xie, Zhang, Balsubramani, Hu, Yasunaga, Phillips, Gao, Lee, David, Stavness, Guo, Berton, Haque, Beery, Leskovec, Kundaje, Pierson, Levine, Finn, and Liang: **Wilds: A benchmark of in-the-wild distribution shifts. In International Conference on Machine Learning**, *ICML*, 2021
