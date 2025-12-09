@@ -194,5 +194,5 @@ Next
 References
 ==========
 
-.. [#CDM23] Cutkosky, Defazio and Mehta: **Mechanic: a Learning Rate Tuner**, *NIPS*, 2023
+.. [#CDM23] Cutkosky, Defazio, and Mehta: **Mechanic: a Learning Rate Tuner**, *NIPS*, 2023
 .. [#MD24] Mishchenko and Defazio: **Prodigy: An Expeditiously Adaptive Parameter-Free Learner**, *ICML*, 2024

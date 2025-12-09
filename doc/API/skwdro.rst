@@ -9,7 +9,6 @@ Subpackages
 
    skwdro.distributions
    skwdro.linear_models
-   skwdro.neural_network
    skwdro.operations_research
    skwdro.solvers
    skwdro.tests

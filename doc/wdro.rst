@@ -64,7 +64,7 @@ In order to define the ambiguity sets, various tools have been proposed [#BtHWMR
 * the total variation distance,
 * the **Wasserstein optimal transport cost**, and variations thereof.
 
-The most popular class of techniques up to recently has been the use of :math:`\phi`-divergences, i.e. distances of the form:
+A popular technique is the use of :math:`\phi`-divergences, i.e. distances of the form:
 
 .. math::
 
@@ -73,8 +73,9 @@ The most popular class of techniques up to recently has been the use of :math:`\
 They are appealing for their apparent simplicity, and because a lot of commonly used divergences in other fields, such as statistics, admit this representation. E.g., for the :math:`KL`-divergence :math:`\phi(s)=\begin{cases}s\log(s) - s + 1 & \text{if } s\ge 0\\ +\infty & \text{otherwise}\end{cases}`, for total variation :math:`\phi(s)=\begin{cases}(s-1)^2 & \text{if } s\ge 0\\ +\infty & \text{otherwise}\end{cases}`.
 See [#KSW24]_ §2.2 for a detailed explanation of the ambiguity sets related to these divergences.
 
-Fortunately, there so happens to exist a recent line of work aiming to engineer those ambiguity sets in a real-world setting, head of which is a python library called `python-dro <https://python-dro.org/>`__.
-We encourage curious users to take a look at `their implementation of some problems <https://python-dro.org/tutorials/linear_fdro.html>`__ using this framework.
+.. Fortunately, there so happens to exist a recent line of work aiming to engineer those ambiguity sets in a real-world setting, head of which is a python library called `python-dro <https://python-dro.org/>`__.
+.. We encourage curious users to take a look at `their implementation of some problems <https://python-dro.org/tutorials/linear_fdro.html>`__ using this framework.
+Fortunately, there exist a recent line of work aiming to engineer those ambiguity sets in practice. For a general setting, have a look to the python library called `python-dro <https://python-dro.org/>`__. For Wasserstein-DRO, you are in good place, see below.
 
 .. note:: About :math:`\phi`-divergences.
 
@@ -134,7 +135,7 @@ Now that we have this notion of transport between distribution, we can recall th
 WDRO in a nutshell
 ==================
 
-Considering what we noted about :math:`\phi`-divergences, in that they are limited to rebalancing histograms thus lacking representation power, we may turn to the Wasserstein type of ambiguity sets.
+Considering what we noted about :math:`\phi`-divergences, in that they are limited to rebalancing histograms thus lacking representation power, we may turn to the Wasserstein type of ambiguity sets, which are advertized as a premium option to improve generalization.
 This leaves as main problem the following:
 
 .. math::
@@ -226,9 +227,9 @@ Next
 
 References
 ==========
-.. [#SaKE19] Shafieezadeh-Abadeh, Kuhn and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
-.. [#SaEK15] Shafieezadeh-Abadeh, Esfahani and Kuhn: **Distributionally Robust Logistic Regression**, *NIPS*, 2015
-.. [#BtHWMR11] Ben-Tal, Hertog, DeWaegenaere, Melenberg and Rennen: **Robust solutions of optimization problems affected by uncertain probabilities**, *Management Sciences*, 2011
+.. [#SaKE19] Shafieezadeh-Abadeh, Kuhn, and Esfahani: **Regularization via Mass Transportation**, *JMLR*, 2019
+.. [#SaEK15] Shafieezadeh-Abadeh, Esfahani, and Kuhn: **Distributionally Robust Logistic Regression**, *NIPS*, 2015
+.. [#BtHWMR11] Ben-Tal, Hertog, DeWaegenaere, Melenberg, and Rennen: **Robust solutions of optimization problems affected by uncertain probabilities**, *Management Sciences*, 2011
 .. [#EK17] Esfahani and Kuhn: **Data-Driven Distributionally Robust Optimization Using the Wasserstein Metric: Performance Guarentees and Tractable Reformulations**, *Mathematical Programming*, 2017
-.. [#KSW24] Kuhn, Shafiee and Wiesemann: **Distributionally Robust Optimization**, *Acta Numerica*, 2024
-.. [#GCK24] Gao, Chen and Kleywegt: **Wasserstein Distributionally Robust Optimization and Variation Regularization**, *Operations Research*, 2024
+.. [#KSW24] Kuhn, Shafiee, and Wiesemann: **Distributionally Robust Optimization**, *Acta Numerica*, 2024
+.. [#GCK24] Gao, Chen, and Kleywegt: **Wasserstein Distributionally Robust Optimization and Variation Regularization**, *Operations Research*, 2024
