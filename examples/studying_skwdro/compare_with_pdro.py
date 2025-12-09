@@ -60,9 +60,9 @@ from skwdro.linear_models import LinearRegression
 # =============
 
 # Total number of samples: chosen to be a bit prohibitive for SVM-like kernel methods (would deserve a separate analysis)
-n = 500
+n = 256
 # "Low"-dimensional setting to avoid this notebook to run for unreasonable amounts of time.
-d = 5
+d = 4
 n_train = int(np.floor(0.8 * n)) # Number of training samples: 80% of dataset
 n_test = n - n_train # Number of test samples
 
@@ -291,7 +291,7 @@ def plot_library_comparison(
     return ax
 
 def _rho_formatter(rho: float) -> str:
-    return f"$10^{int(np.log10(rho))}$"
+    return "$10^{" + f"{int(np.log10(rho))}" + "}$"
 
 # Build pandas DataFrames for seaborn (rho treated as categorical)
 train_df = pd.DataFrame([

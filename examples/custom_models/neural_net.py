@@ -28,7 +28,7 @@ from skwdro.torch import robustify
 
 from sklearn.datasets import make_moons
 
-n = 512 + 64
+n = 256 + 64
 
 X, y = make_moons(n_samples=n,
                   noise=0.05,
@@ -50,7 +50,7 @@ plt.show()
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
-    train_size=512,
+    train_size=256,
     test_size=64,
     random_state=42
 )
@@ -144,7 +144,7 @@ print(robust_model)
 robust_loss = robustify(
     loss_fn,
     robust_model,
-    pt.tensor(5e-3),
+    pt.tensor(1e-3),
     sample_batch_x, sample_batch_y,
     cost_spec="t-NLC-2-2",
     n_samples=16
@@ -154,7 +154,7 @@ robust_loss = robustify(
 # Training loop
 # ~~~~~~~~~~~~~
 
-def train(model, epochs = 500, lr = 1e-3):
+def train(model, epochs = 300, lr = 5e-3):
     optimizer = pt.optim.AdamW(params=model.parameters(), lr=lr)
     # optimizer = pt.optim.AdamW(params=robust_loss.parameters())
 
