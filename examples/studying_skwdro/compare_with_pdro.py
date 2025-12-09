@@ -244,7 +244,7 @@ def plot_library_comparison(
 
     # Create numeric x-axis from categorical rhos
     x_vals = np.arange(df['rho'].nunique())
-    rho_labels = sorted(df['rho'].unique(), key=lambda x: int(x[4:-1]))  # sort by exponent
+    rho_labels = sorted(df['rho'].unique(), key=lambda x: int(x[5:-2]))  # sort by exponent
     rho_to_x = {rho: i for i, rho in enumerate(rho_labels)}
 
     # Build colormaps
