@@ -26,7 +26,6 @@ Here are the main building blocks of :py:mod:`skwdro`.
 
    ../API/skwdro.linear_models
    ../API/skwdro.operations_research
-   ../API/skwdro.neural_network
 
 .. toctree::
    :maxdepth: 2

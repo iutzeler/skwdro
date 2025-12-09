@@ -7,4 +7,5 @@ sphinx_design
 myst_parser
 numpydoc
 tqdm
-furo
+seaborn
+dro

@@ -144,7 +144,7 @@ print(robust_model)
 robust_loss = robustify(
     loss_fn,
     robust_model,
-    pt.tensor(1e-3),
+    pt.tensor(5e-3),
     sample_batch_x, sample_batch_y,
     cost_spec="t-NLC-2-2",
     n_samples=16
@@ -222,7 +222,7 @@ plot_decision_boundary(erm_model, batch_x_test, batch_y_test)
 
 plt.subplot(2, 1, 2)
 plt.title("Test loss through epochs")
-plt.plot(dro_losses)
+plt.plot(erm_losses)
 plt.yscale('log')
 
 plt.show()
