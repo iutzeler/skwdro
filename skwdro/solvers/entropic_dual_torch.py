@@ -1,13 +1,30 @@
-import math
-from warnings import warn
-from typing import List, Optional
-import torch as pt
 from skwdro.base.samplers.torch.base_samplers import BaseSampler
 from skwdro.base.problems import Distribution
 from skwdro.solvers.optim_cond import OptCondTorch
 from skwdro.solvers.utils import detach_tensor, interpret_steps_struct
 from skwdro.solvers.result import wrap_solver_result
 from skwdro.solvers.oracle_torch import _DualLoss, CompositeOptimizer
+import torch as pt
+from typing import List, Optional
+
+import warnings
+
+
+def deprecated(message):
+    def deprecated_decorator(func):
+        def deprecated_func(*args, **kwargs):
+            warnings.warn(
+                "{} is a deprecated function. {}".format(
+                    func.__name__,
+                    message
+                ),
+                category=DeprecationWarning,
+                stacklevel=2
+            )
+            warnings.simplefilter('default', DeprecationWarning)
+            return func(*args, **kwargs)
+        return deprecated_func
+    return deprecated_decorator
 
 
 def extract_data(dist: Distribution):
@@ -156,19 +173,13 @@ def optim_presample(
         """
         optimizer.zero_grad()
 
-        if back:
-            # Forward pass
-            objective = loss(xi, xi_labels, zeta, zeta_labels)
-
-            # Backward pass
-            objective.backward()
-
-        else:
-            loss.eval()
-            objective = loss(xi, xi_labels, zeta, zeta_labels)
-            loss.train()
-
+        # Forward pass
+        objective = loss(xi, xi_labels, zeta, zeta_labels)
         assert isinstance(objective, pt.Tensor)
+
+        # Backward pass
+        if back:
+            objective.backward()
         return objective.item()
 
     losses = []
@@ -187,28 +198,17 @@ def optim_presample(
         optimizer.reset_lbd_state()  # type: ignore
 
     # Train WDRO
-    for iteration in loss.iterations:
+    for iteration in range(train_iters):
         # Do not resample, only step according to BFGS-style algo
         optimizer.step(closure)
-        if opt_cond.metric == 'grad':
-            _is = loss.imp_samp
-            losses.append(closure())
-            loss.imp_samp = _is  # Put it back on if it used to be.
-            del _is
-        else:
-            with pt.no_grad():
-                _is = loss.imp_samp
-                loss.imp_samp = False  # Shut down IS if it is on.
-                losses.append(closure(False))
-                loss.imp_samp = _is  # Put it back on if it used to be.
-                del _is
-        if math.isnan(losses[-1]):
-            warn(
-                "Last iteration loss yielded NaN, the default algorithm diverged"
-            )
-            break
         if opt_cond(loss, iteration):
             break
+        with pt.no_grad():
+            _is = loss.imp_samp
+            loss.imp_samp = False  # Shut down IS if it is on.
+            losses.append(closure(False))
+            loss.imp_samp = _is  # Put it back on if it used to be.
+            del _is
 
     return losses
 
@@ -275,7 +275,7 @@ def optim_postsample(
 
     # Train WDRO
     loss.erm_mode = False
-    for iteration in loss.iterations:
+    for iteration in range(train_iters):
         optimizer.zero_grad()
 
         # Resamples zetas at forward pass
@@ -285,13 +285,8 @@ def optim_postsample(
         objective.backward()
         # Perform the stochastic step
         optimizer.step()
-        losses.append(objective.item())
-        if math.isnan(losses[-1]):
-            warn(
-                "Last iteration loss yielded NaN, the default algorithm diverged"
-            )
-            break
         if opt_cond(loss, iteration):
             break
+        losses.append(objective.item())
 
     return losses

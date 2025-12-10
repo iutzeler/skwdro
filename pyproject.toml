@@ -66,8 +66,7 @@ test = [
 	"ruff",
 	"pycodestyle",
 	"mypy>=1.13",
-	"pytest-rerunfailures",
-    "genbadge[coverage]",
+	"pytest-rerunfailures"
 ]
 monitor = [
     "wandb",

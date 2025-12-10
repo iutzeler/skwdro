@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score
 from skwdro.linear_models import LogisticRegression
 
-ANGLE_TOL = 2e-1 * np.pi
+ANGLE_TOL = 1e-1 * np.pi
 
 
 # ##################################
@@ -11,13 +11,12 @@ ANGLE_TOL = 2e-1 * np.pi
 # ##################################
 
 def generate_points():
-    n = 20
     opposites = np.array([[1., 1.], [-1., -1.]])
     data = np.concatenate([
-        opposites[0, :] + np.random.normal(0, 2, size=(n, 1)) * np.array([[-1, 1]]),
-        opposites[1, :] + np.random.normal(0, 2, size=(n, 1)) * np.array([[-1, 1]])
+        opposites[0, :] + np.random.normal(0, 2, size=(100, 1)) * np.array([[-1, 1]]),
+        opposites[1, :] + np.random.normal(0, 2, size=(100, 1)) * np.array([[-1, 1]])
     ], axis=0)
-    labels = np.array([1.] * n + [-1.] * n)
+    labels = np.array([1.] * 100 + [-1.] * 100)
     return data, labels
 
 
@@ -59,18 +58,17 @@ def generate_multiclass_points():
     """
     Generate synthetic data for 3-class classification.
     """
-    n = 20
     centers = np.array([
         [2, 2],  # Class 0
         [-2, -2],  # Class 1
         [2, -2],  # Class 2
     ])
     data = np.concatenate([
-        centers[0, :] + np.random.normal(0, 1, size=(n, 2)),
-        centers[1, :] + np.random.normal(0, 1, size=(n, 2)),
-        centers[2, :] + np.random.normal(0, 1, size=(n, 2)),
+        centers[0, :] + np.random.normal(0, 1, size=(100, 2)),
+        centers[1, :] + np.random.normal(0, 1, size=(100, 2)),
+        centers[2, :] + np.random.normal(0, 1, size=(100, 2)),
     ])
-    labels = np.array([0] * n + [1] * n + [2] * n)
+    labels = np.array([0] * 100 + [1] * 100 + [2] * 100)
     return data, labels
 
 

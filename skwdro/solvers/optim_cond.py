@@ -44,14 +44,7 @@ class OptCondTorch:
     * only :math:`\theta`
     * only :math:`\lambda`
     * both
-    * or either.
-
-    .. warning:: If setting ``mode='grad'``, verify that your backward pass does
-
-       populate the ``.grad`` attribute of the parameter tensors of your model.
-       If not, verify ``NaN`` values or the connectivity of the compute graph at
-       the forward pass.
-       This helper class **does not perform those verifications**.
+    * or either
 
     Parameters
     ----------
@@ -203,11 +196,7 @@ class OptCondTorch:
         elif self.monitoring in JUST_T:
             return self.check_t(flattheta, flatgrad)
         else:
-            raise ValueError(' '.join([
-                "Please provide a valid value for the variable to monitor",
-                f"for the optimality condition. {self.monitoring}",
-                "is considered invalid."
-            ]))
+            raise ValueError("Please provide a valid value for the monitoring")
 
     def check_t(
         self,
@@ -286,11 +275,7 @@ class OptCondTorch:
                         self.tol_theta
                     )
             else:
-                raise ValueError(' '.join([
-                    "Please provide a valid value for the metric",
-                    f"to consider for the optimality condition. {self.metric}",
-                    "is considered invalid (only grad/param available)."
-                ]))
+                return wrap(False)
 
     def check_l(self, lam: LazyTensor, lam_grad: LazyTensor) -> ValidAndError:
         r"""
@@ -325,7 +310,7 @@ class OptCondTorch:
                 else:
                     # New nabla_lambda
                     new = pt.abs(lam_grad())
-                    return self.check_metric(new, mem, self.tol_lambda)
+                    return self.check_metric(new, mem, self.tol_theta)
             elif self.metric == "param":
                 mem0 = self.l_0
                 mem1 = self.delta_l_1
@@ -357,11 +342,7 @@ class OptCondTorch:
                         self.tol_lambda
                     )
             else:
-                raise ValueError(' '.join([
-                    "Please provide a valid value for the metric",
-                    f"to consider for the optimality condition. {self.metric}",
-                    "is considered invalid (only grad/param available)."
-                ]))
+                return wrap(False)
 
     def check_metric(
         self,
@@ -412,7 +393,7 @@ class OptCondTorch:
         cond: bool
             green light to stop algorithm
         """
-        return False if self.max_iter <= 0 else (it_number >= self.max_iter)
+        return False if self.max_iter <= 0 else it_number >= self.max_iter
 
     @classmethod
     def get_flat_param(cls, module: pt.nn.Module) -> pt.Tensor:

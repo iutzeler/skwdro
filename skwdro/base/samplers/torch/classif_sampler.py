@@ -131,7 +131,7 @@ class ClassificationNormalIdSampler(LabeledSampler, IsOptionalCovarianceSampler)
         """
         Just get as many labels as data points (n_sample).
         """
-        return self.labels_s.mean.unsqueeze(0).expand(n_sample, -1, -1)
+        return self.data_s.mean.unsqueeze(0).expand(n_sample, -1, -1)
 
     def reset_mean(
         self,

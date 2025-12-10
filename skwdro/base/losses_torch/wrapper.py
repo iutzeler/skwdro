@@ -104,16 +104,10 @@ class WrappedPrimalLoss(Loss):
                 map(
                     pt.flatten,
                     chain(self.loss.parameters(), self.transform.parameters())
-                )
-            ))
+                )))
         else:
             assert callable(self.loss)
-            return pt.concat(list(
-                map(
-                    pt.flatten,
-                    self.transform.parameters()
-                )
-            ))
+            return self.transform.parameters
 
     @property
     def intercept(self):
@@ -156,7 +150,6 @@ class WrappedPrimalLoss(Loss):
         if self.has_labels:
             assert xi_labels is not None
             if xi.dim() > 2 and xi_labels.dim() > 2:
-                # Forwarding zetas
                 *b, _ = xi.size()
                 flat_loss = self._flat_value_w_labels(
                     xi.flatten(start_dim=0, end_dim=-2),
@@ -164,7 +157,6 @@ class WrappedPrimalLoss(Loss):
                 )
                 return self._reduce_flat_spatial_dims_loss(flat_loss).view(*b, 1)
             elif xi.dim() > 2 and xi_labels.dim() == 2:
-                # Forwarding zetas
                 *b, _ = xi.size()
                 flat_loss = self._flat_value_w_labels(
                     xi.flatten(start_dim=0, end_dim=-2),
@@ -172,38 +164,30 @@ class WrappedPrimalLoss(Loss):
                 )
                 return self._reduce_flat_spatial_dims_loss(flat_loss).view(*b, 1)
             elif xi.dim() == 2 and xi_labels.dim() <= 2:
-                # Forwarding xis
                 flat_loss = self._flat_value_w_labels(
                     xi, xi_labels
                 ).squeeze()
                 return self._reduce_flat_spatial_dims_loss(flat_loss)
             elif xi.dim() == xi_labels.dim() == 1:
-                # Forwarding xis (no batch dim)
-                b_xi = xi.unsqueeze(0)  # need to consider as zetas, will squeeze later
-                b_xi_labels = xi_labels.unsqueeze(0)  # need to consider as zeta_labels, will squeeze later
-                flat_loss = self._flat_value_w_labels(b_xi, b_xi_labels)
-                return self._reduce_flat_spatial_dims_loss(flat_loss).squeeze()
+                flat_loss = self._flat_value_w_labels(xi, xi_labels)
+                return self._reduce_flat_spatial_dims_loss(flat_loss)
             else:
                 raise NotImplementedError()
         else:
             assert xi_labels is None
             if xi.dim() > 2:
-                # Forwarding zetas
                 *b, _ = xi.size()
                 flat_loss = self._flat_value_wo_labels(
                     xi.flatten(start_dim=0, end_dim=-2)
                 )
                 return self._reduce_flat_spatial_dims_loss(flat_loss).view(*b, 1)
             elif xi.dim() == 2:
-                # Forwarding xis
                 return self._reduce_flat_spatial_dims_loss(
                     self._flat_value_wo_labels(xi)
                 ).squeeze()
             elif xi.dim() == 1:
-                # Forwarding xis (no batch dim)
-                b_xi = xi.unsqueeze(0)  # need to consider as zetas, will squeeze later
                 return self._reduce_flat_spatial_dims_loss(
-                    self._flat_value_wo_labels(b_xi)
-                ).squeeze()
+                    self._flat_value_wo_labels(xi)
+                )
             else:
                 raise NotImplementedError()

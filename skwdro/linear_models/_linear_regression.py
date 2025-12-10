@@ -14,7 +14,7 @@ from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.utils import Steps, detach_tensor, maybe_detach_tensor
+from skwdro.solvers.utils import detach_tensor, maybe_detach_tensor
 from skwdro.base.problems import EmpiricalDistributionWithLabels
 from skwdro.base.costs_torch import Cost as TorchCost
 from skwdro.solvers.optim_cond import OptCondTorch
@@ -101,7 +101,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                  learning_rate: Optional[float] = None,
                  n_zeta_samples: int = 10,
                  random_state: int = 0,
-                 n_iter: Optional[Steps] = None,
                  opt_cond: Optional[OptCondTorch] = OptCondTorch(2)
                  ):
 
@@ -117,7 +116,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
         self.solver_reg = solver_reg
         self.sampler_reg = sampler_reg
         self.learning_rate = learning_rate
-        self.n_iter = n_iter
         self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.random_state = random_state
@@ -194,7 +192,6 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 epsilon=self.solver_reg,
                 imp_samp=_post_sample,  # hard set
                 adapt="prodigy" if self.learning_rate is None else None,
-                n_iter=self.n_iter,
                 l2reg=self.l2_reg
             )
 
@@ -215,7 +212,7 @@ class LinearRegression(BaseEstimator, RegressorMixin):
                 fit_intercept=self.fit_intercept
             )
         else:
-            raise NotImplementedError("Designation for solver not recognized")
+            raise NotImplementedError
 
         self.is_fitted_ = True
 

@@ -204,6 +204,7 @@ class _DualLossBase(nn.Module, ABC):
             An instance of the appropriate subclass of BaseSampler.
         """
         sam: BaseSampler
+        assert self.primal_loss.sampler is None
         if self.primal_loss.has_labels:
             assert xi_labels is not None, """
                 Do not forward None as labels on a Loss function that has the
@@ -225,7 +226,6 @@ class _DualLossBase(nn.Module, ABC):
                 sigma, seed=seed
             )
         self._sampler = sam
-        self.primal_loss.sampler = sam
         return sam
 
     @property
@@ -350,7 +350,13 @@ class _SampledDualLoss(_OptimizeableDual):
         zeta : (n_samples, m, d)
         zeta_labels : (n_samples, m, d')
         """
-        if n_samples is None or n_samples <= 0:
+        if self.primal_loss.sampler is None:
+            raise ValueError(" ".join([
+                'Please set a sampler on your dual loss for the',
+                'reference distribution of the regularization of the'
+                'Wasserstein neighborhood before your forward pass.'
+            ]))
+        elif n_samples is None or n_samples <= 0:
             # Default:
             return self.primal_loss.sampler.sample(self.n_samples)
         else:

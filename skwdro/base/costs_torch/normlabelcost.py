@@ -83,7 +83,7 @@ class NormLabelCost(NormCost):
         xi_labels: None = None,
         zeta_labels: None = None
     ) -> pt.Tensor:
-        raise AssertionError()
+        pass
 
     @overload
     def value(
@@ -104,7 +104,7 @@ class NormLabelCost(NormCost):
     ) -> pt.Tensor:
         assert xi_labels is not None and zeta_labels is not None
         _c: pt.Tensor
-        if float(self.kappa) == float("inf"):
+        if float(self.kappa) is float("inf"):
             # Writing convention: if kappa=+oo we put all cost on switching
             # labels so the cost is reported on y.
             # To provide a tractable computation, we yield the y-penalty alone.
@@ -131,7 +131,7 @@ class NormLabelCost(NormCost):
     def _sampler_labels(
         self,
         xi_labels: pt.Tensor,
-        epsilon: Optional[pt.Tensor]
+        epsilon: pt.Tensor
     ) -> dst.Distribution:
         pass
 
@@ -139,7 +139,7 @@ class NormLabelCost(NormCost):
     def _sampler_labels(
         self,
         xi_labels: None,
-        epsilon: Optional[pt.Tensor]
+        epsilon: pt.Tensor
     ) -> None:
         raise ValueError()
 
