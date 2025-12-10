@@ -19,4 +19,4 @@ Those classes have a :py:meth:`BaseSampler.reset_mean` method to dynamicaly chan
 References
 ~~~~~~~~~~
 
-.. [#AIM23] Azizian, Iutzeler, and Malick: **Regularization for Wasserstein Distributionally Robust Optimization**, *COCV*, 2023
+.. [#AIM23] Azizian, Iutzeler and Malick: **Regularization for Wasserstein Distributionally Robust Optimization**, *COCV*, 2023
