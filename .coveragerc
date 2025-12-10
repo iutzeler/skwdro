@@ -8,7 +8,6 @@ source =
 # show which lines are missing in terminal report
 show_missing = True
 # omit test files, example code, docs, and packaging cruft
-# Also omit operation research estimators which are not as well tested as the others
 omit =
     */tests/*
     */test_*.py
@@ -20,10 +19,6 @@ omit =
     */__init__.py
     */__main__.py
     */conftest.py
-    skwdro/neural_network
-    skwdro/_template.py
-    skwdro/solvers/__entropic_dual_torch_epsilon.py
-    skwdro/operations_research
 
 # treat these markers as "excluded" (useful for generated/conditional code)
 exclude_lines =
@@ -36,11 +31,6 @@ exclude_lines =
     if 0:
     if False:
     @abc.abstractmethod
-    @abstractmethod
-    raise NotImplementedError()
-    @overload
-    # Will separate into another file with tests later (TODO)
-    CompositeOptimizer
 
 [html]
 directory = coverage_html_report

@@ -1,13 +1,13 @@
 <table>
     <tr>
-        <td rowspan=4>
+        <td rowspan=3>
             <b> CI </b>
         </td>
         <td>
             Test
         </td>
         <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/test.yml" alt="Doc tests"><img alt="Workflow Test" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/test.yml?style=for-the-badge&label=Tests"></a>
+            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Doc tests"><img alt="Workflow Test" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/test.yml?style=for-the-badge&label=Tests"></a>
         </td>
     </tr>
     <tr>
@@ -15,7 +15,7 @@
             Style
         </td>
         <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/style.yml" alt="Doc tests"><img alt="Workflow Style" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/style.yml?style=for-the-badge&label=Style"></a>
+            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Doc tests"><img alt="Workflow Style" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/style.yml?style=for-the-badge&label=Style"></a>
         </td>
     </tr>
     <tr>
@@ -23,15 +23,7 @@
             Doc
         </td>
         <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Doc tests"><img alt="Workflow Doc" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/doc.yml?style=for-the-badge&label=Doc-build"></a>
-        </td>
-    </tr>
-    <tr>
-        <td>
-            Coverage
-        </td>
-        <td>
-            <a href="https://github.com/iutzeler/skwdro/actions/workflows/test.yml" alt="Coverage report"><img alt="Coverage badge" src="./coverage-badge.svg"></a>
+            <a href="https://github.com/iutzeler/skwdro/actions/workflows/doc.yml" alt="Doc tests"><img alt="Workflow Doc" src="https://img.shields.io/github/actions/workflow/status/iutzeler/skwdro/doc.yml?style=for-the-badge&label=Doc build"></a>
         </td>
     </tr>
     <tr>

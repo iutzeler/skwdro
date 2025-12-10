@@ -37,6 +37,7 @@ class NewsVendorLoss_torch(Loss):
         number of journal stocked
     name : Optional[str]
     """
+
     def __init__(
         self,
         sampler: NoLabelsSampler,

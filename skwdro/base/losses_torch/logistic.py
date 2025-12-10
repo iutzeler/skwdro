@@ -43,6 +43,7 @@ class LogisticLoss(Loss):
     linear : nn.Linear
         linear combination containing the relevant parameters
     """
+
     def __init__(
             self,
             sampler: LabeledSampler,

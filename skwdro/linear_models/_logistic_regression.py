@@ -20,7 +20,6 @@ from skwdro.base.cost_decoder import cost_from_str
 
 import skwdro.solvers.specific_solvers as spS
 import skwdro.solvers.entropic_dual_torch as entTorch
-from skwdro.solvers.utils import Steps
 from skwdro.wrap_problem import dualize_primal_loss
 
 
@@ -107,7 +106,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                  learning_rate: Optional[float] = None,
                  n_zeta_samples: int = 10,
                  random_state: int = 0,
-                 n_iter: Optional[Steps] = None,
                  opt_cond: Optional[OptCondTorch] = DEFAULT_OCOND
                  ):
 
@@ -128,7 +126,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         self.solver_reg = solver_reg
         self.sampler_reg = sampler_reg  # sigma
         self.learning_rate = learning_rate
-        self.n_iter = n_iter
         self.opt_cond = opt_cond
         self.n_zeta_samples = n_zeta_samples
         self.random_state = random_state
@@ -155,13 +152,13 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
         y = np.array(y)
 
         # Type checking for rho
-        if not isinstance(self.rho, float):
+        if self.rho is not float:
             try:
                 self.rho = float(self.rho)
             except BaseException:
                 raise TypeError(
                     ' '.join([
-                        "The uncertainty radius rho should be",
+                        "The uncertainty radius rho should be"
                         f"numeric, received {type(self.rho)}"
                     ])
                 )
@@ -205,8 +202,8 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             )
 
         # Check type
-        # if not np.issubdtype(X.dtype, np.number):
-        #     raise ValueError(f"Input X has dtype  {X.dtype}")
+        if not np.issubdtype(X.dtype, np.number):
+            raise ValueError(f"Input X has dtype  {X.dtype}")
 
         # Store data
         self.X_ = X
@@ -260,10 +257,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
             _post_sample = (
                 self.solver in ("entropic_torch", "entropic_torch_post")
             )
-
-            if self.opt_cond is None:
-                self.opt_cond = OptCondTorch(2)
-
             _bilat = len(self.classes_) == 2
             module_out = 1 if _bilat else len(self.classes_)
             loss = (
@@ -284,7 +277,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.n_zeta_samples,
                 self.random_state,
                 learning_rate=self.learning_rate,
-                n_iter=self.n_iter,
                 sigma=self.sampler_reg,
                 epsilon=self.solver_reg,
                 imp_samp=_post_sample,  # hard set
@@ -302,7 +294,6 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
                 self.opt_cond  # type: ignore
             )
 
-            assert isinstance(self.wdro_loss_.primal_loss.transform, nn.Linear)
             self.coef_ = (
                 self
                 .wdro_loss_
@@ -331,7 +322,7 @@ class LogisticRegression(BaseEstimator, ClassifierMixin):
 
         # Unknown solver
         else:
-            raise NotImplementedError("Designation for solver not recognized")
+            raise NotImplementedError()
         self.is_fitted_ = True
 
         # Return the classifier
