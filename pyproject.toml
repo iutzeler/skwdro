@@ -33,7 +33,7 @@ dependencies = [
     "scikit-learn >=1.4, <1.5.2",
     "scipy",
     "cvxopt",
-    "cvxpy",
+    "cvxpy[ECOS,SCS,CLARABEL]",
     "torch",
     "sqwash",
     "dask[distributed]",
@@ -58,7 +58,8 @@ docs = [
     "sphinx_design",
     "myst_parser",
     "sphinxcontrib-mermaid",
-    "furo"
+    "seaborn",
+    "dro"
 ]
 test = [
     "pytest",
@@ -66,7 +67,8 @@ test = [
 	"ruff",
 	"pycodestyle",
 	"mypy>=1.13",
-	"pytest-rerunfailures"
+	"pytest-rerunfailures",
+    "genbadge[coverage]",
 ]
 monitor = [
     "wandb",

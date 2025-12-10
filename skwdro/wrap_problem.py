@@ -10,6 +10,7 @@ from skwdro.base.samplers.torch.base_samplers import BaseSampler
 from skwdro.base.samplers.torch.cost_samplers import LabeledCostSampler, NoLabelsCostSampler
 from skwdro.solvers._dual_interfaces import _DualLoss
 from skwdro.solvers.oracle_torch import DualPostSampledLoss, DualPreSampledLoss
+from skwdro.solvers.utils import Steps
 
 SIGMA_FACTOR: float = .5
 EPSILON_SIGMA_FACTOR: float = 1e-2
@@ -101,6 +102,7 @@ def dualize_primal_loss(
     sigma: Optional[float] = None,
     l2reg: Optional[float] = None,
     adapt: Optional[str] = "prodigy",
+    n_iter: Optional[Steps] = None,
     imp_samp: bool = True,
     loss_reduces_spatial_dims: bool = False
 ) -> _DualLoss:
@@ -151,6 +153,12 @@ def dualize_primal_loss(
         L2 regularization if needed
     adapt: str|None
         the adaptative step to use between `"prodigy"` and `"mechanic"`.
+    n_iter: int|tuple[int, int]|None
+        can set the default number of iterations if used through the default
+        solving routines. Mostly an internal parameter. If int, it is the
+        number of internal robust optimization steps, if a 2-uple of ints, it is
+        the number of erm steps preceding the robust solve then the number of
+        robust steps, if None it will be filled by default.
     imp_samp: bool
         whether to use importance sampling
         (will work only for ``(2, 2)`` costs).
@@ -209,7 +217,9 @@ def dualize_primal_loss(
     return loss_constructor(
         loss,
         cost,
-        n_iter=((200, 2800) if post_sample else (100, 10)),
+        n_iter=(
+            (200, 2800) if post_sample else (100, 10)
+        ) if n_iter is None else n_iter,
         rho_0=rho,
         n_samples=n_samples,
         epsilon_0=expert_epsilon,

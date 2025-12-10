@@ -11,7 +11,7 @@ from typing import Optional
 
 from skwdro.base.problems import EmpiricalDistributionWithoutLabels
 from skwdro.base.losses_torch.portfolio import SimplePortfolio
-from skwdro.solvers.utils import detach_tensor
+from skwdro.solvers.utils import Steps, detach_tensor
 from skwdro.wrap_problem import dualize_primal_loss
 
 from skwdro.base.cost_decoder import cost_from_str
@@ -80,7 +80,6 @@ class Portfolio(BaseEstimator):
     --------
 
     """
-
     def __init__(
         self,
         rho=1e-2,
@@ -95,7 +94,8 @@ class Portfolio(BaseEstimator):
         reparam="softmax",
         learning_rate: Optional[float] = None,
         n_zeta_samples: int = 10,
-        seed: int = 0,
+        random_state: int = 0,
+        n_iter: Optional[Steps] = None,
         opt_cond: Optional[OptCondTorch] = OptCondTorch(
             2
         )  # type: ignore
@@ -103,7 +103,13 @@ class Portfolio(BaseEstimator):
 
         # Verifying conditions on rho, eta and alpha
         if rho < 0:
-            raise ValueError("The Wasserstein radius cannot be negative")
+            raise ValueError(
+                ' '.join([
+                    "The uncertainty radius rho should be",
+                    "non-negative, received",
+                    f"{rho}"
+                ])
+            )
         elif eta < 0:
             raise ValueError("Risk-aversion error eta cannot be negative")
         elif alpha <= 0 or alpha > 1:
@@ -125,7 +131,8 @@ class Portfolio(BaseEstimator):
         self.learning_rate = learning_rate
         self.reparam = reparam
         self.n_zeta_samples = n_zeta_samples
-        self.seed = seed
+        self.random_state = random_state
+        self.n_iter = n_iter
         self.opt_cond = opt_cond
 
     def fit(self, X, y=None):
@@ -141,14 +148,21 @@ class Portfolio(BaseEstimator):
         """
         del y
 
+        # Check that X has correct shape
+        X = check_array(X)
+
+        if self.rho is not float:
+            try:
+                self.rho = float(self.rho)
+            except BaseException:
+                raise TypeError(
+                    f"The uncertainty radius rho should be numeric, received {type(self.rho)}")
+
         # Conversion to float to prevent torch.nn conversion errors
         self.rho_ = float(self.rho)
         self.eta_ = float(self.eta)
         self.alpha_ = float(self.alpha)
         self.solver_reg_ = float(self.solver_reg)
-
-        # Check that X has correct shape
-        X = check_array(X)
 
         # Store data
         self.X_ = X
@@ -198,6 +212,10 @@ class Portfolio(BaseEstimator):
             )
             self.coef_, self.tau_, self.dual_var_, self.result_ = _res
         elif "torch" in self.solver:
+
+            if self.opt_cond is None:
+                self.opt_cond = OptCondTorch(2)
+
             self._wdro_loss = dualize_primal_loss(
                 SimplePortfolio(m, risk_aversion=self.eta_,
                                 risk_level=self.alpha_),
@@ -208,10 +226,11 @@ class Portfolio(BaseEstimator):
                 "post" not in self.solver,
                 self.cost,
                 self.n_zeta_samples,
-                self.seed,
+                self.random_state,
                 learning_rate=self.learning_rate,
                 epsilon=self.solver_reg_,
                 adapt="prodigy" if self.learning_rate is None else None,
+                n_iter=self.n_iter,
                 l2reg=0.
             )
             _res = entTorch.solve_dual_wdro(

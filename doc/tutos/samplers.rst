@@ -67,7 +67,7 @@ In this procedure, a disintegration lemma must be used to split the reference ge
 
    P_{\pi_0}(\xi\in X\cap\zeta\in Y) = \underbrace{P_{\pi_0}(\xi\in X)}_{\hat{\mathbb{P}}^N(X)}\underbrace{P_{\pi_0}(\zeta\in Y|\xi\in X)}_{\nu_\xi(Y)}.
 
-.. note:: A common wisdom is that ususally, if :math:`\nu_\xi` does depend on :math:`\xi`, it should better average to it i.e.
+.. note:: A common wisdom is that usually, if :math:`\nu_\xi` does depend on :math:`\xi`, it should better average to it i.e.
 
    .. math::
 
@@ -96,12 +96,10 @@ To build your own sampler, you can write a class that inherits :py:class:`skwdro
 These two templates leave for you to define **only two methods**: the constructor and a special :py:meth:`skwdro.base.samplers.torch.BaseSampler.reset_sampler` method that defines how to change the parameters of :math:`\nu_\xi` if :math:`\xi` changes (resetting dynamically the :py:class:`torch.distributions.Distribution` objects if needs be.
 But while it is not mendatory, one may rewrite to their liking some custom methods, including the central :py:meth:`skwdro.base.samplers.torch.BaseSampler.sample` method used by the library.
 
-Learning by examples
---------------------
+Learning by examples: a case study on mixed-features WDRO
+---------------------------------------------------------
 
-Say now you want to implement a logistic regression model based on a mixture of continuous and discrete features as described in [#BSW23]_.
-As mentionned in the paper, contrary to continuous-features WDRO logistic regression, the robust loss function cannot be cast as a regularized version of the empirical risk minimization.
-Hence the robustness is harder to achieve, and while the authors propose, between other tools, a cutting-plane algorithm to solve WDRO, we could attempt to robustify mixed-features logistic regression with `SkWDRO`.
+Say now you want to implement a logistic regression model based on a mixture of continuous and discrete features as described in [#BSW23]_ which  proposes, between other tools, a cutting-plane algorithm to solve WDRO formulation with these features. As a case study, we explain here how to use SkWDRO to approximate the solution of this problem.
 
 Let's consider that the problem is formulated such that the `n_continuous_features`\ +\ `n_discrete_features` features are concatenated in an input variable `xi`, and target labels are in `xi_labels`. Consider the discrete features to be first one-hot encoded and then recentered to :math:`\{-1, 1\}`, just like in the usual logistic regression from the documentation. Here is how we would build the sampler for such a problem in pytorch.
 
@@ -274,5 +272,5 @@ Testing the snippets above on some fake data
 
 References
 ==========
-.. [#AIM23] Azizian, Iutzeler and Malick: **Regularization for Wasserstein Distributionally Robust Optimization**, *COCV*, 2023
-.. [#BSW23] Belbasi, Selvi and Wiesemann: **It’s All in the Mix: Wasserstein Classification and Regression with Mixed Features**, *CoRR*, 2023
+.. [#AIM23] Azizian, Iutzeler, and Malick: **Regularization for Wasserstein Distributionally Robust Optimization**, *COCV*, 2023
+.. [#BSW23] Belbasi, Selvi, and Wiesemann: **It’s All in the Mix: Wasserstein Classification and Regression with Mixed Features**, *ArXiV* (https://arxiv.org/abs/2312.12230), 2023

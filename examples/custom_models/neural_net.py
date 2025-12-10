@@ -28,7 +28,7 @@ from skwdro.torch import robustify
 
 from sklearn.datasets import make_moons
 
-n = 512 + 64
+n = 256 + 64
 
 X, y = make_moons(n_samples=n,
                   noise=0.05,
@@ -50,7 +50,7 @@ plt.show()
 X_train, X_test, y_train, y_test = train_test_split(
     X,
     y,
-    train_size=512,
+    train_size=256,
     test_size=64,
     random_state=42
 )
@@ -154,7 +154,7 @@ robust_loss = robustify(
 # Training loop
 # ~~~~~~~~~~~~~
 
-def train(model, epochs = 500, lr = 1e-3):
+def train(model, epochs = 300, lr = 5e-3):
     optimizer = pt.optim.AdamW(params=model.parameters(), lr=lr)
     # optimizer = pt.optim.AdamW(params=robust_loss.parameters())
 
@@ -222,7 +222,7 @@ plot_decision_boundary(erm_model, batch_x_test, batch_y_test)
 
 plt.subplot(2, 1, 2)
 plt.title("Test loss through epochs")
-plt.plot(dro_losses)
+plt.plot(erm_losses)
 plt.yscale('log')
 
 plt.show()

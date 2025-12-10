@@ -45,6 +45,7 @@ Here is a quick reading order that we advise:
    Introduction to the PyTorch interface <pytorch>
    Some torch examples for practice <examples/Custom/index>
    examples/Study/index
+   wilds
 
 .. toctree::
    :maxdepth: 2

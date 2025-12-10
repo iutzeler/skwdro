@@ -128,7 +128,7 @@ classifiers_collection = [
 # ~~~~~~~~~
 
 fig, ax = plt.subplots()
-test_ls = np.logspace(-5, 5, base=10, num=100)
+test_ls = np.logspace(-5, 3, base=10, num=100)
 ls_track = []
 
 it = tqdm(classifiers_collection)

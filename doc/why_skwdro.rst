@@ -120,6 +120,6 @@ Next
 References
 ==========
 
-.. [#AIM23] Azizian, Iutzeler and Malick: **Regularization for Wasserstein Distributionally Robust Optimization**, *COCV*, 2023
-.. [#AIM24] Azizian, Iutzeler and Malick: **Exact Generalization Guarantees for (Regularized) Wasserstein Distributionally Robust Models**, *NIPS*, 2024
-.. [#WGX23] Wang, Gao, Xie: **Sinkhorn Distributionally Robust Optimization**, *arXiv (2109.11926)*, 2023
+.. [#AIM23] Azizian, Iutzeler, and Malick: **Regularization for Wasserstein Distributionally Robust Optimization**, *COCV*, 2023
+.. [#AIM24] Azizian, Iutzeler, and Malick: **Exact Generalization Guarantees for (Regularized) Wasserstein Distributionally Robust Models**, *NIPS*, 2024
+.. [#WGX23] Wang, Gao, and Xie: **Sinkhorn Distributionally Robust Optimization**, *arXiv (2109.11926)*, 2023
