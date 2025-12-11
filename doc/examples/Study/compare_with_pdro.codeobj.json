@@ -255,6 +255,24 @@
    "name": "list"
   }
  ],
+ "_output": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "_output.split": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  }
+ ],
  "_rho_formatter": [
   {
    "is_class": false,
@@ -332,6 +350,15 @@
    "module": "sklearn.utils",
    "module_short": "sklearn.utils",
    "name": "check_X_y"
+  }
+ ],
+ "command": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
   }
  ],
  "d": [
@@ -1076,6 +1103,38 @@
    "name": "LinearRegression"
   }
  ],
+ "subprocess.PIPE": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "int"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "subprocess",
+   "module_short": "subprocess",
+   "name": "PIPE"
+  }
+ ],
+ "subprocess.run": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "function"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "subprocess",
+   "module_short": "subprocess",
+   "name": "run"
+  }
+ ],
  "test_df": [
   {
    "is_class": false,
@@ -1172,6 +1231,15 @@
    "module": "builtins",
    "module_short": "builtins",
    "name": "builtin_function_or_method"
+  }
+ ],
+ "title": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
   }
  ],
  "tqdm.tqdm": [
