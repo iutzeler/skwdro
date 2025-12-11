@@ -56,11 +56,12 @@ domains.
 
 .. with similar hyperparameters settings, on a similar task.
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-58
+.. GENERATED FROM PYTHON SOURCE LINES 40-59
 
 .. code-block:: Python
 
     import timeit
+    import subprocess
     import tqdm.auto as tqdm
 
     import matplotlib.pyplot as plt
@@ -85,12 +86,12 @@ domains.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 59-61
+.. GENERATED FROM PYTHON SOURCE LINES 60-62
 
 Problem setup
 =============
 
-.. GENERATED FROM PYTHON SOURCE LINES 61-82
+.. GENERATED FROM PYTHON SOURCE LINES 62-83
 
 .. code-block:: Python
 
@@ -122,7 +123,95 @@ Problem setup
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 83-114
+.. GENERATED FROM PYTHON SOURCE LINES 84-98
+
+Some more words on the setup
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For reproducibility, we make notice of the fact that the results obtained
+bellow are obtained for a low number of runs, in order to reduce the time
+needed to launch them.
+
+.. note:: All benchmarks presented are run on CPU. GPU experiments are not
+   yet available.
+
+.. warning:: This small script only works with unix-compatible
+   shells/distributions.
+
+These are the exact machine details:
+
+.. GENERATED FROM PYTHON SOURCE LINES 98-112
+
+.. code-block:: Python
+
+
+    for title, command in [
+        ('System spec.:', ['uname', '-mrs']),
+        ('Memory (RAM):', ['grep', 'MemTotal', '/proc/meminfo']),
+        ('CPU cores:', ['grep', 'model name', '/proc/cpuinfo']),
+        ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
+    ]:
+        print(title)
+        _output = subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
+        if 'CPU' in title:
+            print(*_output.split('model name\t: '))
+        else:
+            print(_output)
+
+
+
+
+
+.. rst-class:: sphx-glr-script-out
+
+ .. code-block:: none
+
+    System spec.:
+    Linux 6.8.0-87-generic x86_64
+
+    Memory (RAM):
+    MemTotal:       32464392 kB
+
+    CPU cores:
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+     13th Gen Intel(R) Core(TM) i7-13800H
+
+    CPU infos:
+      *-cpu
+           product: 13th Gen Intel(R) Core(TM) i7-13800H
+           vendor: Intel Corp.
+           physical id: 1
+           bus info: cpu@0
+           version: 6.186.2
+           size: 3800MHz
+           capacity: 5GHz
+           width: 64 bits
+           capabilities: fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp x86-64 constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb intel_pt sha_ni xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk avx_vnni dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req hfi vnmi umip pku ospke waitpkg gfni vaes vpclmulqdq tme rdpid movdiri movdir64b fsrm md_clear serialize pconfig arch_lbr ibt flush_l1d arch_capabilities ibpb_exit_to_user cpufreq
+           configuration: microcode=16681
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 113-144
 
 WDRO linear regression
 ======================
@@ -156,7 +245,7 @@ The variance of the sampler is fixed, as well as the regularization parameter.
 .. We set a fixed number of SGD iterations for the two libraries (5000 here, which
 .. seems to be enough).
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-179
+.. GENERATED FROM PYTHON SOURCE LINES 144-209
 
 .. code-block:: Python
 
@@ -232,12 +321,12 @@ The variance of the sampler is fixed, as well as the regularization parameter.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 180-182
+.. GENERATED FROM PYTHON SOURCE LINES 210-212
 
 Evaluation
 ==========
 
-.. GENERATED FROM PYTHON SOURCE LINES 182-216
+.. GENERATED FROM PYTHON SOURCE LINES 212-246
 
 .. code-block:: Python
 
@@ -285,27 +374,27 @@ Evaluation
 
     Radii:   0%|          | 0/3 [00:00<?, ?it/s]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [01:44<01:44, 52.43s/it]
-    Method-score: 100%|██████████| 4/4 [03:02<00:00, 44.56s/it]
-                                                                   Radii:  33%|███▎      | 1/3 [11:10<22:19, 669.91s/it]
+    Method-score:  50%|█████     | 2/4 [00:58<00:58, 29.02s/it]
+    Method-score: 100%|██████████| 4/4 [01:25<00:00, 19.90s/it]
+                                                                   Radii:  33%|███▎      | 1/3 [06:59<13:58, 419.10s/it]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [01:23<01:23, 41.89s/it]
-    Method-score: 100%|██████████| 4/4 [03:00<00:00, 45.67s/it]
-                                                                   Radii:  67%|██████▋   | 2/3 [23:27<11:49, 709.56s/it]
+    Method-score:  50%|█████     | 2/4 [00:56<00:56, 28.47s/it]
+    Method-score: 100%|██████████| 4/4 [01:30<00:00, 21.54s/it]
+                                                                   Radii:  67%|██████▋   | 2/3 [13:05<06:27, 387.56s/it]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [01:20<01:20, 40.43s/it]
-    Method-score: 100%|██████████| 4/4 [02:34<00:00, 38.37s/it]
-                                                                   Radii: 100%|██████████| 3/3 [34:10<00:00, 679.13s/it]    Radii: 100%|██████████| 3/3 [34:10<00:00, 683.54s/it]
+    Method-score:  50%|█████     | 2/4 [01:35<01:35, 47.65s/it]
+    Method-score: 100%|██████████| 4/4 [02:26<00:00, 34.62s/it]
+                                                                   Radii: 100%|██████████| 3/3 [21:30<00:00, 441.60s/it]    Radii: 100%|██████████| 3/3 [21:30<00:00, 430.30s/it]
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 217-219
+.. GENERATED FROM PYTHON SOURCE LINES 247-249
 
 Plotting
 ========
 
-.. GENERATED FROM PYTHON SOURCE LINES 219-312
+.. GENERATED FROM PYTHON SOURCE LINES 249-342
 
 .. code-block:: Python
 
@@ -409,7 +498,7 @@ Plotting
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 313-319
+.. GENERATED FROM PYTHON SOURCE LINES 343-349
 
 WDRO comparison plots
 ^^^^^^^^^^^^^^^^^^^^^
@@ -418,7 +507,7 @@ libraries.
 It compares the test losses for the two methods, evaluated as the ERM (with
 mean-squared error), and the wall-clock running times.
 
-.. GENERATED FROM PYTHON SOURCE LINES 319-326
+.. GENERATED FROM PYTHON SOURCE LINES 349-356
 
 .. code-block:: Python
 
@@ -436,11 +525,11 @@ mean-squared error), and the wall-clock running times.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 327-328
+.. GENERATED FROM PYTHON SOURCE LINES 357-358
 
 Test loss plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 328-338
+.. GENERATED FROM PYTHON SOURCE LINES 358-368
 
 .. code-block:: Python
 
@@ -472,18 +561,18 @@ Test loss plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 339-343
+.. GENERATED FROM PYTHON SOURCE LINES 369-373
 
 We see that the two libraries are relatively similar, especially for small
 Wasserstein radii, which is to be expected considering the similarity between
 the implementations, based on the standard techniques of [#SaKE19]_ and
 [#EK17]_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 345-346
+.. GENERATED FROM PYTHON SOURCE LINES 375-376
 
 Timing plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 346-356
+.. GENERATED FROM PYTHON SOURCE LINES 376-386
 
 .. code-block:: Python
 
@@ -515,7 +604,7 @@ Timing plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 357-369
+.. GENERATED FROM PYTHON SOURCE LINES 387-399
 
 The running times of the two libraries are usually
 comparable, even though it seems like the implementation in ``SkWDRO`` seems
@@ -530,7 +619,7 @@ faster in some setting.
 .. as their transport cost (see the `costs tutorial <tutos/costs.html>`__ for
 .. more details on how to do that).
 
-.. GENERATED FROM PYTHON SOURCE LINES 371-376
+.. GENERATED FROM PYTHON SOURCE LINES 401-406
 
 SK-WDRO comparison plots
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -538,11 +627,11 @@ Here is another set of plots comparing regularized WDRO
 implementations, for the two libraries, both relying under the hood on
 ``PyTorch``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 378-379
+.. GENERATED FROM PYTHON SOURCE LINES 408-409
 
 Let's compare Sinkhorn-based WDRO models from both libraries
 
-.. GENERATED FROM PYTHON SOURCE LINES 379-386
+.. GENERATED FROM PYTHON SOURCE LINES 409-416
 
 .. code-block:: Python
 
@@ -560,11 +649,11 @@ Let's compare Sinkhorn-based WDRO models from both libraries
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 387-388
+.. GENERATED FROM PYTHON SOURCE LINES 417-418
 
 Test loss plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 388-399
+.. GENERATED FROM PYTHON SOURCE LINES 418-429
 
 .. code-block:: Python
 
@@ -597,11 +686,11 @@ Test loss plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 400-401
+.. GENERATED FROM PYTHON SOURCE LINES 430-431
 
 Timing plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 401-411
+.. GENERATED FROM PYTHON SOURCE LINES 431-441
 
 .. code-block:: Python
 
@@ -633,13 +722,13 @@ Timing plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 412-459
+.. GENERATED FROM PYTHON SOURCE LINES 442-489
 
-The speed of ``SkWDRO`` is substantially higher (:math:`\approx\times 100` faster)
+The speed of ``SkWDRO`` is usualy higher
 in this low dimensional setting with a medium-sized dataset.
 Other experiments could be run to show more balanced results with fewer samples
-(e.g. we obtained closer timings with :math:`n=100`), or more drastic difference
-of running time performance.
+(e.g. we obtained closer timings with :math:`n=100`), or some times more
+drastic difference of running time performance.
 
 For the test accuracy though, it seems to depend heavily on the chosen
 robustness radius: for smaller radii ``SkWDRO`` is more performant while
@@ -686,7 +775,7 @@ References
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (34 minutes 12.106 seconds)
+   **Total running time of the script:** (21 minutes 33.214 seconds)
 
 
 .. _sphx_glr_download_examples_Study_compare_with_pdro.py:

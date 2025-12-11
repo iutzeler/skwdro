@@ -38,6 +38,7 @@ domains.
 .. with similar hyperparameters settings, on a similar task.
 """
 import timeit
+import subprocess
 import tqdm.auto as tqdm
 
 import matplotlib.pyplot as plt
@@ -78,6 +79,35 @@ y = minmax_scale(y, feature_range=(-1, 1))
 X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=n_train, test_size=n_test, random_state=0)
 assert isinstance(X_train, np.ndarray)
 assert isinstance(X_test, np.ndarray)
+
+# %%
+# Some more words on the setup
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+#
+# For reproducibility, we make notice of the fact that the results obtained
+# bellow are obtained for a low number of runs, in order to reduce the time
+# needed to launch them.
+#
+# .. note:: All benchmarks presented are run on CPU. GPU experiments are not
+#    yet available.
+#
+# .. warning:: This small script only works with unix-compatible
+#    shells/distributions.
+#
+# These are the exact machine details:
+
+for title, command in [
+    ('System spec.:', ['uname', '-mrs']),
+    ('Memory (RAM):', ['grep', 'MemTotal', '/proc/meminfo']),
+    ('CPU cores:', ['grep', 'model name', '/proc/cpuinfo']),
+    ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
+]:
+    print(title)
+    _output = subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
+    if 'CPU' in title:
+        print(*_output.split('model name\t: '))
+    else:
+        print(_output)
 
 # %%
 # WDRO linear regression
@@ -409,11 +439,11 @@ plot_library_comparison(
 )
 
 # %%
-# The speed of ``SkWDRO`` is substantially higher (:math:`\approx\times 100` faster)
+# The speed of ``SkWDRO`` is usualy higher
 # in this low dimensional setting with a medium-sized dataset.
 # Other experiments could be run to show more balanced results with fewer samples
-# (e.g. we obtained closer timings with :math:`n=100`), or more drastic difference
-# of running time performance.
+# (e.g. we obtained closer timings with :math:`n=100`), or some times more
+# drastic difference of running time performance.
 #
 # For the test accuracy though, it seems to depend heavily on the chosen
 # robustness radius: for smaller radii ``SkWDRO`` is more performant while
