@@ -8,4 +8,4 @@ myst_parser
 numpydoc
 tqdm
 seaborn
-dro
+dro=0.3.3
