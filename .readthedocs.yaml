@@ -17,6 +17,15 @@ build:
   jobs:
     pre_build:
      - sphinx-apidoc -o "./doc/API" "./skwdro" 
+    build:
+      html:
+       - echo "Here I'm trying to do my own commands instead of RTD defaults"
+       - pip install --user hatch
+       - make shell
+       - cd doc
+       - mkdir --parents $READTHEDOCS_OUTPUT/html
+       - make html
+       - cp -r _build/html $READTHEDOCS_OUTPUT/html
 
 
 # Build documentation in the "docs/" directory with Sphinx
