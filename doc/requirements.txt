@@ -7,5 +7,3 @@ sphinx_design
 myst_parser
 numpydoc
 tqdm
-seaborn
-dro=0.3.3
