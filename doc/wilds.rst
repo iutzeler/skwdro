@@ -2,9 +2,8 @@
 Illustration on iWildsCam
 =========================
 
-The library can be applied to a wide range of difficult problems in machine
-learning.
-
+.. The library can be applied to a wide range of difficult problems in machine
+.. learning.
 .. and since it has been mostly showcased on more simple cases (either
 .. linear problems or low dimensional ones),
 
@@ -101,8 +100,8 @@ Notice how the overfitting behaviour changes substantially with the robustness r
 
 * For small values of :math:`\rho`, the accuracy raises in the first hundred iterations,
   and then goes down as the training procedure overfits the training set.
-* In contrast, for higher values of :math:`\rho`, the accuracy raises steadily. The training
-  loss is higher, displaying its more pessimistic nature.
+* In contrast, for higher values of :math:`\rho`, the test performances are better and increase
+  **more steadily**. From 300 epochs the performance does not degrade along training.
 
 .. As a followup on
 
@@ -116,39 +115,41 @@ we give to its optimisation (recall the
    :caption: See how much lambda varies depending on the problem studied.
 
    $ uv run optim_script.v2.py -s 0.001 -is on -l -m tb_lam
-   Rho      | Lmin  | Lmax  | ratio
+   Rho              | Lmin          | Lmax   | ratio
    -       -       -       -
    ρ=1.0e-06        | 109672        | 109752 | 1.00
-   ρ=1.0e-05        | 10975         | 11054 | 1.01
-   ρ=1.0e-04        | 1098  | 1180 | 1.08
-   ρ=1.0e-03        | 110   | 188 | 1.71
-   ρ=1.0e-02        | 11    | 102 | 9.32
+   ρ=1.0e-05        | 10975         | 11054  | 1.01
+   ρ=1.0e-04        | 1098          | 1180   | 1.08
+   ρ=1.0e-03        | 110           | 188    | 1.71
+   ρ=1.0e-02        | 11            | 102    | 9.32
    -       -       -       -
 
-A linear separator
-------------------
-
-Then one may try a linear model yielding vastly different results, and prompting
-other interpretation as of the linear separability of the frozen features:
-
-.. code-block:: console
-   :caption: Here is a slightly different setting for the linear case
-
-   $ # uv run optim_script.v2.py -s 0.0001 -is on -l -c -m train
-   $ uv run optim_script.v2.py -s 0.0001 -is on -l -c -m plot_acc_train
-
-.. image:: assets/wilds/train_wilds_logreg.png
-
-.. .. note::
-.. The plot above illustrate the training of the linear model on a smaller number of iterations.
-.. On 10000 iterations, we would observe the same overfitting behaviour as above in the long run.
-.. We zoom on the first iterations to show the difference between radii that yield monotonous
-.. accuracy increases and others that start to decrease after 800 iterations.
-
-The behaviour of the optimisation procedure provides some clues on how to find a suitable radius
-:math:`\rho`: we want it to yield a fast and stable optimisation procedure (unlike
-:math:`\rho=10^{-2}` above), but still avoiding overfitting (unlike :math:`\rho\le 10^{-4}`
-above). So here a radius around ``1e-3`` seems fitting.
+.. A linear separator
+.. ------------------
+.. 
+.. Then one may try a linear model yielding vastly different results, and prompting
+.. other interpretation as of the linear separability of the frozen features:
+.. 
+.. .. code-block:: console
+..    :caption: Here is a slightly different setting for the linear case
+.. 
+..    $ # uv run optim_script.v2.py -s 0.0001 -is on -l -c -m train
+..    $ uv run optim_script.v2.py -s 0.0001 -is on -l -c -m plot_acc_train
+.. 
+.. .. image:: assets/wilds/train_wilds_logreg.png
+.. 
+.. .. .. note::
+.. .. The plot above illustrate the training of the linear model on a smaller number of iterations.
+.. .. On 10000 iterations, we would observe the same overfitting behaviour as above in the long run.
+.. .. We zoom on the first iterations to show the difference between radii that yield monotonous
+.. .. accuracy increases and others that start to decrease after 800 iterations.
+.. 
+.. We see a fast and stable learning still avoiding overfitting depending
+.. 
+.. .. The behaviour of the optimisation procedure provides some clues on how to find a suitable radius
+.. .. :math:`\rho`: we want it to yield a fast and stable optimisation procedure (unlike
+.. .. :math:`\rho=10^{-2}` above), but still avoiding overfitting (unlike :math:`\rho\le 10^{-4}`
+.. .. above). So here a radius around ``1e-3`` seems fitting.
 
 References
 ==========
