@@ -58,7 +58,7 @@ docs = [
     "sphinx_design",
     "myst_parser",
     "sphinxcontrib-mermaid",
-    "dro"
+    "dro==0.3.3"
 ]
 test = [
     "pytest",
