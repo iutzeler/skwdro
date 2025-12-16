@@ -99,7 +99,7 @@ for title, command in [
     ('System spec.:', ['uname', '-mrs']),
     ('Memory (RAM):', ['grep', 'MemTotal', '/proc/meminfo']),
     ('CPU cores:', ['grep', 'model name', '/proc/cpuinfo']),
-    ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
+    # ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
 ]:
     print(title)
     _output = subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
