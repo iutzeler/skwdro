@@ -62,7 +62,7 @@ from skwdro.linear_models import LinearRegression
 # Total number of samples: chosen to be a bit prohibitive for SVM-like kernel methods (would deserve a separate analysis)
 n = 512
 # "Low"-dimensional setting to avoid this notebook to run for unreasonable amounts of time.
-d = 8
+d = 4
 n_train = int(np.floor(0.8 * n)) # Number of training samples: 80% of dataset
 n_test = n - n_train # Number of test samples
 
@@ -99,7 +99,7 @@ for title, command in [
     ('System spec.:', ['uname', '-mrs']),
     ('Memory (RAM):', ['grep', 'MemTotal', '/proc/meminfo']),
     ('CPU cores:', ['grep', 'model name', '/proc/cpuinfo']),
-    # ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
+    ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
 ]:
     print(title)
     _output = subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
@@ -153,7 +153,7 @@ def fit_wdro_from_dro(rho: float):
     )
     estimator.update({
         'cost_matrix': np.eye(d),
-        'eps': rho,
+        'eps': rho**2,
         'p': 2,
         'kappa': 'inf'
     })
@@ -170,7 +170,7 @@ def fit_skwdro_from_dro(rho: float):
     )
     estimator.update({
         'cost_matrix': np.eye(d),
-        'eps': rho,
+        'eps': rho**2,
         'p': 2,
         'kappa': 'inf'
     })
@@ -249,6 +249,7 @@ for rho in tqdm.tqdm(rhos, desc='Radii', position=0, leave=True):
 # ----------------------------------------------------------------------
 # Generic comparison plotting helper
 # Author: chat-gpt
+# Don't expect type stability
 # ----------------------------------------------------------------------
 
 def plot_library_comparison(
