@@ -56,7 +56,7 @@ domains.
 
 .. with similar hyperparameters settings, on a similar task.
 
-.. GENERATED FROM PYTHON SOURCE LINES 40-59
+.. GENERATED FROM PYTHON SOURCE LINES 40-58
 
 .. code-block:: Python
 
@@ -67,7 +67,6 @@ domains.
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
-    import seaborn as sns
 
     from sklearn.datasets import make_regression
     from sklearn.preprocessing import minmax_scale
@@ -86,12 +85,12 @@ domains.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 60-62
+.. GENERATED FROM PYTHON SOURCE LINES 59-61
 
 Problem setup
 =============
 
-.. GENERATED FROM PYTHON SOURCE LINES 62-83
+.. GENERATED FROM PYTHON SOURCE LINES 61-82
 
 .. code-block:: Python
 
@@ -123,7 +122,7 @@ Problem setup
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 84-98
+.. GENERATED FROM PYTHON SOURCE LINES 83-97
 
 Some more words on the setup
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -140,7 +139,7 @@ needed to launch them.
 
 These are the exact machine details:
 
-.. GENERATED FROM PYTHON SOURCE LINES 98-112
+.. GENERATED FROM PYTHON SOURCE LINES 97-111
 
 .. code-block:: Python
 
@@ -149,7 +148,7 @@ These are the exact machine details:
         ('System spec.:', ['uname', '-mrs']),
         ('Memory (RAM):', ['grep', 'MemTotal', '/proc/meminfo']),
         ('CPU cores:', ['grep', 'model name', '/proc/cpuinfo']),
-        ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
+        # ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
     ]:
         print(title)
         _output = subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
@@ -167,10 +166,10 @@ These are the exact machine details:
  .. code-block:: none
 
     System spec.:
-    Linux 6.8.0-87-generic x86_64
+    Linux 6.8.0-90-generic x86_64
 
     Memory (RAM):
-    MemTotal:       32464392 kB
+    MemTotal:       32464404 kB
 
     CPU cores:
      13th Gen Intel(R) Core(TM) i7-13800H
@@ -194,24 +193,11 @@ These are the exact machine details:
      13th Gen Intel(R) Core(TM) i7-13800H
      13th Gen Intel(R) Core(TM) i7-13800H
 
-    CPU infos:
-      *-cpu
-           product: 13th Gen Intel(R) Core(TM) i7-13800H
-           vendor: Intel Corp.
-           physical id: 1
-           bus info: cpu@0
-           version: 6.186.2
-           size: 3800MHz
-           capacity: 5GHz
-           width: 64 bits
-           capabilities: fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp x86-64 constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb intel_pt sha_ni xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk avx_vnni dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req hfi vnmi umip pku ospke waitpkg gfni vaes vpclmulqdq tme rdpid movdiri movdir64b fsrm md_clear serialize pconfig arch_lbr ibt flush_l1d arch_capabilities ibpb_exit_to_user cpufreq
-           configuration: microcode=16681
 
 
 
 
-
-.. GENERATED FROM PYTHON SOURCE LINES 113-144
+.. GENERATED FROM PYTHON SOURCE LINES 112-143
 
 WDRO linear regression
 ======================
@@ -245,7 +231,7 @@ The variance of the sampler is fixed, as well as the regularization parameter.
 .. We set a fixed number of SGD iterations for the two libraries (5000 here, which
 .. seems to be enough).
 
-.. GENERATED FROM PYTHON SOURCE LINES 144-209
+.. GENERATED FROM PYTHON SOURCE LINES 143-208
 
 .. code-block:: Python
 
@@ -321,12 +307,12 @@ The variance of the sampler is fixed, as well as the regularization parameter.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 210-212
+.. GENERATED FROM PYTHON SOURCE LINES 209-211
 
 Evaluation
 ==========
 
-.. GENERATED FROM PYTHON SOURCE LINES 212-246
+.. GENERATED FROM PYTHON SOURCE LINES 211-245
 
 .. code-block:: Python
 
@@ -374,27 +360,27 @@ Evaluation
 
     Radii:   0%|          | 0/3 [00:00<?, ?it/s]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [00:58<00:58, 29.02s/it]
-    Method-score: 100%|██████████| 4/4 [01:25<00:00, 19.90s/it]
-                                                                   Radii:  33%|███▎      | 1/3 [06:59<13:58, 419.10s/it]
+    Method-score:  50%|█████     | 2/4 [00:49<00:49, 24.58s/it]
+    Method-score: 100%|██████████| 4/4 [01:13<00:00, 17.41s/it]
+                                                                   Radii:  33%|███▎      | 1/3 [05:31<11:01, 330.71s/it]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [00:56<00:56, 28.47s/it]
-    Method-score: 100%|██████████| 4/4 [01:30<00:00, 21.54s/it]
-                                                                   Radii:  67%|██████▋   | 2/3 [13:05<06:27, 387.56s/it]
+    Method-score:  50%|█████     | 2/4 [00:47<00:47, 23.57s/it]
+    Method-score: 100%|██████████| 4/4 [01:10<00:00, 16.70s/it]
+                                                                   Radii:  67%|██████▋   | 2/3 [10:17<05:04, 304.86s/it]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [01:35<01:35, 47.65s/it]
-    Method-score: 100%|██████████| 4/4 [02:26<00:00, 34.62s/it]
-                                                                   Radii: 100%|██████████| 3/3 [21:30<00:00, 441.60s/it]    Radii: 100%|██████████| 3/3 [21:30<00:00, 430.30s/it]
+    Method-score:  50%|█████     | 2/4 [00:49<00:49, 24.89s/it]
+    Method-score: 100%|██████████| 4/4 [01:14<00:00, 17.63s/it]
+                                                                   Radii: 100%|██████████| 3/3 [15:20<00:00, 303.70s/it]    Radii: 100%|██████████| 3/3 [15:20<00:00, 306.73s/it]
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 247-249
+.. GENERATED FROM PYTHON SOURCE LINES 246-248
 
 Plotting
 ========
 
-.. GENERATED FROM PYTHON SOURCE LINES 249-342
+.. GENERATED FROM PYTHON SOURCE LINES 248-341
 
 .. code-block:: Python
 
@@ -498,7 +484,7 @@ Plotting
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 343-349
+.. GENERATED FROM PYTHON SOURCE LINES 342-348
 
 WDRO comparison plots
 ^^^^^^^^^^^^^^^^^^^^^
@@ -507,7 +493,7 @@ libraries.
 It compares the test losses for the two methods, evaluated as the ERM (with
 mean-squared error), and the wall-clock running times.
 
-.. GENERATED FROM PYTHON SOURCE LINES 349-356
+.. GENERATED FROM PYTHON SOURCE LINES 348-355
 
 .. code-block:: Python
 
@@ -525,11 +511,11 @@ mean-squared error), and the wall-clock running times.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 357-358
+.. GENERATED FROM PYTHON SOURCE LINES 356-357
 
 Test loss plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 358-368
+.. GENERATED FROM PYTHON SOURCE LINES 357-367
 
 .. code-block:: Python
 
@@ -561,18 +547,18 @@ Test loss plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 369-373
+.. GENERATED FROM PYTHON SOURCE LINES 368-372
 
 We see that the two libraries are relatively similar, especially for small
 Wasserstein radii, which is to be expected considering the similarity between
 the implementations, based on the standard techniques of [#SaKE19]_ and
 [#EK17]_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 375-376
+.. GENERATED FROM PYTHON SOURCE LINES 374-375
 
 Timing plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 376-386
+.. GENERATED FROM PYTHON SOURCE LINES 375-385
 
 .. code-block:: Python
 
@@ -604,7 +590,7 @@ Timing plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 387-399
+.. GENERATED FROM PYTHON SOURCE LINES 386-398
 
 The running times of the two libraries are usually
 comparable, even though it seems like the implementation in ``SkWDRO`` seems
@@ -619,7 +605,7 @@ faster in some setting.
 .. as their transport cost (see the `costs tutorial <tutos/costs.html>`__ for
 .. more details on how to do that).
 
-.. GENERATED FROM PYTHON SOURCE LINES 401-406
+.. GENERATED FROM PYTHON SOURCE LINES 400-405
 
 SK-WDRO comparison plots
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -627,11 +613,11 @@ Here is another set of plots comparing regularized WDRO
 implementations, for the two libraries, both relying under the hood on
 ``PyTorch``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 408-409
+.. GENERATED FROM PYTHON SOURCE LINES 407-408
 
 Let's compare Sinkhorn-based WDRO models from both libraries
 
-.. GENERATED FROM PYTHON SOURCE LINES 409-416
+.. GENERATED FROM PYTHON SOURCE LINES 408-415
 
 .. code-block:: Python
 
@@ -649,11 +635,11 @@ Let's compare Sinkhorn-based WDRO models from both libraries
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 417-418
+.. GENERATED FROM PYTHON SOURCE LINES 416-417
 
 Test loss plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 418-429
+.. GENERATED FROM PYTHON SOURCE LINES 417-428
 
 .. code-block:: Python
 
@@ -686,11 +672,11 @@ Test loss plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 430-431
+.. GENERATED FROM PYTHON SOURCE LINES 429-430
 
 Timing plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 431-441
+.. GENERATED FROM PYTHON SOURCE LINES 430-440
 
 .. code-block:: Python
 
@@ -722,7 +708,7 @@ Timing plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 442-489
+.. GENERATED FROM PYTHON SOURCE LINES 441-488
 
 The speed of ``SkWDRO`` is usualy higher
 in this low dimensional setting with a medium-sized dataset.
@@ -775,7 +761,7 @@ References
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (21 minutes 33.214 seconds)
+   **Total running time of the script:** (15 minutes 21.055 seconds)
 
 
 .. _sphx_glr_download_examples_Study_compare_with_pdro.py:
