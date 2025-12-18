@@ -98,7 +98,7 @@ Problem setup
     # Total number of samples: chosen to be a bit prohibitive for SVM-like kernel methods (would deserve a separate analysis)
     n = 512
     # "Low"-dimensional setting to avoid this notebook to run for unreasonable amounts of time.
-    d = 8
+    d = 4
     n_train = int(np.floor(0.8 * n)) # Number of training samples: 80% of dataset
     n_test = n - n_train # Number of test samples
 
@@ -148,7 +148,7 @@ These are the exact machine details:
         ('System spec.:', ['uname', '-mrs']),
         ('Memory (RAM):', ['grep', 'MemTotal', '/proc/meminfo']),
         ('CPU cores:', ['grep', 'model name', '/proc/cpuinfo']),
-        # ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
+        ('CPU infos:', ['lshw', '-class', 'cpu', '-sanitize', '-notime'])
     ]:
         print(title)
         _output = subprocess.run(command, stdout=subprocess.PIPE).stdout.decode('utf-8')
@@ -192,6 +192,19 @@ These are the exact machine details:
      13th Gen Intel(R) Core(TM) i7-13800H
      13th Gen Intel(R) Core(TM) i7-13800H
      13th Gen Intel(R) Core(TM) i7-13800H
+
+    CPU infos:
+      *-cpu
+           product: 13th Gen Intel(R) Core(TM) i7-13800H
+           vendor: Intel Corp.
+           physical id: 1
+           bus info: cpu@0
+           version: 6.186.2
+           size: 1143MHz
+           capacity: 5GHz
+           width: 64 bits
+           capabilities: fpu fpu_exception wp vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp x86-64 constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb intel_pt sha_ni xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk avx_vnni dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req hfi vnmi umip pku ospke waitpkg gfni vaes vpclmulqdq tme rdpid movdiri movdir64b fsrm md_clear serialize pconfig arch_lbr ibt flush_l1d arch_capabilities ibpb_exit_to_user cpufreq
+           configuration: microcode=16681
 
 
 
@@ -248,7 +261,7 @@ The variance of the sampler is fixed, as well as the regularization parameter.
         )
         estimator.update({
             'cost_matrix': np.eye(d),
-            'eps': rho,
+            'eps': rho**2,
             'p': 2,
             'kappa': 'inf'
         })
@@ -265,7 +278,7 @@ The variance of the sampler is fixed, as well as the regularization parameter.
         )
         estimator.update({
             'cost_matrix': np.eye(d),
-            'eps': rho,
+            'eps': rho**2,
             'p': 2,
             'kappa': 'inf'
         })
@@ -360,17 +373,17 @@ Evaluation
 
     Radii:   0%|          | 0/3 [00:00<?, ?it/s]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [00:49<00:49, 24.58s/it]
-    Method-score: 100%|██████████| 4/4 [01:13<00:00, 17.41s/it]
-                                                                   Radii:  33%|███▎      | 1/3 [05:31<11:01, 330.71s/it]
+    Method-score:  50%|█████     | 2/4 [00:44<00:44, 22.38s/it]
+    Method-score: 100%|██████████| 4/4 [01:10<00:00, 16.66s/it]
+                                                                   Radii:  33%|███▎      | 1/3 [04:37<09:14, 277.44s/it]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [00:47<00:47, 23.57s/it]
-    Method-score: 100%|██████████| 4/4 [01:10<00:00, 16.70s/it]
-                                                                   Radii:  67%|██████▋   | 2/3 [10:17<05:04, 304.86s/it]
+    Method-score:  50%|█████     | 2/4 [00:44<00:44, 22.03s/it]
+    Method-score: 100%|██████████| 4/4 [01:08<00:00, 16.16s/it]
+                                                                   Radii:  67%|██████▋   | 2/3 [09:11<04:34, 274.99s/it]
     Method-score:   0%|          | 0/4 [00:00<?, ?it/s]
-    Method-score:  50%|█████     | 2/4 [00:49<00:49, 24.89s/it]
-    Method-score: 100%|██████████| 4/4 [01:14<00:00, 17.63s/it]
-                                                                   Radii: 100%|██████████| 3/3 [15:20<00:00, 303.70s/it]    Radii: 100%|██████████| 3/3 [15:20<00:00, 306.73s/it]
+    Method-score:  50%|█████     | 2/4 [00:43<00:43, 21.80s/it]
+    Method-score: 100%|██████████| 4/4 [01:08<00:00, 16.36s/it]
+                                                                   Radii: 100%|██████████| 3/3 [13:42<00:00, 273.18s/it]    Radii: 100%|██████████| 3/3 [13:42<00:00, 274.04s/it]
 
 
 
@@ -380,7 +393,7 @@ Evaluation
 Plotting
 ========
 
-.. GENERATED FROM PYTHON SOURCE LINES 248-341
+.. GENERATED FROM PYTHON SOURCE LINES 248-342
 
 .. code-block:: Python
 
@@ -388,6 +401,7 @@ Plotting
     # ----------------------------------------------------------------------
     # Generic comparison plotting helper
     # Author: chat-gpt
+    # Don't expect type stability
     # ----------------------------------------------------------------------
 
     def plot_library_comparison(
@@ -484,7 +498,7 @@ Plotting
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 342-348
+.. GENERATED FROM PYTHON SOURCE LINES 343-349
 
 WDRO comparison plots
 ^^^^^^^^^^^^^^^^^^^^^
@@ -493,7 +507,7 @@ libraries.
 It compares the test losses for the two methods, evaluated as the ERM (with
 mean-squared error), and the wall-clock running times.
 
-.. GENERATED FROM PYTHON SOURCE LINES 348-355
+.. GENERATED FROM PYTHON SOURCE LINES 349-356
 
 .. code-block:: Python
 
@@ -511,11 +525,11 @@ mean-squared error), and the wall-clock running times.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 356-357
+.. GENERATED FROM PYTHON SOURCE LINES 357-358
 
 Test loss plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 357-367
+.. GENERATED FROM PYTHON SOURCE LINES 358-368
 
 .. code-block:: Python
 
@@ -547,18 +561,18 @@ Test loss plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 368-372
+.. GENERATED FROM PYTHON SOURCE LINES 369-373
 
 We see that the two libraries are relatively similar, especially for small
 Wasserstein radii, which is to be expected considering the similarity between
 the implementations, based on the standard techniques of [#SaKE19]_ and
 [#EK17]_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 374-375
+.. GENERATED FROM PYTHON SOURCE LINES 375-376
 
 Timing plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 375-385
+.. GENERATED FROM PYTHON SOURCE LINES 376-386
 
 .. code-block:: Python
 
@@ -590,7 +604,7 @@ Timing plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 386-398
+.. GENERATED FROM PYTHON SOURCE LINES 387-399
 
 The running times of the two libraries are usually
 comparable, even though it seems like the implementation in ``SkWDRO`` seems
@@ -605,7 +619,7 @@ faster in some setting.
 .. as their transport cost (see the `costs tutorial <tutos/costs.html>`__ for
 .. more details on how to do that).
 
-.. GENERATED FROM PYTHON SOURCE LINES 400-405
+.. GENERATED FROM PYTHON SOURCE LINES 401-406
 
 SK-WDRO comparison plots
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -613,11 +627,11 @@ Here is another set of plots comparing regularized WDRO
 implementations, for the two libraries, both relying under the hood on
 ``PyTorch``.
 
-.. GENERATED FROM PYTHON SOURCE LINES 407-408
+.. GENERATED FROM PYTHON SOURCE LINES 408-409
 
 Let's compare Sinkhorn-based WDRO models from both libraries
 
-.. GENERATED FROM PYTHON SOURCE LINES 408-415
+.. GENERATED FROM PYTHON SOURCE LINES 409-416
 
 .. code-block:: Python
 
@@ -635,11 +649,11 @@ Let's compare Sinkhorn-based WDRO models from both libraries
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 416-417
+.. GENERATED FROM PYTHON SOURCE LINES 417-418
 
 Test loss plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 417-428
+.. GENERATED FROM PYTHON SOURCE LINES 418-429
 
 .. code-block:: Python
 
@@ -672,11 +686,11 @@ Test loss plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 429-430
+.. GENERATED FROM PYTHON SOURCE LINES 430-431
 
 Timing plot
 
-.. GENERATED FROM PYTHON SOURCE LINES 430-440
+.. GENERATED FROM PYTHON SOURCE LINES 431-441
 
 .. code-block:: Python
 
@@ -708,7 +722,7 @@ Timing plot
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 441-488
+.. GENERATED FROM PYTHON SOURCE LINES 442-489
 
 The speed of ``SkWDRO`` is usualy higher
 in this low dimensional setting with a medium-sized dataset.
@@ -761,7 +775,7 @@ References
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** (15 minutes 21.055 seconds)
+   **Total running time of the script:** (13 minutes 44.203 seconds)
 
 
 .. _sphx_glr_download_examples_Study_compare_with_pdro.py:
