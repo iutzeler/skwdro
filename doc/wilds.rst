@@ -94,7 +94,7 @@ The neural net example
 
 The training outcomes for the neural network is as follows:
 
-.. image:: assets/wilds/train_wilds.png
+.. image:: assets/wilds/train_wilds_paper.png
 
 Notice how the overfitting behaviour changes substantially with the robustness radius :math:`\rho`.
 
