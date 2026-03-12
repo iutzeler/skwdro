@@ -14,7 +14,10 @@
         <table>
             <td><a href="https://pypi.org/project/skwdro/"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/skwdro?style=for-the-badge"></a></td>
             <td><a href="https://anaconda.org/flvincen/skwdro"> <img src="https://anaconda.org/flvincen/skwdro/badges/version.svg" /></a></td>
-            <td><a href="https://arxiv.org/abs/2410.21231"><img src="https://img.shields.io/badge/arXiv-2410.21231-b31b1b.svg?style=for-the-badge&logo=arXiv&logoColor=b31b1b"></a></td>
+            <td>
+                <a href="https://jmlr.org/papers/v27/24-1840.html"><img src="https://img.shields.io/badge/JMLR_MLOSS-24--1840-navy.svg?style=for-the-badge&logo=data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABxElEQVQ4T9WST0iTcRjHPz+ay4xGan8IbWqYEsOMocKEDrECJdcllcDCutUQOkRMFMqLJYTehPRUIxGELEUQCiuX2qEUSxoNzdns3QrW/MM7tpHsF69vfyjIiyef4wPPB77P5yuklJJNjNh6AImE9dQCIUAkk8m/fiC07X8mKSVqNM7cfIhvERVbacEvwB+Gdi+lIPF9Dd9sECUUxr8Y4Uq9HXffSxpv9VNlP8qrST+OkxYdoKoxno29R/myxNS7T9xurqXn4QTNbQMcyskkshRl/s0dPBNenK4HPH/k4vJ1NzWOEh0w5/9Ksf0G+bn7icUTNFw6wYxPQQmtEAwtE1DC+MbbWFGj2Cpb6W6/yLWbfYwPNemAeGKNrOKrmLP3cOr4EZ56vGSk76TGUcpdt4fA5zCD9xtI3WGk4lw7o/0uWjoGyDSl6QCtSwXlTezelcqFWhuPh6fXs/d2OalzdrG6GsOcnUGZNZ/DeXupPl2CyZRGisGAeDE2I5+MfqDz3ghFhQc4U2HFWpTDx0CY82dtLAYj5B7chzFl2283uqmfKt96F+Tr6QWOWcxYCrPYbjSguRZSk6wr3UjtFqzyvyXddIQfQYTZgNWVYGAAAAAASUVORK5CYII="></a>
+                <a href="https://arxiv.org/abs/2410.21231"><img src="https://img.shields.io/badge/arXiv-2410.21231-b31b1b.svg?style=for-the-badge&logo=arXiv&logoColor=b31b1b"></a>
+            </td>
         </table>
     </nobr><p>
 
@@ -173,3 +176,23 @@ Next
       :link: api_deepdive/submodules.html
 
       More details about the exposed API.
+
+
+Cite
+----
+
+``skwdro`` is the result of a research project. It is licensed under `BSD 3-Clause <https://github.com/iutzeler/skwdro/blob/main/LICENSE>`_. You are free to use it and if you do so, please cite:
+
+.. code-block:: bibtex
+   :caption: Cite as follows:
+
+    @article{JMLR:v27:24-1840,
+      author  = {Vincent Florian and Wa{\"i}ss Azizian and Franck Iutzeler and J{\'e}r{\^o}me Malick},
+      title   = {skwdro: a library for Wasserstein distributionally robust machine learning},
+      journal = {Journal of Machine Learning Research},
+      year    = {2026},
+      volume  = {27},
+      number  = {8},
+      pages   = {1--7},
+      url     = {http://jmlr.org/papers/v27/24-1840.html}
+    }
